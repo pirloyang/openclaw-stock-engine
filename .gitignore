@@ -1,0 +1,82 @@
+# 个人配置文件（含持仓/自选/策略等隐私数据）
+AGENTS.md
+SOUL.md
+USER.md
+TOOLS.md
+IDENTITY.md
+HEARTBEAT.md
+ROLDS.md
+PORTFOLIO.md
+LOTTERY.md
+ROLES.md
+info-sources.md
+DAILY_REPORT_FRAMEWORK.md
+
+# 历史报告（每天生成，不纳入版本）
+reports/
+workspace/
+memory/
+agent-*/
+
+# 临时/缓存文件
+stock-signals/cache/
+stock-signals/cache/.*
+/tmp/stock_alerts/
+*.tmp
+*.pyc
+__pycache__/
+*.pyo
+*.swp
+*.bak
+.*.swp
+
+# 模拟交易数据（账户/日志/每日报告）
+sim_trading/account.json
+sim_trading/logs/
+sim_trading/reports/
+sim_trading/data/
+
+# 已过期的遗留文件
+stocks/
+监控/
+trade_log/
+scripts/monitor_603667.sh
+scripts/monitor_entry_0525.sh
+scripts/monitor_suanli.py
+scripts/monitor_suanli.sh
+scripts/monitor_all.sh
+scripts/realtime_monitor.py
+scripts/realtime_trader.py
+scripts/check_signals.sh
+scripts/verify_first_tier.sh
+scripts/top5.sh
+scripts/top5_ratings.sh
+scripts/weekend_report.sh
+scripts/__pycache__/
+stock-signals/price_cache.sh.bak
+stock-signals/test_300620.sh
+stock-signals/__pycache__/
+stock-signals/rules/__pycache__/
+
+# 备份目录
+backups/
+
+# 非股票项目
+projects/
+
+# 双色球
+ssq_history_2025_2026.json
+
+# OpenClaw 技能（不属于股票系统，由 OpenClaw 自动管理）
+skills/
+
+# OpenClaw 内部文件
+.clawhub/
+.openclaw/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

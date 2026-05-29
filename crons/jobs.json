@@ -1,0 +1,1773 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "b71080c4-dcc1-4259-9f82-7d89223abfe0",
+      "name": "双色球开奖回顾",
+      "enabled": true,
+      "createdAtMs": 1778148765909,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 22 * * 2,4,0",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "🎲 艾彩票模式启动。\n\n请执行以下任务：\n\n**角色：** 彩票预测专家「艾彩票」\n**任务：** 双色球开奖回顾 + 预测命中验证\n\n**步骤：**\n1. 拉取今日最新开奖结果（开奖号码、奖池、中奖注数）\n2. 读取 workspace/LOTTERY.md\n3. 读取 /tmp/ssq_history.json 获取历史对比数据\n4. 先 exec cat reports/$(date +%Y-%m-%d)-1200-双色球预测.md 2>/dev/null 读取今日12:00的预测方案\n5. 输出回顾分析报告\n\n**输出格式（关键）：**\n1. 今日开奖结果（期号、日期、红球、蓝球、奖池金额、一等奖x注/单注奖金、二等奖x注/单注奖金）\n2. 🔍 预测命中验证（**逐组对比预测方案 vs 实际开奖**）：\n   - 列出各预测方案的号码组合\n   - 每组标注命中几个红球、是否中蓝球、总命中数\n   - 命中率分析：这轮预测整体表现如何\n3. 中奖特征分析：奇偶比、三区分布、连号情况、重号数量\n4. 冷热号验证：今日开出的号码中哪些是热号、哪些是冷号\n5. 下一期趋势提示",
+        "timeoutSeconds": 360
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "1a272b75-f724-4fe1-abb3-e8cf64125d94",
+      "name": "W2周复盘(05/11-05/17)",
+      "enabled": true,
+      "createdAtMs": 1778467173018,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 16 * * 5",
+        "tz": "Asia/Shanghai",
+        "staggerMs": 30000
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "现在是周五收盘后，执行W2周复盘。\n\n先运行 python3 /root/.openclaw/workspace/scripts/monitor_full.py 获取最新行情。\n\n然后按照投资项目管理看板格式输出周报：\n1. 本周操作回顾（华友清仓、紫光建仓）\n2. 账户变化：期初→期末净值，盈亏\n3. 组合健康度评估（仓位、集中度、损益结构）\n4. 风险看板更新\n5. W3策略调整建议\n6. 进度：当前距20-30万目标的百分比\n\n格式要求：结构化、带数据的表格、结论明确。\n推送给辉哥。",
+        "timeoutSeconds": 300
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "076d3bf8-f413-4106-a803-62f8a6fefa18",
+      "name": "p_1778479480",
+      "enabled": false,
+      "deleteAfterRun": true,
+      "createdAtMs": 1778479482589,
+      "schedule": {
+        "kind": "at",
+        "at": "2026-05-11T06:04:44.589Z"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "【持仓】紫光股份 31.84 -4.01% | 大跌📊 14:04\n【ETF】芯片ETF富国+6.76% 工业母机ETF国泰+3.28% 人工智能ETF华夏+3.18%📊 14:04\n【机会】澜起科技+18%(HBM/存储芯片) 佰维存储+9%(HBM/存储芯片) 海光信息+8%(AI芯片)",
+        "timeoutSeconds": 30
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "8ae7842c-3fa8-465b-9e8b-31c07e41557d",
+      "name": "p_1778481898",
+      "enabled": false,
+      "deleteAfterRun": true,
+      "createdAtMs": 1778481900280,
+      "schedule": {
+        "kind": "at",
+        "at": "2026-05-11T06:45:02.325Z"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "【持仓】亨通光电 74.66 -3.38% | 大跌📊 14:44\n【持仓】紫光股份 31.70 -4.43% | 大跌📊 14:44\n【ETF】芯片ETF富国+6.40% 工业母机ETF国泰+3.50%📊 14:44\n【机会】澜起科技+18%(HBM/存储芯片) 佰维存储+9%(HBM/存储芯片) 海光信息+7%(AI芯片)",
+        "timeoutSeconds": 30
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "89110540-09fc-4994-9546-70fe789138b3",
+      "name": "盘后交割单与绩效审计",
+      "enabled": true,
+      "deleteAfterRun": false,
+      "createdAtMs": 1778490068946,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 15 * * 1-5",
+        "tz": "Asia/Shanghai",
+        "staggerMs": 0
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "⚡ 盘后交割单与绩效审计\n\n数据源：\ncat /tmp/stock_alerts/L1_market.txt\ncat /tmp/stock_alerts/L2_holdings.txt\ncat /tmp/stock_alerts/L3_focus.txt\ncat /tmp/stock_alerts/L4_etf_concept.txt\nhead -5 /tmp/stock_alerts/L5_watchlist.txt\nhead -10 /tmp/stock_alerts/L6_hot_alerts.txt\ncat /tmp/stock_alerts/urgent.txt\ncat /tmp/stock_alerts/signals_summary.json\n\n你是辉哥的专属顶级股票策略官。生成《盘后交割单与绩效审计》。\n\n回答三个问题：\n① 今天做对了什么\n② 哪里需要修正\n③ 明天怎么办\n\n手写逐只持仓点评，自然语言，不用表格。\n\n【盘间呼应】开头引述今日08:30盘前作战的关键判断，全文必须与午餐(12:00)分析相呼应。具体操作建议必须在-16:00结构重塑报告中做预判和对照。持仓绩效应与昨日同时期对比。结尾预告21:00结构重塑报告方向。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "timeout": 300000,
+      "state": {}
+    },
+    {
+      "id": "171fe392-8e32-4fc1-a24a-9a265f28a0c0",
+      "name": "盘前作战指令",
+      "enabled": true,
+      "deleteAfterRun": true,
+      "createdAtMs": 1778490098334,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 8 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "message too long, skip",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "820c077a-8414-43da-b9f7-6e5148fe33bc",
+      "name": "早盘竞价验证-多维度策略",
+      "enabled": true,
+      "createdAtMs": 1778549183850,
+      "schedule": {
+        "kind": "cron",
+        "expr": "25 9 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "您是辉哥的专属顶级股票策略官。生成《早盘竞价验证》。\n\n【写作风格】简单直接，不需要展开。看竞价数据跟昨天判断有没有出入。\n\n如果持仓竞价正常（偏离<1%），一行说\"竞价正常，按原计划执行\"。如果有异常（低开超3%破止损位），单独点出来：\n\"长电昨收57.49，竞价开55.80，低开约3%，低于55.50止损位，注意开盘第一根K线方向。\"\n\n【自律规则】\n⚠️ 先 exec cat reports/$(date +%Y-%m-%d)-0830-盘前作战.md 2>/dev/null 读取今日08:30报告，开头引用其核心判断，看竞价验证/挑战了哪个预期\n⚠️ 持仓以TOOLS.md为准，已清仓标的不得出现\n⚠️ 完成后用 write 保存到 reports/$(date +%Y-%m-%d)-0925-竞价验证.md",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "21a8523f-ceec-4952-94b7-52f760055db5",
+      "name": "午间盘面复盘&多源资讯&策略修正",
+      "enabled": true,
+      "createdAtMs": 1778561449504,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 12 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "【数据源】先exec read /tmp/stock_alerts/L1_market.txt L2_holdings.txt L3_focus.txt L6_hot_alerts.txt。报告中引用这些盘中监控数据而非重新拉取。\n您是辉哥的专属顶级股票策略官。生成《午间盘面复盘》。\n\n【写作风格】半天盘讲半天事，不要太长。\n\n先说上午大盘气质（涨跌+量能+主线），重点强调跟昨日的不同。\n然后逐只持仓一句半日判断：\n\"长电上午+2%，突破昨收站稳MA5，止损位上移到56.00。\"\n\"金风上午-1.2%，顶背离确认，下午继续走弱减仓100股。\"\n\n历史自选如果上午有触发信号的（涨超4%或该涨不涨异动），单独提。不到级别的忽略。\n\n【自律规则】\n⚠️ 先 exec cat reports/$(date +%Y-%m-%d)-0925-竞价验证.md 2>/dev/null 和 reports/$(date +%Y-%m-%d)-0830-盘前作战.md 2>/dev/null，开头引用08:30+09:25结论，说清楚上午走势验证/挑战了哪个预期\n⚠️ 持仓以TOOLS.md为准，脚本输出的买卖信号是系统建议不是用户交易，防虚构\n⚠️ 完成后用 write 保存到 reports/$(date +%Y-%m-%d)-1200-午间修正.md",
+        "timeoutSeconds": 180,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "a58ae9f7-1640-4aa2-9f8d-2e4ac3fe04f3",
+      "name": "盘中监控-09:45",
+      "enabled": false,
+      "createdAtMs": 1778567963796,
+      "schedule": {
+        "kind": "cron",
+        "expr": "45 09 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "04500848-5fcf-49a9-9da0-98bf38ea9905",
+      "name": "盘中监控-09:55",
+      "enabled": false,
+      "createdAtMs": 1778567965699,
+      "schedule": {
+        "kind": "cron",
+        "expr": "55 09 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "531e6527-620b-40ef-bd2a-3a1e219c92c3",
+      "name": "盘中监控-10:35",
+      "enabled": false,
+      "createdAtMs": 1778567967639,
+      "schedule": {
+        "kind": "cron",
+        "expr": "35 10 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "2e939165-2254-4cd8-8860-aa8ffe2a7a5c",
+      "name": "盘中监控-10:45",
+      "enabled": false,
+      "createdAtMs": 1778567969568,
+      "schedule": {
+        "kind": "cron",
+        "expr": "45 10 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "d3dfb6f7-70af-4f46-a124-528040b0d444",
+      "name": "盘中监控-10:55",
+      "enabled": false,
+      "createdAtMs": 1778567971462,
+      "schedule": {
+        "kind": "cron",
+        "expr": "55 10 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "66ddfb7a-c3fb-4c5f-8131-bd4f2bd27b70",
+      "name": "盘中监控-11:35",
+      "enabled": false,
+      "createdAtMs": 1778567973421,
+      "schedule": {
+        "kind": "cron",
+        "expr": "35 11 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行智能监控：bash /root/.openclaw/workspace/scripts/smart_monitor.sh。输出中如果有介入信号就推送给辉哥，如果是\"全池安静\"则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "bda7f562-79c7-4d4b-9ef8-6ead50c74fdd",
+      "name": "盘中监控-11:45",
+      "enabled": false,
+      "createdAtMs": 1778567975348,
+      "schedule": {
+        "kind": "cron",
+        "expr": "45 11 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行智能监控：bash /root/.openclaw/workspace/scripts/smart_monitor.sh。输出中如果有介入信号就推送给辉哥，如果是\"全池安静\"则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "6a8b8cbd-552e-49fa-a3e2-f3f3cc1e0b4b",
+      "name": "盘中监控-11:55",
+      "enabled": false,
+      "createdAtMs": 1778567977253,
+      "schedule": {
+        "kind": "cron",
+        "expr": "55 11 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "1018d99f-202a-4de1-8afd-b43ffd7f51c7",
+      "name": "盘中监控-10:05",
+      "enabled": false,
+      "createdAtMs": 1778567979179,
+      "schedule": {
+        "kind": "cron",
+        "expr": "05 10 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "53a00a9d-a2d5-4842-8010-99c35396deb6",
+      "name": "盘中监控-10:15",
+      "enabled": false,
+      "createdAtMs": 1778567981082,
+      "schedule": {
+        "kind": "cron",
+        "expr": "15 10 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "8987aec6-7c0c-4e0c-92e1-d2ddea3e7008",
+      "name": "盘中监控-10:25",
+      "enabled": false,
+      "createdAtMs": 1778567983002,
+      "schedule": {
+        "kind": "cron",
+        "expr": "25 10 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "2364e261-fd57-4239-9acf-32ab4308b611",
+      "name": "盘中监控-11:05",
+      "enabled": false,
+      "createdAtMs": 1778567984895,
+      "schedule": {
+        "kind": "cron",
+        "expr": "05 11 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "08f22048-c9ec-4c62-8c6c-ac518b478dc5",
+      "name": "盘中监控-11:15",
+      "enabled": false,
+      "createdAtMs": 1778567986832,
+      "schedule": {
+        "kind": "cron",
+        "expr": "15 11 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "92e4bbcb-0ebc-4889-93b7-0f6de2499027",
+      "name": "盘中监控-11:25",
+      "enabled": false,
+      "createdAtMs": 1778567988744,
+      "schedule": {
+        "kind": "cron",
+        "expr": "25 11 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "f62afecb-9de7-43d7-b6c5-8dc0afb651c2",
+      "name": "盘中监控-13:05",
+      "enabled": false,
+      "createdAtMs": 1778567990627,
+      "schedule": {
+        "kind": "cron",
+        "expr": "05 13 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "1e06013f-b722-44fc-be84-9d5bf1bbabcd",
+      "name": "盘中监控-13:15",
+      "enabled": false,
+      "createdAtMs": 1778567992564,
+      "schedule": {
+        "kind": "cron",
+        "expr": "15 13 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "e71c863a-4b30-44bc-9eaa-bf062b0ffd1d",
+      "name": "盘中监控-13:25",
+      "enabled": false,
+      "createdAtMs": 1778567994499,
+      "schedule": {
+        "kind": "cron",
+        "expr": "25 13 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "55697417-9d17-4696-89d0-5f487d42ad9a",
+      "name": "盘中监控-13:35",
+      "enabled": false,
+      "createdAtMs": 1778567996393,
+      "schedule": {
+        "kind": "cron",
+        "expr": "35 13 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "2f6dd36b-9683-4ec3-a398-c1449345e6a8",
+      "name": "盘中监控-13:45",
+      "enabled": false,
+      "createdAtMs": 1778567998327,
+      "schedule": {
+        "kind": "cron",
+        "expr": "45 13 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "750a27e8-6659-4f3a-9de6-c587dba694ec",
+      "name": "盘中监控-13:55",
+      "enabled": false,
+      "createdAtMs": 1778568000249,
+      "schedule": {
+        "kind": "cron",
+        "expr": "55 13 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "319761c0-7b17-4969-9f04-4be6c7a86804",
+      "name": "盘中监控-14:05",
+      "enabled": false,
+      "createdAtMs": 1778568002232,
+      "schedule": {
+        "kind": "cron",
+        "expr": "05 14 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "6ca65b81-fbf0-4545-a8e2-b4c6f9f3d330",
+      "name": "盘中监控-14:15",
+      "enabled": false,
+      "createdAtMs": 1778568004120,
+      "schedule": {
+        "kind": "cron",
+        "expr": "15 14 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "9b0711d0-24c3-441c-9073-38261c44e62c",
+      "name": "盘中监控-14:25",
+      "enabled": false,
+      "createdAtMs": 1778568006046,
+      "schedule": {
+        "kind": "cron",
+        "expr": "25 14 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "12594c03-c6f2-4468-906d-b4187a8ca7d6",
+      "name": "盘中监控-14:35",
+      "enabled": false,
+      "createdAtMs": 1778568008032,
+      "schedule": {
+        "kind": "cron",
+        "expr": "35 14 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "40bc34aa-2b03-4f53-a337-0863a4576161",
+      "name": "盘中监控-14:45",
+      "enabled": false,
+      "createdAtMs": 1778568009933,
+      "schedule": {
+        "kind": "cron",
+        "expr": "45 14 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "54276382-f2d2-4c9f-a8a0-36c01bddc051",
+      "name": "盘中监控-14:55",
+      "enabled": false,
+      "createdAtMs": 1778568011839,
+      "schedule": {
+        "kind": "cron",
+        "expr": "55 14 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "12679493-f4b8-434d-ad22-3e67bb23a8af",
+      "name": "盘中监控-09:35",
+      "enabled": false,
+      "createdAtMs": 1778568030872,
+      "schedule": {
+        "kind": "cron",
+        "expr": "35 9 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行监控脚本。若有信号输出，推送时必须引用08:30计划的预期，说清楚这个信号验证/挑战了计划的哪个判断\n   例如：\"亨通08:30计划判断回踩MA5确认，竞价验证-1.95%落在该区域——当前信号XX进一步验证/推翻该判断\"\n4. 结尾指向12:00午间修正：\"上述信号已记录，将纳入12:00午间修正的策略评估\"\n\n你是辉哥的交易助手。运行: bash /root/.openclaw/workspace/scripts/smart_monitor.sh。若输出有介入信号就推送辉哥，若输出全池安静则回复NO_REPLY。\n【数据纪律·防虚构】\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录。推送信号时只说\"XX触发XX条件\"，不说\"你卖了XX/你买了XX\"\n⚠️ 只有TOOLS.md持仓段明确的标的才是用户持仓，其他按监控池对待\n\n【自律规则】脚本输出的买卖信号是系统建议，不是用户真实交易。持仓以TOOLS.md为准。",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "05259c24-0f7c-4a81-a593-9afd47e88d08",
+      "name": "双色球预测推送",
+      "enabled": true,
+      "createdAtMs": 1778570840872,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 12 * * 2,4,0",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "你是\"艾彩票\"双色球预测专家。现在是12:00，双色球开奖日。\n\n请执行：\n1. 获取最近20期开奖数据：https://datachart.500.com/ssq/history/newinc/history.php?start=26040&end=26053\n2. 分析热号/冷号/三区分布/奇偶比/蓝球走势\n3. 生成3-5组预测方案，每组标注策略说明（热号主攻/三区均衡/遗漏回归等）\n4. 完成后用 write 保存到 reports/$(date +%Y-%m-%d)-1200-双色球预测.md\n5. 结尾提示：今晚22:30开奖回顾将逐组验证预测命中率",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "5164e8e4-d8c1-4de2-adf2-57bc5f18c213",
+      "name": "双色球预测推送",
+      "enabled": true,
+      "createdAtMs": 1778570848382,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 12 * * 2,4,0",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "你是\"艾彩票\"双色球预测专家。现在是12:00，双色球开奖日。\n\n请执行：\n1. 获取最近20期开奖数据：https://datachart.500.com/ssq/history/newinc/history.php?start=26040&end=26053\n2. 分析热号/冷号/三区分布/奇偶比/蓝球走势\n3. 生成3-5组预测方案，每组标注策略说明（热号主攻/三区均衡/遗漏回归等）\n4. 完成后用 write 保存到 reports/$(date +%Y-%m-%d)-1200-双色球预测.md\n5. 结尾提示：今晚22:30开奖回顾将逐组验证预测命中率",
+        "timeoutSeconds": 300,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "enabled": true,
+        "after": 1,
+        "cooldownMs": 3600000,
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "5a747726-35eb-4238-858e-f170f70abb05",
+      "name": "收盘缓存更新-日线追加",
+      "description": "每日收盘后追加价格+成交量到日线缓存",
+      "enabled": true,
+      "createdAtMs": 1778675918052,
+      "schedule": {
+        "kind": "cron",
+        "expr": "5 15 * * 1-5"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "收盘了。用exec运行: bash /root/.openclaw/workspace/stock-signals/price_cache.sh update。追加今日收盘价和成交量到所有标的日线缓存。",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot",
+        "bestEffort": true
+      },
+      "state": {}
+    },
+    {
+      "id": "a6ac1437-7214-402a-b5df-4aa9f96d8574",
+      "name": "收盘后行情缓存更新",
+      "enabled": true,
+      "createdAtMs": 1778982164870,
+      "schedule": {
+        "kind": "cron",
+        "expr": "15 16 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "当前时间16:15，收盘了。运行 bash /root/.openclaw/workspace/stock-signals/price_cache.sh update 更新所有标的的OHLCV缓存数据（增量追加最新交易日，去重，保留最近60行）。完成后回复✅\n\n【数据纪律·防虚构】\n⚠️ 持仓数据以 TOOLS.md 为准。执行 exec cat TOOLS.md，从\"### 持仓（含手续费\"到下一个\"###\"之间提取当前持仓列表\n⚠️ 严禁从价格波动推断用户交易。被监控脚本列出的标的不等于用户买入了，只有TOOLS.md持仓段明确的才是\n⚠️ 脚本输出中的\"止损/买入/卖出信号\"是系统建议，不是用户实际交易记录\n只能报告TOOLS.md持仓段明确列出的标的，其他均为监控池标的",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "91c1897e-ad64-4abd-a037-18f6955dd4f9",
+      "name": "模拟交易-09:35",
+      "enabled": false,
+      "createdAtMs": 1778985323090,
+      "schedule": {
+        "kind": "cron",
+        "expr": "35 9 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "当前时间09:35，执行模拟交易V2.0盘中扫描，输出交易信号。运行 bash /root/.openclaw/workspace/sim_trading/run_sim.sh",
+        "timeoutSeconds": 300
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot",
+        "bestEffort": true
+      },
+      "failureAlert": {
+        "after": 1
+      },
+      "state": {}
+    },
+    {
+      "id": "a14738e7-1f58-4571-b3b3-85bc537e8cea",
+      "name": "模拟交易-10:30",
+      "enabled": false,
+      "createdAtMs": 1778985326712,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 10 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "当前时间10:30，执行模拟交易V2.0盘中扫描。运行 bash /root/.openclaw/workspace/sim_trading/run_sim.sh",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "openclaw-weixin",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "622c07aa-9194-4765-9ee2-852571bdbdee",
+      "name": "模拟交易-11:25",
+      "enabled": false,
+      "createdAtMs": 1778985330054,
+      "schedule": {
+        "kind": "cron",
+        "expr": "25 11 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "当前时间11:25，执行模拟交易V2.0午盘前扫描。运行 bash /root/.openclaw/workspace/sim_trading/run_sim.sh",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "openclaw-weixin",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "977d3025-1ba3-4325-992a-45edbe0219d2",
+      "name": "模拟交易-13:35",
+      "enabled": false,
+      "createdAtMs": 1778985333676,
+      "schedule": {
+        "kind": "cron",
+        "expr": "35 13 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "当前时间13:35，执行模拟交易V2.0午后扫描。运行 bash /root/.openclaw/workspace/sim_trading/run_sim.sh",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "openclaw-weixin",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "8b046e49-9aa6-4c08-adda-93b00b09b801",
+      "name": "模拟交易-14:30",
+      "enabled": false,
+      "createdAtMs": 1778985337332,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 14 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "当前时间14:30，执行模拟交易V2.0尾盘扫描。运行 bash /root/.openclaw/workspace/sim_trading/run_sim.sh",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "openclaw-weixin",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "cb068df7-d9e5-44cf-911b-b73cfe3f0254",
+      "name": "模拟交易-收盘报告",
+      "enabled": true,
+      "createdAtMs": 1778985340690,
+      "schedule": {
+        "kind": "cron",
+        "expr": "10 15 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "当前时间15:10，收盘了，生成模拟交易V2.0日报。运行 bash /root/.openclaw/workspace/sim_trading/run_sim.sh",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "openclaw-weixin",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "e6a62cb9-8336-43ff-8e6f-dde86677fc96",
+      "name": "周末风口研报",
+      "enabled": true,
+      "createdAtMs": 1779562173382,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 21 * * 0",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "请生成周末风口研报，从以下三部分准备周一盘前输入：1.搜索周末财经要闻+A股消息汇总 2.搜索隔夜美股收盘（三大指数+英伟达+苹果+特斯拉） 3.搜索港股恒生指数收盘。整合后按 docs/周末风口研报模板.md 格式输出完整报告，推送给辉哥\n\n【数据回流——报告结束后执行】\n从周末要闻和研报中提取新发现的可关注标的（包括产业政策催化/业绩超预期/资金异动的个股），写入风口候选池：\nexec python3 -c \"\nimport json\nf = open('/root/.openclaw/workspace/stock-signals/fengkou_candidates.json')\nd = json.load(f); f.close()\nnew_stocks = [{'code': 'XXXXXX', 'name': '股票名', 'source': '研报来源/资讯来源', 'catalyst': '催化逻辑一句话', 'entry_low': 00.00, 'entry_high': 00.00}]\nfor ns in new_stocks:\n    if ns['code'] not in [c['code'] for c in d['candidates']]:\n        d['candidates'].append(ns)\nd['last_update'] = '$(date +%Y-%m-%d)'\nf = open('/root/.openclaw/workspace/stock-signals/fengkou_candidates.json','w')\njson.dump(d, f, ensure_ascii=False, indent=2); f.close()\nprint(f'✅ 风口候选池已更新至{d[\"last_update\"]}，{len(d[\"candidates\"])}只标的')\n\"",
+        "timeoutSeconds": 300
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "dac0bdca-2f98-48bf-b4c3-ded6d36cf163",
+      "name": "周一池-0935",
+      "enabled": false,
+      "deleteAfterRun": true,
+      "createdAtMs": 1779672451702,
+      "schedule": {
+        "kind": "cron",
+        "expr": "35 9 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "【09:35 周一监控池统一扫描】查以下4只标的当前价+集合竞价结果，逐只核对介入条件是否触发：\n\n1️⃣ 安泰科技(000969) — 突破22.74介入 / 止损22.40\n2️⃣ 江苏雷利(300660) — 站稳48.06介入 / 止损MA20 44.60\n3️⃣ 鹏鼎控股(002938) — 开板回踩100-102介入 / 止损MA20 82\n4️⃣ 美格智能(002881) — 突破49.14介入 / 止损MA20 41.49\n\n给一个简洁的逐只判断+操作建议，触发条件的标的一并标注。数据源用tencent stock。",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "32309e6b-669f-4d55-b80c-304e9a666390",
+      "name": "周一池-1305",
+      "enabled": false,
+      "deleteAfterRun": true,
+      "createdAtMs": 1779672466352,
+      "schedule": {
+        "kind": "cron",
+        "expr": "05 13 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "【13:05 周一监控池统一扫描】午后开盘，逐只核对：\n\n1️⃣ 安泰科技(000969) — 若已介入，检查是否守住介入价；若未介入，看午后是否给机会\n2️⃣ 江苏雷利(300660) — 同上\n3️⃣ 鹏鼎控股(002938) — 开板回踩机会出现否？\n4️⃣ 美格智能(002881) — 同上\n\n已介入的给持仓建议，未触发的评估午后可行性。",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "8b813fc9-d1b8-403c-97dc-dc25f410e79b",
+      "name": "周一池-1430",
+      "enabled": false,
+      "deleteAfterRun": true,
+      "createdAtMs": 1779672466818,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 14 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "【14:30 周一监控池尾盘决策】收盘前最后一轮，逐只给结论：\n\n1️⃣ 安泰科技(000969) — 收在什么位置？/ 尾盘是否介入？/ 持仓建议\n2️⃣ 江苏雷利(300660) — 同上\n3️⃣ 鹏鼎控股(002938) — 今天有无机会介入？/ 明天策略\n4️⃣ 美格智能(002881) — 同上\n\n每只给出清晰的\"今天入/明天等/放弃\"判断。",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "ced1aaa7-ea7f-4516-9226-3cb96e904d59",
+      "name": "周一池-1030",
+      "enabled": false,
+      "deleteAfterRun": true,
+      "createdAtMs": 1779672467299,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 10 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "【10:30 周一监控池统一扫描】4只标的盘中30分钟走势确认：\n\n1️⃣ 安泰科技(000969) — 突破22.74否？/ 当前走势强弱\n2️⃣ 江苏雷利(300660) — 站稳48.06否？/ 当前走势\n3️⃣ 鹏鼎控股(002938) — 是否开板回踩100-102？/ 能否介入\n4️⃣ 美格智能(002881) — 突破49.14否？/ 当前走势\n\n已触发介入条件的标的具体说明，未触发的给出能否等到的判断。",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "6cd7ff74-b681-4287-967f-a88dea8e81f0",
+      "name": "盘中监控-午盘",
+      "enabled": true,
+      "createdAtMs": 1779771685638,
+      "schedule": {
+        "kind": "cron",
+        "expr": "5,20,35,50 13-14 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "读/tmp/stock_alerts/下全部txt文件和signals_summary.json（引擎信号摘要），给我盘中监控简报。\n\n数据源：\n- L1_market.txt = 大盘指数\n- L2_holdings.txt = 持仓\n- L3_focus.txt = 重点监控\n- L4_etf_concept.txt = ETF/概念板块\n- L5_watchlist.txt = 全量自选池异动\n- L6_hot_alerts.txt = 热点异动分析\n- urgent.txt = 紧急信号\n- signals_summary.json = 引擎信号摘要（含共振判定/形态信号/评分排行/紧急信号/止损告警）\n\n输出：1️⃣大盘一句话 2️⃣我的持仓（止损止盈逼近的标红，形态信号标注规则索引）3️⃣重点监控（区分持仓/非持仓，标注共振判定）4️⃣ETF/概念异动 5️⃣自选异动+热点深度分析 6️⃣紧急信号\n\n风格自然语言有判断有结论，形态信号必须标注规则名称和解读。",
+        "timeoutSeconds": 300
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot",
+        "bestEffort": true
+      },
+      "failureAlert": {
+        "after": 1,
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "mode": "announce",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "cd5353f3-3fb4-4d77-9e5c-d203d6884bc2",
+      "name": "盘中监控-早盘",
+      "enabled": true,
+      "createdAtMs": 1779855990703,
+      "schedule": {
+        "kind": "cron",
+        "expr": "35,50 9 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "读/tmp/stock_alerts/下全部txt文件和signals_summary.json（引擎信号摘要），给我盘中监控简报。\n\n数据源：\n- L1_market.txt = 大盘指数\n- L2_holdings.txt = 持仓\n- L3_focus.txt = 重点监控\n- L4_etf_concept.txt = ETF/概念板块\n- L5_watchlist.txt = 全量自选池异动\n- L6_hot_alerts.txt = 热点异动分析\n- urgent.txt = 紧急信号\n- signals_summary.json = 引擎信号摘要（含共振判定/形态信号/评分排行/紧急信号/止损告警）\n\n输出：1️⃣大盘一句话 2️⃣我的持仓（止损止盈逼近的标红，形态信号标注规则索引）3️⃣重点监控（区分持仓/非持仓，标注共振判定）4️⃣ETF/概念异动 5️⃣自选异动+热点深度分析 6️⃣紧急信号\n\n风格自然语言有判断有结论，形态信号必须标注规则名称和解读。",
+        "timeoutSeconds": 300
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "after": 1
+      },
+      "state": {}
+    },
+    {
+      "id": "62061159-ffe4-4db0-a5e3-4e54e68fc054",
+      "name": "盘中监控-早盘B",
+      "enabled": true,
+      "createdAtMs": 1779855996511,
+      "schedule": {
+        "kind": "cron",
+        "expr": "5,20,35,50 10-11 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "读/tmp/stock_alerts/下全部txt文件和signals_summary.json（引擎信号摘要），给我盘中监控简报。\n\n数据源：\n- L1_market.txt = 大盘指数\n- L2_holdings.txt = 持仓\n- L3_focus.txt = 重点监控\n- L4_etf_concept.txt = ETF/概念板块\n- L5_watchlist.txt = 全量自选池异动\n- L6_hot_alerts.txt = 热点异动分析\n- urgent.txt = 紧急信号\n- signals_summary.json = 引擎信号摘要（含共振判定/形态信号/评分排行/紧急信号/止损告警）\n\n输出：1️⃣大盘一句话 2️⃣我的持仓（止损止盈逼近的标红，形态信号标注规则索引）3️⃣重点监控（区分持仓/非持仓，标注共振判定）4️⃣ETF/概念异动 5️⃣自选异动+热点深度分析 6️⃣紧急信号\n\n风格自然语言有判断有结论，形态信号必须标注规则名称和解读。",
+        "timeoutSeconds": 300
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "after": 1
+      },
+      "state": {}
+    },
+    {
+      "id": "9c325fa6-89ef-43c4-b23d-571c6114ca62",
+      "name": "收盘数据快照",
+      "enabled": true,
+      "createdAtMs": 1779869711835,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 16 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行: bash /root/.openclaw/workspace/stock-signals/engine.sh 生成收盘信号快照",
+        "timeoutSeconds": 600,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "failureAlert": {
+        "after": 1
+      },
+      "state": {}
+    },
+    {
+      "id": "041ba36b-74a9-4b4c-858a-7bae055e70a0",
+      "name": "市场结构与逻辑重塑报告",
+      "enabled": true,
+      "createdAtMs": 1779887076296,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 21 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "【数据源】先exec read /tmp/stock_alerts/L1_market.txt L2_holdings.txt L6_hot_alerts.txt。引用分层数据做市场分析。\n您是辉哥的专属顶级股票策略官。生成《市场结构与逻辑重塑报告》。\n\n【写作风格】像交易员给合伙人讲盘——有大局观、有判断、每句话都有数据但不是表格堆砌。不要表格和口号。\n\n先讲大盘气质（一句话）：\n\"今天科技爆了消费崩了，三万亿成交不是散户干的。\"\n\n逐只持仓诊断，V1.0风格：\n\"亨通光电 MA5=75.75（当前75.43）。多头排列，股价微贴5日线。上涨途中缩量回调不破位=洗盘，正常持有。\"\n\"长电科技 +4.07%，MA5=53.61偏离约7%。多头排列不拐头不走——拿着，偏离过大禁止加仓。\"\n\n历史自选挑最重要的讲（最多5只），每只一句判断+入场价+止损价。\n\n明日推演：三句话说清明天怎么走怎么应对。\n\n【自律规则】\n⚠️ 先exec cat reports/$(date +%Y-%m-%d)-1530-盘后审计.md 2>/dev/null 读取今日15:30报告，开头引用其核心结论\n⚠️ 持仓以TOOLS.md为准，已清仓标的不得出现\n⚠️ 完成后用write保存到 reports/$(date +%Y-%m-%d)-2100-结构重塑.md\n⚠️ 最后直接输出报告正文（不用问确认，直接输出文本交付）",
+        "timeoutSeconds": 600,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    },
+    {
+      "id": "afc3c271-35dc-4209-8c91-da126ea33ad6",
+      "name": "信息炼金：风口与研报精要",
+      "enabled": true,
+      "createdAtMs": 1779887096120,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 22 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "【数据源说明】\n- 真实持仓（仅这些）：TOOLS.md → exec grep \"持仓\" /root/.openclaw/workspace/TOOLS.md\n- 大盘+板块数据：exec cat /tmp/stock_alerts/L1_market.txt && exec cat /tmp/stock_alerts/L4_etf_concept.txt\n- 监控池触发标记（非持仓，仅用于风口分析）：exec head -30 /tmp/stock_alerts/L3_focus.txt\n- 热点异动（非持仓，仅用于发现新风口）：exec head -20 /tmp/stock_alerts/L6_hot_alerts.txt\n- 引擎信号（仅供形态/信号参考）：exec cat /tmp/stock_alerts/signals_summary.json\n\n【报告模板】必须严格按照 workspace/docs/信息炼金报告模板.md 的格式生成。模板文件定义了完整的段落结构、规范和三段式内容组织方式。每次生成报告前先 exec cat /root/.openclaw/workspace/docs/信息炼金报告模板.md 读取模板。\n\n【写作风格】自然语言、有温度的分析。每节三个黑体冒号段落：**什么事：**（事实陈述）**持仓影响：**（关联分析）**应对：**（操作指令）。不堆砌数据表格，把数据和判断揉成一句叙述。持仓影响用★评级。新增风口加🔥标注。持仓全景四列表格保留。\n\n【自律规则】\n⚠️ 持仓以TOOLS.md\"持仓\"节为准，其他所有L3/L6/engine_signals的数据都不是持仓\n⚠️ L3_focus.txt中的\"监控·触发\"标的只是触发介入条件，用户并未买入，不得写入持仓全景\n⚠️ L6_hot_alerts.txt中的标的只是系统评分关注，用户并未买入\n⚠️ 脚本输出的买卖信号是系统建议，不是用户真实交易\n⚠️ 已清仓标的不得出现\n⚠️ 完成后用 write 保存到 reports/$(date +%Y-%m-%d)-2200-信息炼金.md\n【数据回流指令——报告结束后执行】\n生成完报告后，从你的分析中提取新发现的可关注标的（包括研报推荐+风口事件催化的个股），用exec写入文件：\nexec python3 -c \"\nimport json\nf = open('/root/.openclaw/workspace/stock-signals/fengkou_candidates.json','r')\nd = json.load(f); f.close()\nnew_stocks = [{'code': 'XXXXXX', 'name': '股票名', 'source': '研报/资讯来源', 'catalyst': '催化逻辑一句话', 'entry_low': 00.00, 'entry_high': 00.00}]\nfor ns in new_stocks:\n    if ns['code'] not in [c['code'] for c in d['candidates']]:\n        d['candidates'].append(ns)\nd['last_update'] = '$(date +%Y-%m-%d)'\nf = open('/root/.openclaw/workspace/stock-signals/fengkou_candidates.json','w')\njson.dump(d, f, ensure_ascii=False, indent=2); f.close()\nprint(f'✅ 风口候选池已更新，当前{len(d[\"candidates\"])}只')\n\"\n注意：code必须用6位数字、name用股票全称、source标明来源。只写真正有价值的标的，不要凑数。\n最后直接输出报告正文（不用问确认，直接输出文本交付）\n\n【盘间呼应】开头引述今日21:00结构重塑的核心结论及今日盘中信号。所有新增风口监控标的必须交代发现逻辑（来自哪个环节）。持仓全景必须与今日盘后交割的绩效审计结论一致。监控池更新必须标注新入库标的的入选理由和淘汰标的的剔除原因。结尾预告明日08:30盘前作战方向。",
+        "timeoutSeconds": 600,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "openclaw-weixin",
+        "to": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+        "accountId": "9674fc9ac953-im-bot"
+      },
+      "state": {}
+    }
+  ]
+}
