@@ -524,8 +524,17 @@ def main():
     subprocess.run(["python3", f"{WORKSPACE}/scripts/signals_summary.py"],
                    capture_output=True, timeout=10)
     
+    # V2.2 板块资金流向监控（新增）
+    subprocess.run(["python3", f"{WORKSPACE}/scripts/sector_fund_flow.py"],
+                   capture_output=True, timeout=10)
+    
+    # V2.2 产业链传导模型（新增，依赖sector_fund_flow输出）
+    subprocess.run(["python3", f"{WORKSPACE}/scripts/industry_chain.py"],
+                   capture_output=True, timeout=10)
+    
     print(f"✅ {datetime.now().strftime('%H:%M:%S')} 分层采集完成 | {len(stocks)}只 | 采集{fetch_time}s | 总计{total_time}s")
     print(f"   持仓{l2}| 重点{l3}| ETF+概念{l4['etf']}| 自选异动{len(l5)} | 信号摘要{os.path.getsize(sig_summary) if os.path.exists(sig_summary) else 'N/A'}B")
+    print(f"   板块强度{os.path.getsize(f'{ALERT_DIR}/sector_flow.json')}B | 传导预警{os.path.getsize(f'{ALERT_DIR}/chain_alerts.json')}B")
     return data
 
 if __name__ == "__main__":
