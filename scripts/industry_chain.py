@@ -47,12 +47,40 @@ DEFAULT_CHAINS = [
     {
         "name": "航天军工链",
         "stages": [
-            {"order": 1, "name": "政策/发射", "sectors": ["商业航天"],    "delay_days": 0},
-            {"order": 2, "name": "卫星制造",  "sectors": ["商业航天"],    "delay_days": 2},
-            {"order": 3, "name": "地面设备",  "sectors": ["商业航天"],    "delay_days": 5},
-            {"order": 4, "name": "运营服务",  "sectors": ["商业航天"],    "delay_days": 8},
+            {"order": 1, "name": "发射任务/政策", "sectors": ["商业航天"],    "delay_days": 0},
+            {"order": 2, "name": "卫星平台制造",  "sectors": ["商业航天"],    "delay_days": 2},
+            {"order": 3, "name": "地面设备/终端",  "sectors": ["商业航天", "半导体设备/材料"], "delay_days": 5},
+            {"order": 4, "name": "运营与应用服务",  "sectors": ["商业航天", "AI应用/大模型"], "delay_days": 8},
         ],
-        "description": "发射任务→卫星制造先行→地面设备→数据服务"
+        "description": "发射任务→卫星平台→地面设备→遥感/导航数据服务"
+    },
+    {
+        "name": "机器人产业链",
+        "stages": [
+            {"order": 1, "name": "政策/AI模型", "sectors": ["AI应用/大模型"],    "delay_days": 0},
+            {"order": 2, "name": "核心零部件",  "sectors": ["机器人/工业母机", "半导体/芯片"], "delay_days": 3},
+            {"order": 3, "name": "整机制造",    "sectors": ["机器人/工业母机"], "delay_days": 7},
+            {"order": 4, "name": "应用场景",    "sectors": ["机器人/工业母机", "新能源"], "delay_days": 10},
+        ],
+        "description": "AI大模型突破→减速器/电机/传感器→人形机器人整机→工业/医疗应用"
+    },
+    {
+        "name": "AI应用落地链",
+        "stages": [
+            {"order": 1, "name": "算力基建", "sectors": ["液冷/数据中心", "半导体/芯片"], "delay_days": 0},
+            {"order": 2, "name": "大模型/平台", "sectors": ["AI应用/大模型"],    "delay_days": 5},
+            {"order": 3, "name": "行业应用", "sectors": ["AI应用/大模型", "商业航天"], "delay_days": 10},
+        ],
+        "description": "算力基建→大模型发布→AI应用落地(营销/医疗/航天/安全)"
+    },
+    {
+        "name": "消费电子复苏链",
+        "stages": [
+            {"order": 1, "name": "芯片/传感器", "sectors": ["半导体/芯片", "半导体设备/材料"], "delay_days": 0},
+            {"order": 2, "name": "精密结构件",  "sectors": ["机器人/工业母机"], "delay_days": 5},
+            {"order": 3, "name": "整机/品牌",   "sectors": ["机器人/工业母机"], "delay_days": 10},
+        ],
+        "description": "AI芯片+传感器→结构件/模组→手机/MR/可穿戴整机"
     },
 ]
 
