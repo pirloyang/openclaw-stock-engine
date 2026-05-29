@@ -58,6 +58,81 @@ def market_blocked(signals):
             return False, ""
     return False, "无指数数据"
 
+def get_market_change(signals):
+    """获取上证指数涨跌幅"""
+    for s in signals:
+        if s.get('code') == '000001':
+            return float(s.get('change_pct', '0').replace('%', ''))
+    return 0.0
+
+def get_sector_benchmark(signals, code):
+    """获取标的所属板块的基准涨跌幅
+    
+    通过标的前缀判断版块:
+    - 600/601/603: 使用芯片ETF作为科技板块基准
+    - 000/002: 使用有色ETF作为资源板块基准
+    - 300/301: 使用创新药ETF作为成长板块基准
+    - 688: 使用芯片ETF
+    """
+    sector_map = {
+        'sh516640': ('600', '601', '603', '688'),  # 芯片ETF
+        'sz159667': ('300', '301'),                  # 工业母机ETF (成长)
+        'sh512400': ('000', '002'),                  # 有色ETF (资源)
+    }
+    
+    for etf_id, prefixes in sector_map.items():
+        if any(code.startswith(p) for p in prefixes):
+            for s in signals:
+                if s.get('code') == etf_id.replace('sh','').replace('sz',''):
+                    chg = s.get('change_pct', '0')
+                    return float(chg.replace('%', ''))
+                # 也尝试完整代码匹配
+                sid = s.get('code', '')
+                if sid == etf_id.replace('sh','').replace('sz',''):
+                    chg = s.get('change_pct', '0')
+                    return float(chg.replace('%', ''))
+    return 0.0
+
+def check_sector_strength(signals, code):
+    """检查板块强度: 板块ETF涨跌幅≥0.5% 或 同板块≥2只标的涨>2%"""
+    # 方式1: ETF基准
+    etf_chg = get_sector_benchmark(signals, code)
+    if etf_chg >= 0.5:
+        return True
+    
+    # 方式2: 同板块个股联动
+    # 根据code前缀分组
+    prefix = code[:3] if len(code) >= 3 else code[0]
+    same_sector_strong = 0
+    for s in signals:
+        sc = s.get('code', '')
+        if sc == code or sc in ['000001', '399001', '399006', '000688']:
+            continue
+        if sc.startswith(prefix):
+            chg = float(s.get('change_pct', '0').replace('%', ''))
+            if chg > 2.0:
+                same_sector_strong += 1
+    
+    return same_sector_strong >= 2
+
+def is_in_cooldown(acc, code):
+    """检查是否处于信号冷却期（同标的止损后3日内禁止回购）"""
+    today = datetime.now().strftime('%Y-%m-%d')
+    today_dt = datetime.strptime(today, '%Y-%m-%d')
+    
+    # 查找最近一次该标的的止损卖出
+    for t in reversed(acc.get('trades', [])):
+        if t.get('type') == 'SELL' and t.get('code') == code:
+            reason = t.get('reason', '')
+            if '止损' in reason or '信号引擎卖出' in reason:
+                sell_date = t.get('time', '')[:10]
+                sell_dt = datetime.strptime(sell_date, '%Y-%m-%d')
+                days_diff = (today_dt - sell_dt).days
+                if days_diff <= 3:
+                    return True  # 3日内止损过，冷却中
+                break  # 只检查最后一次
+    return False
+
 def get_resonance(signals, code):
     """从信号引擎获取共振判决"""
     for s in signals:
@@ -67,19 +142,59 @@ def get_resonance(signals, code):
     return '无数据', 0, 0
 
 def get_stop_from_signal(signals, code, cost):
-    """从信号规则中提取止损价"""
+    """从信号规则中提取止损价——技术位优先，买入价为最终兜底
+    
+    止损逻辑优先级（V2.1优化）:
+    1. 信号引擎的 entry_stop_loss（阳线50%位/支撑位）
+    2. MA20下方3%（趋势破位线）
+    3. 20日最低价下方1%（前低支撑）
+    4. 成本下方8%（宽幅兜底，避免正常波动扫损）
+    """
+    best_stop = cost * 0.92  # 兜底：成本下方8%
+    
     for s in signals:
-        if s.get('code') != code: continue
+        if s.get('code') != code:
+            continue
+        
+        # 1. 信号引擎的止损位（阳线50%/关键支撑）
         for sig in s.get('signals', []):
             rule = sig.get('rule', '')
             if rule == 'entry_stop_loss':
                 sp = sig.get('body_50pct')
-                if sp: return float(sp)
-        # fallback: MA5下方3%
-        ma5 = s.get('ma5', 'n/a')
-        if ma5 != 'n/a':
-            return float(ma5) * 0.97
-    return cost * 0.95  # 最终fallback
+                if sp:
+                    sig_stop = float(sp)
+                    # 止损位不能离买入价太近（<2%），否则用更宽松的技术位
+                    if sig_stop < cost * 0.98:
+                        best_stop = max(best_stop, sig_stop)
+        
+        # 2. MA20下方3%（趋势破位线）
+        ma20 = s.get('ma20', 'n/a')
+        if ma20 != 'n/a':
+            try:
+                ma20_stop = float(ma20) * 0.97
+                if ma20_stop < cost:  # 只在亏损方向设止损
+                    best_stop = max(best_stop, ma20_stop)
+            except:
+                pass
+        
+        # 3. 20日最低价下方1%（前低支撑）
+        # 从形态信号中提取低点信息
+        for sig in s.get('signals', []):
+            low20 = sig.get('low20')
+            if low20:
+                try:
+                    low_stop = float(low20) * 0.99
+                    if low_stop < cost:
+                        best_stop = max(best_stop, low_stop)
+                except:
+                    pass
+    
+    # 保证止损位至少在成本下方3%（避免买入即止损）
+    min_stop = cost * 0.97
+    if best_stop > min_stop:
+        best_stop = min_stop
+    
+    return round(best_stop, 2)
 
 def is_t1_locked(holding):
     """检查是否T+1锁定"""
@@ -186,13 +301,14 @@ def save_signals_for_push(signals, executed, blocked, mkt_note):
         ma10 = s.get('ma10', 'n/a')
         level = s.get('price_level', 'L0_NORMAL')
         
-        # === 统一选股条件 ===
-        # 买入: L3焦点池或P0≥2.0 + 共振判决=出手/可参与
+        # === 统一选股条件 (V2.1) ===
+        # 买入: 三重共振直接通过 | 双重确认+P0≥3.5 | 双重确认+P0≥2.5需板块验证
         # 卖出: 卖出信号≥2
-        is_buy = (verdict in ['三重共振-出手', '双重确认-可参与']) and (code in focus_codes or p0_total >= 2.0)
+        from_buy = verdict == '三重共振-出手' or (verdict == '双重确认-可参与' and p0_total >= 3.5)
+        from_buy_weak = verdict == '双重确认-可参与' and p0_total >= 2.5 and p0_total < 3.5
         is_sell = sell_cnt >= 2
         
-        if is_buy or is_sell:
+        if from_buy or is_sell or from_buy_weak:
             actionable.append({
                 'code': code, 'name': name, 'price': price,
                 'change': change, 'verdict': verdict,
@@ -264,15 +380,29 @@ def run_trading_session():
 
     # 市场过滤器
     blocked, mkt_note = market_blocked(signals)
+    MARKET_CHG = get_market_change(signals)  # V2.1: 全局市场涨跌幅
     if blocked:
         print(f"⏸️ 市场过滤器激活: {mkt_note}")
 
     decisions = []
+    
+    # 获取当前持仓的MA5/MA10数据（用于移动止盈）
+    def get_ma_data(signals, code):
+        for s in signals:
+            if s.get('code') == code:
+                ma5 = s.get('ma5', 'n/a')
+                ma10 = s.get('ma10', 'n/a')
+                # ma5可能是复合值如"841.15"，尝试解析
+                try:
+                    return float(ma5) if ma5 != 'n/a' else None, float(ma10) if ma10 != 'n/a' else None
+                except:
+                    return None, None
+        return None, None
 
-    # 1. 止损检查 (使用信号引擎的止损价)
+    # 1. 持仓检查 (止损+移动止盈)
     for code, holding in acc["holdings"].items():
         verdict, buy_cnt, sell_cnt = get_resonance(signals, code)
-        stop_price = get_stop_from_signal(signals, code, holding["avg_cost"])
+        
         # 获取当前价
         cur_price = None
         for s in signals:
@@ -282,6 +412,29 @@ def run_trading_session():
         if not cur_price: continue
 
         loss_pct = (cur_price - holding["avg_cost"]) / holding["avg_cost"] * 100
+        
+        # === V2.1 移动止盈（盈利标的） ===
+        if loss_pct > 5:
+            ma5, ma10 = get_ma_data(signals, code)
+            if ma5 and cur_price <= ma5:
+                # 盈利>5%后跌破MA5 → 移动止盈
+                decisions.append({
+                    "action": "SELL", "code": code, "name": holding["name"],
+                    "qty": holding["qty"], "price": cur_price,
+                    "reason": f"移动止盈(MA5): 盈{loss_pct:+.1f}% 跌破MA5={ma5:.2f}"
+                })
+                continue
+            if ma10 and cur_price <= ma10 and loss_pct > 10:
+                # 盈利>10%后跌破MA10 → 趋势止盈
+                decisions.append({
+                    "action": "SELL", "code": code, "name": holding["name"],
+                    "qty": holding["qty"], "price": cur_price,
+                    "reason": f"移动止盈(MA10): 盈{loss_pct:+.1f}% 跌破MA10={ma10:.2f}"
+                })
+                continue
+        
+        # === 止损检查（使用技术位止损） ===
+        stop_price = get_stop_from_signal(signals, code, holding["avg_cost"])
 
         # 止损触发
         if cur_price <= stop_price:
@@ -314,38 +467,64 @@ def run_trading_session():
                 })
 
     # 2. 机会扫描 (仅在市场未阻塞且无止损待处理时)
+    # V2.1 买入门槛升级: P0≥3.5 + 板块强度≥B + 环境过滤器 + 信号冷却期
     if not blocked and not any(d["action"] == "SELL" for d in decisions):
-        for s in signals:
-            code = s.get('code', '')
-            # 跳过指数和非标的
-            if code in ['000001', '399001', '399006']: continue
-            # 跳过已持仓
-            if code in acc["holdings"]: continue
-            # 跳过历史自选池里的（只看持仓信号）
-            if code not in [h for h in acc['holdings'].keys()]:
-                # 非持仓标的：只看共振买入
-                verdict, buy_cnt, _ = get_resonance(signals, code)
-                if verdict not in ['三重共振-出手', '双重确认-可参与']: continue
+        # 大盘环境过滤器：上证跌>1.5%时禁止新开仓
+        mkt_chg = MARKET_CHG  # 由外部传入的市场涨跌幅
+        mkt_blocked_new = mkt_chg < -1.5
+        if mkt_blocked_new:
+            print(f"⏸️ 大盘环境过滤器激活: 上证{mkt_chg:+.2f}%，禁止新开仓")
+            mkt_blocked_new = True
+        
+        if not mkt_blocked_new:
+            for s in signals:
+                code = s.get('code', '')
+                # 跳过指数
+                if code in ['000001', '399001', '399006', '000688']: continue
+                # 跳过已持仓
+                if code in acc["holdings"]: continue
+                
+                verdict, buy_cnt, sell_cnt = get_resonance(signals, code)
+                p0_total = float(s.get('total_score_ext', 0))
+                
+                # === V2.1 买入门槛 ===
+                # 三重共振直接通过（代表最高级别信号）
+                if verdict == '三重共振-出手':
+                    pass  # 通过
+                elif verdict == '双重确认-可参与' and p0_total >= 3.5:
+                    pass  # 双重确认+P0≥3.5 通过
+                elif verdict == '双重确认-可参与' and p0_total >= 2.5:
+                    # P0在2.5-3.5之间: 需要板块强度验证
+                    sector_ok = check_sector_strength(signals, code)
+                    if not sector_ok:
+                        continue  # 板块不够强，跳过
+                else:
+                    continue  # 其他情况跳过
+                
+                # === 信号冷却期 ===
+                if is_in_cooldown(acc, code):
+                    continue  # 同标的止损后3日内不再买入
 
-            name = s.get('name', '?')
-            price = s.get('price', 0)
-            change = float(s.get('change_pct', '0').replace('%', ''))
-            ma5 = s.get('ma5', 'n/a')
+                name = s.get('name', '?')
+                price = s.get('price', 0)
+                change = float(s.get('change_pct', '0').replace('%', ''))
+                ma5 = s.get('ma5', 'n/a')
 
-            if change <= 0: continue  # 下跌不买
-            if price <= 0: continue
+                if change <= 0: continue  # 下跌不买
+                if price <= 0: continue
 
-            # 买入量 (100股整数倍)
-            max_amount = min(acc["cash"] * 0.4, acc["initial_capital"] * 0.2)
-            qty = int(max_amount / price / 100) * 100
-            if qty < 100: continue
+                # 买入量 (100股整数倍)
+                # 信号强度决定仓位: 三重共振=满单票上限, 双重确认=半仓
+                max_pos_ratio = 0.2 if verdict == '三重共振-出手' else 0.1
+                max_amount = min(acc["cash"] * 0.4, acc["initial_capital"] * max_pos_ratio)
+                qty = int(max_amount / price / 100) * 100
+                if qty < 100: continue
 
-            verdict, buy_cnt, _ = get_resonance(signals, code)
-            decisions.append({
-                "action": "BUY", "code": code, "name": name,
-                "price": price, "qty": qty,
-                "reason": f"{verdict} | 涨{change:+.2f}% | buy_signals={buy_cnt}"
-            })
+                decisions.append({
+                    "action": "BUY", "code": code, "name": name,
+                    "price": price, "qty": qty,
+                    "reason": f"{verdict} | P0={p0_total:.1f} | 涨{change:+.2f}% | buy_signals={buy_cnt}"
+                })
 
     # 3. 执行决策
     executed = []
