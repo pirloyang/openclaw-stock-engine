@@ -269,6 +269,164 @@ def execute_sell(acc, code, name, price, qty, reason):
     })
     return True, None
 
+# ============================================================
+# V2.2 趋势跟踪系统
+# ============================================================
+
+def detect_trend_strength(signals, code):
+    """检测趋势强度：弱/中/强/极强
+    
+    评级依据（多层叠加）:
+    - 极强: 多头排列(MA5>MA10>MA20) + 股价>全部均线 + 趋势斜率>2%
+    - 强:   多头排列 + 股价>MA5,MA20
+    - 中:   股价>MA20 + MA20方向向上
+    - 弱:   股价<MA20 或 MA20方向向下
+    """
+    for s in signals:
+        if s.get('code') != code:
+            continue
+        
+        price = s.get('price', 0)
+        ma5_str = s.get('ma5', 'n/a')
+        ma10_str = s.get('ma10', 'n/a')
+        ma20_str = s.get('ma20', 'n/a')
+        
+        try:
+            price = float(price)
+            ma5 = float(ma5_str) if ma5_str != 'n/a' else None
+            ma10 = float(ma10_str) if ma10_str != 'n/a' else None
+            ma20 = float(ma20_str) if ma20_str != 'n/a' else None
+        except (ValueError, TypeError):
+            return '弱', 0
+        
+        if ma5 is None or ma20 is None:
+            return '弱', 0
+        
+        # 趋势强度评分
+        strength_score = 0
+        # 条件1: 多头排列 MA5>MA10>MA20
+        if ma10 and ma5 > ma10 > ma20:
+            strength_score += 2
+        elif ma5 > ma20:
+            strength_score += 1
+        
+        # 条件2: 股价位置
+        if price > ma5:
+            strength_score += 1
+        if price > ma20:
+            strength_score += 1
+        
+        # 条件3: MA20斜率（从score_details提取趋势分）
+        trend_slope_score = 0
+        score_details = s.get('score_details', '')
+        if '趋势:' in score_details:
+            try:
+                trend_str = score_details.split('趋势:')[1].split('|')[0]
+                trend_slope_score = float(trend_str)
+            except:
+                pass
+        if trend_slope_score >= 1.0:
+            strength_score += 2
+        elif trend_slope_score >= 0.5:
+            strength_score += 1
+        
+        # 判定
+        if strength_score >= 5:
+            return '极强', strength_score
+        elif strength_score >= 3:
+            return '强', strength_score
+        elif strength_score >= 2:
+            return '中', strength_score
+        else:
+            return '弱', strength_score
+    
+    return '弱', 0
+
+def trend_adjust_stop_and_position(holding, trend_strength, price, avg_cost):
+    """根据趋势强度调整止盈止损和仓位策略
+    
+    返回: (adjusted_stop_pct, can_add_position)
+    - adjusted_stop_pct: 调整后的止盈触发百分比（负数=相对于当前价的百分比）
+    - can_add_position: 是否允许回踩加仓
+    """
+    profit_pct = (price - avg_cost) / avg_cost * 100 if avg_cost > 0 else 0
+    
+    if trend_strength == '极强' and profit_pct > 8:
+        # 极强趋势+显著盈利: 止盈放宽到MA20附近（给趋势充分空间）
+        return -10.0, True
+    elif trend_strength == '强' and profit_pct > 5:
+        # 强趋势+盈利: MA10跟踪止盈
+        return -5.0, True
+    elif trend_strength == '中':
+        # 中性趋势: MA5跟踪止盈+不追高
+        return -3.0, False
+    elif trend_strength == '弱' and profit_pct > 3:
+        # 弱趋势但盈利: 收紧止盈，落袋为安
+        return -2.0, False
+    else:
+        # 弱趋势+亏损: 原止损逻辑不变
+        return 0, False
+
+def get_trend_status(signals, code, holding):
+    """获取持仓的趋势状态摘要"""
+    for s in signals:
+        if s.get('code') != code:
+            continue
+        price = s.get('price', 0)
+        avg_cost = holding.get('avg_cost', 0)
+        profit_pct = (price - avg_cost) / avg_cost * 100 if avg_cost > 0 else 0
+        trend, strength = detect_trend_strength(signals, code)
+        adj_stop, can_add = trend_adjust_stop_and_position(holding, trend, price, avg_cost)
+        return {
+            'trend': trend, 'strength_score': strength,
+            'profit_pct': round(profit_pct, 2),
+            'adj_stop_pct': adj_stop, 'can_add': can_add
+        }
+    return {'trend': '弱', 'strength_score': 0, 'profit_pct': 0, 'adj_stop_pct': 0, 'can_add': False}
+
+def should_add_position(acc, signals, code):
+    """判断趋势持仓是否应该加仓（回踩支撑位确认）"""
+    if code not in acc['holdings']:
+        return False, ""
+    
+    holding = acc['holdings'][code]
+    status = get_trend_status(signals, code, holding)
+    if not status['can_add']:
+        return False, f"趋势{status['trend']}-不追高"
+    
+    # 加仓条件: 回踩MA5但不跌破 + 今日涨>0
+    for s in signals:
+        if s.get('code') != code:
+            continue
+        price = s.get('price', 0)
+        ma5_str = s.get('ma5', 'n/a')
+        ma5 = float(ma5_str) if ma5_str != 'n/a' else None
+        change = float(s.get('change_pct', '0').replace('%', ''))
+        
+        if ma5 and price > 0:
+            dist_to_ma5 = (price - ma5) / ma5 * 100
+            # 回踩MA5附近（-1%到2%之间）且不破
+            if -1 <= dist_to_ma5 <= 2 and change > 0:
+                return True, f"趋势{status['trend']}-回踩MA5加仓 盈{status['profit_pct']:+.1f}%"
+    
+    return False, ""
+
+def get_ma_data(signals, code):
+    """获取持仓的MA5/MA10/MA20数据"""
+    for s in signals:
+        if s.get('code') == code:
+            try:
+                ma5_str = s.get('ma5', 'n/a')
+                ma10_str = s.get('ma10', 'n/a')
+                ma20_str = s.get('ma20', 'n/a')
+                ma5 = float(ma5_str) if ma5_str != 'n/a' else None
+                ma10 = float(ma10_str) if ma10_str != 'n/a' else None
+                ma20 = float(ma20_str) if ma20_str != 'n/a' else None
+                return ma5, ma10, ma20
+            except:
+                pass
+    return None, None, None
+
 def save_signals_for_push(signals, executed, blocked, mkt_note):
     """将信号引擎判决写入持久文件，用于AI推送"""
     today = datetime.now().strftime("%Y-%m-%d")
@@ -385,19 +543,6 @@ def run_trading_session():
         print(f"⏸️ 市场过滤器激活: {mkt_note}")
 
     decisions = []
-    
-    # 获取当前持仓的MA5/MA10数据（用于移动止盈）
-    def get_ma_data(signals, code):
-        for s in signals:
-            if s.get('code') == code:
-                ma5 = s.get('ma5', 'n/a')
-                ma10 = s.get('ma10', 'n/a')
-                # ma5可能是复合值如"841.15"，尝试解析
-                try:
-                    return float(ma5) if ma5 != 'n/a' else None, float(ma10) if ma10 != 'n/a' else None
-                except:
-                    return None, None
-        return None, None
 
     # 1. 持仓检查 (止损+移动止盈)
     for code, holding in acc["holdings"].items():
@@ -413,24 +558,40 @@ def run_trading_session():
 
         loss_pct = (cur_price - holding["avg_cost"]) / holding["avg_cost"] * 100
         
-        # === V2.1 移动止盈（盈利标的） ===
-        if loss_pct > 5:
-            ma5, ma10 = get_ma_data(signals, code)
-            if ma5 and cur_price <= ma5:
-                # 盈利>5%后跌破MA5 → 移动止盈
-                decisions.append({
-                    "action": "SELL", "code": code, "name": holding["name"],
+        # === V2.2 趋势感知移动止盈 ===
+        # 根据趋势等级动态调整止盈策略
+        trend_status = get_trend_status(signals, code, holding)
+        trend = trend_status['trend']
+        
+        if loss_pct > 3:
+            ma5, ma10, ma20 = get_ma_data(signals, code)
+            
+            if trend == '极强' and loss_pct > 8:
+                # 极强趋势: 只破MA20才止盈（最宽空间）
+                if ma20 and cur_price <= ma20:
+                    decisions.append({"action": "SELL", "code": code, "name": holding["name"],
+                        "qty": holding["qty"], "price": cur_price,
+                        "reason": f"趋势止盈(极强-MA20): 盈{loss_pct:+.1f}% 跌破MA20={ma20:.2f}"})
+                    continue
+            elif trend == '强' and loss_pct > 5:
+                # 强趋势: 破MA10止盈
+                if ma10 and cur_price <= ma10:
+                    decisions.append({"action": "SELL", "code": code, "name": holding["name"],
+                        "qty": holding["qty"], "price": cur_price,
+                        "reason": f"趋势止盈(强-MA10): 盈{loss_pct:+.1f}% 跌破MA10={ma10:.2f}"})
+                    continue
+            elif trend == '中' and loss_pct > 5:
+                # 中等趋势: 破MA5止盈
+                if ma5 and cur_price <= ma5:
+                    decisions.append({"action": "SELL", "code": code, "name": holding["name"],
+                        "qty": holding["qty"], "price": cur_price,
+                        "reason": f"移动止盈(中-MA5): 盈{loss_pct:+.1f}% 跌破MA5={ma5:.2f}"})
+                    continue
+            elif trend == '弱' and loss_pct > 3:
+                # 弱趋势+盈利: 收紧止盈，落袋为安
+                decisions.append({"action": "SELL", "code": code, "name": holding["name"],
                     "qty": holding["qty"], "price": cur_price,
-                    "reason": f"移动止盈(MA5): 盈{loss_pct:+.1f}% 跌破MA5={ma5:.2f}"
-                })
-                continue
-            if ma10 and cur_price <= ma10 and loss_pct > 10:
-                # 盈利>10%后跌破MA10 → 趋势止盈
-                decisions.append({
-                    "action": "SELL", "code": code, "name": holding["name"],
-                    "qty": holding["qty"], "price": cur_price,
-                    "reason": f"移动止盈(MA10): 盈{loss_pct:+.1f}% 跌破MA10={ma10:.2f}"
-                })
+                    "reason": f"弱趋势止盈: 盈{loss_pct:+.1f}% 趋势={trend} 锁定利润"})
                 continue
         
         # === 止损检查（使用技术位止损） ===
