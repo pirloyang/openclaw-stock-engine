@@ -1,0 +1,92 @@
+{
+  "CPO/光通信": [
+    {
+      "date": "2026-05-30",
+      "avg_chg": -2.59,
+      "level": "D",
+      "up_ratio": 20.0,
+      "strong_count": 0
+    }
+  ],
+  "HBM/存储": [
+    {
+      "date": "2026-05-30",
+      "avg_chg": -2.52,
+      "level": "D",
+      "up_ratio": 20.0,
+      "strong_count": 0
+    }
+  ],
+  "PCB/覆铜板": [
+    {
+      "date": "2026-05-30",
+      "avg_chg": 0.5,
+      "level": "C",
+      "up_ratio": 42.9,
+      "strong_count": 3
+    }
+  ],
+  "半导体/芯片": [
+    {
+      "date": "2026-05-30",
+      "avg_chg": -5.45,
+      "level": "E",
+      "up_ratio": 0.0,
+      "strong_count": 0
+    }
+  ],
+  "商业航天": [
+    {
+      "date": "2026-05-30",
+      "avg_chg": -7.15,
+      "level": "E",
+      "up_ratio": 0.0,
+      "strong_count": 0
+    }
+  ],
+  "新能源": [
+    {
+      "date": "2026-05-30",
+      "avg_chg": -2.55,
+      "level": "D",
+      "up_ratio": 25.0,
+      "strong_count": 0
+    }
+  ],
+  "机器人/工业母机": [
+    {
+      "date": "2026-05-30",
+      "avg_chg": -4.98,
+      "level": "E",
+      "up_ratio": 0.0,
+      "strong_count": 0
+    }
+  ],
+  "AI应用/大模型": [
+    {
+      "date": "2026-05-30",
+      "avg_chg": 0.86,
+      "level": "C",
+      "up_ratio": 40.0,
+      "strong_count": 2
+    }
+  ],
+  "液冷/数据中心": [
+    {
+      "date": "2026-05-30",
+      "avg_chg": -5.97,
+      "level": "E",
+      "up_ratio": 0.0,
+      "strong_count": 0
+    }
+  ],
+  "半导体设备/材料": [
+    {
+      "date": "2026-05-30",
+      "avg_chg": -0.01,
+      "level": "C",
+      "up_ratio": 75.0,
+      "strong_count": 3
+    }
+  ]
+}
