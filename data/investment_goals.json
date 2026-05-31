@@ -1,0 +1,122 @@
+{
+  "_schema": "1.0",
+  "_description": "投资目标配置文件。修改数值即可调整策略，无需改代码。",
+  "_updated": "2026-06-01T01:35:00+08:00",
+
+  "target": {
+    "value": 250000,
+    "currency": "CNY",
+    "initial_capital": 84000,
+    "start_date": "2026-05-04",
+    "deadline": "2027-02-06",
+    "description": "账户从8.4万增长至20-30万，取中值25万为目标线"
+  },
+
+  "milestones": [
+    {
+      "id": "cleanup",
+      "name": "清淤收官",
+      "target_value": 100000,
+      "deadline": "2026-07-31",
+      "description": "清理低效仓位，释放资金，账户回到10万+",
+      "entry_criteria": "净值首次 ≥ 100000"
+    },
+    {
+      "id": "wave1",
+      "name": "主线1完成",
+      "target_value": 180000,
+      "deadline": "2026-10-31",
+      "description": "秋收行情集中火力，10万→18万",
+      "entry_criteria": "净值首次 ≥ 180000"
+    },
+    {
+      "id": "sprint",
+      "name": "冲刺线",
+      "target_value": 250000,
+      "deadline": "2027-01-31",
+      "description": "跨年行情+春节红包，18万→25万",
+      "entry_criteria": "净值首次 ≥ 250000"
+    }
+  ],
+
+  "risk_rules": {
+    "max_total_drawdown_pct": -15,
+    "max_single_position_pct": 0.25,
+    "min_cash_reserve_pct": 0.10,
+    "hard_stop_loss_pct": -5,
+    "description": "硬止损-5%是短线铁律，不随阶段变化"
+  },
+
+  "progressive_risk": {
+    "_description": "账户净值达到阈值后自动收紧风控，防止浮盈回吐",
+    "stages": [
+      {
+        "net_worth_range": [0, 120000],
+        "max_single_position_pct": 0.25,
+        "min_cash_reserve_pct": 0.10,
+        "max_positions": 6,
+        "description": "积累期：可承担较高单票风险"
+      },
+      {
+        "net_worth_range": [120000, 180000],
+        "max_single_position_pct": 0.20,
+        "min_cash_reserve_pct": 0.12,
+        "max_positions": 5,
+        "description": "成长中期：适度收敛单票集中度"
+      },
+      {
+        "net_worth_range": [180000, 250000],
+        "max_single_position_pct": 0.18,
+        "min_cash_reserve_pct": 0.15,
+        "max_positions": 5,
+        "description": "冲刺期：放大现金缓冲防止回撤"
+      },
+      {
+        "net_worth_range": [250000, 999999999],
+        "max_single_position_pct": 0.15,
+        "min_cash_reserve_pct": 0.20,
+        "max_positions": 4,
+        "description": "守成期：锁定利润优先"
+      }
+    ]
+  },
+
+  "trading_calendar": {
+    "market": "A",
+    "exchange": ["SZ", "SH"],
+    "session_hours": {
+      "morning": ["09:30", "11:30"],
+      "afternoon": ["13:00", "15:00"]
+    },
+    "timezone": "Asia/Shanghai",
+    "lunch_break": ["11:30", "13:00"]
+  },
+
+  "reporting": {
+    "daily_reports": [
+      {"time": "08:45", "name": "盘前作战指令", "channel": "weixin"},
+      {"time": "11:30", "name": "午间复盘", "channel": "weixin"},
+      {"time": "15:30", "name": "盘后交割单与绩效审计", "channel": "weixin"},
+      {"time": "21:00", "name": "市场结构与逻辑重塑", "channel": "weixin"},
+      {"time": "22:00", "name": "信息炼金风口研报精要", "channel": "weixin"}
+    ],
+    "weekly_reports": [
+      {"day": "friday", "time": "16:00", "name": "周复盘与下周策略", "channel": "weixin"}
+    ],
+    "monthly_reports": [
+      {"day": "last_trading_day", "time": "18:00", "name": "月绩效审计与策略校准", "channel": "weixin"}
+    ],
+    "weekend_reports": [
+      {"day": "sunday", "time": "21:00", "name": "周末风口研报", "channel": "weixin"}
+    ]
+  },
+
+  "alert_thresholds": {
+    "milestone_progress_deviation_pct": 20,
+    "monthly_target_deviation_pct": 20,
+    "drawdown_warning_pct": -8,
+    "drawdown_critical_pct": -12,
+    "daily_loss_warning_pct": -5,
+    "_description": "偏离/亏损达到阈值时触发自动告警"
+  }
+}

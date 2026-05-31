@@ -1,0 +1,32 @@
+{
+  "month": "2026-06",
+  "month_stats": {
+    "month": "2026-06",
+    "start_value": 147285.1,
+    "end_value": 147285.1,
+    "change": 0.0,
+    "change_pct": 0.0,
+    "peak_value": 147285.1,
+    "trough_value": 147285.1,
+    "max_drawdown_pct": 0.0,
+    "trading_days": 1
+  },
+  "progress": {
+    "net_worth": 147285.1,
+    "target_value": 250000.0,
+    "initial_capital": 84000.0,
+    "current_gain": 63285.1,
+    "remaining_gain": 102714.9,
+    "progress_pct": 38.1,
+    "time_progress_pct": 10.1,
+    "remaining_days": 249,
+    "monthly_return_needed_pct": 6.6
+  },
+  "trade_summary": {
+    "closed_count": 0,
+    "total_pnl": 0,
+    "win_rate": null
+  },
+  "positions_count": 5,
+  "generated_at": "2026-06-01T01:41:28.255358"
+}
