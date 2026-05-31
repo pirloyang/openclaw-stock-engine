@@ -22,7 +22,7 @@
 import sys, json, os, time
 from datetime import datetime, timezone
 
-STATE_FILE = "/tmp/signal_state.json"
+STATE_FILE = "/root/.openclaw/workspace/data/signal_state.json"
 
 # 信号类型→冷却分钟数映射（按规则名关键词匹配）
 COOLING_RULES = {

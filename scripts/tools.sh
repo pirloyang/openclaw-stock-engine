@@ -6,6 +6,7 @@
 
 get_holdings_text() {
   grep "^### 持仓" -A 15 /root/.openclaw/workspace/TOOLS.md | grep "^- " | \
+    grep -v '清仓' | \
     sed -n 's/^- \([^ ]*\) \([0-9]*\)（\([0-9]*\)股，成本\([0-9.]*\).*/\2 \1 \3 \4/p'
 }
 
@@ -46,6 +47,10 @@ get_all_codes() {
   echo -n "sh600183,sz002916,sz002938,sz002384"
   # 有色/新材料（2026-05-23加安泰科技）
   echo -n ",sz000969"
+  # 2026-05-30补齐：TOOLS.md新增自选标的
+  echo -n ",sz000636,sh000960,sz000988,sz001314,sz002202,sz002881,sz300113"
+  echo -n ",sh600029,sh600115,sh600309,sh600961,sh601111"
+  echo -n ",sh601869,sz603232,sh688041"
 }
 
 fetch_prices() {
