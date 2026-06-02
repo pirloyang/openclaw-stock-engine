@@ -69,6 +69,21 @@ rule_density_zone() {
     echo "{\"rule\":\"density_zone\",\"direction\":\"neutral\",\"ma20\":$ma20,\"strength\":\"info\",\"note\":\"20日线附近-筹码密集\"}"
 }
 
+rule_chip_analysis() {
+  local code="$1" price="$3"
+  local rule_dir="$_RULES_DIR_HR"
+  local signal_dir="$(cd "$rule_dir/.." 2>/dev/null && pwd)"
+  [ -z "$signal_dir" ] && return
+  local cache="$signal_dir/cache/${code}.day"
+  [ ! -f "$cache" ] || [ "$(wc -l < "$cache")" -lt 15 ] && return
+  
+  local py_script="$rule_dir/chip_distribution.py"
+  [ ! -f "$py_script" ] && return
+  
+  local result=$(python3 "$py_script" "$cache" "$price" 2>/dev/null)
+  [ -n "$result" ] && echo "$result"
+}
+
 rule_shrink_then_break() {
   local code="$1" price="$3" vol="${9}" high20="${15}"
   [ -z "$high20" ] || [ "$(echo "$price > $high20" | bc -l 2>/dev/null)" != "1" ] && return

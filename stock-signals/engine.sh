@@ -404,6 +404,12 @@ scan_morphology_signals() {
       approach_resistance)   bs=-0.20; desc="接近前高" ;;
       historical_breakthrough) bs=0.30; desc="前高突破" ;;
 
+      # 筹码分布信号
+      chip_resistance)       bs=-0.40; desc="筹码套牢区-压制" ;;
+      chip_density_low)      bs=0.30; desc="低位筹码密集" ;;
+      chip_deviation_high)   bs=-0.30; desc="大幅偏离成本-获利盘" ;;
+      chip_below_cost)       bs=0.20; desc="低于主力成本-超跌" ;;
+
       bearish_arrangement)   bs=-0.50; desc="均线空头排列" ;;
       ma_death_cross)        bs=-0.30; desc="5日死叉20日" ;;
 
