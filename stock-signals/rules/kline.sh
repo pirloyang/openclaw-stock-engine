@@ -227,7 +227,7 @@ rule_shrink_reversal() {
 }
 
 rule_gap_detection() {
-  local open="$5" yclose="$8"
+  local open="$5" yclose="$8" price="$3" high="$6"
   [ -z "$open" ] || [ -z "$yclose" ] || [ "$open" = "0.000" ] || [ "$yclose" = "0.000" ] && return
 
   local gap_pct=$(echo "scale=2; ($open-$yclose)/$yclose*100" | bc -l 2>/dev/null)
@@ -235,7 +235,14 @@ rule_gap_detection() {
 
   if [ "$(echo "$abs_gap > 1" | bc -l 2>/dev/null)" = "1" ]; then
     if [ "$(echo "$gap_pct > 0" | bc -l 2>/dev/null)" = "1" ]; then
-      echo "{\"rule\":\"gap_up\",\"direction\":\"bullish\",\"gap_pct\":$gap_pct,\"strength\":\"medium\",\"note\":\"向上跳空+${gap_pct}%—突破或消息驱动\"}"
+      # 高开跳空——检查是否高开低走（收盘回补缺口）
+      local decline=$(echo "scale=2; ($high - $price) / $high * 100" | bc -l 2>/dev/null 2>/dev/null)
+      if [ "$(echo "$gap_pct >= 5 && $price < $open && $decline >= 5" | bc -l 2>/dev/null 2>/dev/null)" = "1" ]; then
+        # 高开5%以上 + 收盘回落超5% → 假突破式高开
+        echo "{\"rule\":\"gap_up_meltdown\",\"direction\":\"bearish_warn\",\"gap_pct\":$gap_pct,\"strength\":\"very_high\",\"note\":\"跳空高开+${gap_pct}%但收盘回落${decline}%,缺口全吞-假突破\"}"
+      else
+        echo "{\"rule\":\"gap_up\",\"direction\":\"bullish\",\"gap_pct\":$gap_pct,\"strength\":\"medium\",\"note\":\"向上跳空+${gap_pct}%—突破或消息驱动\"}"
+      fi
     else
       echo "{\"rule\":\"gap_down\",\"direction\":\"bearish\",\"gap_pct\":$gap_pct,\"strength\":\"high\",\"note\":\"向下跳空${gap_pct}%—需警惕\"}"
     fi

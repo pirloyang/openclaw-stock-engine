@@ -272,7 +272,7 @@ calc_resonance() {
     if [ "$is_buy" -eq 1 ]; then
       local rule=$(echo "$sig" | grep -o '"rule":"[^"]*"' | cut -d'"' -f4)
       case "$rule" in
-        ma_*|bullish_arr*|macd_bottom_div*|macd_above_zero*)
+        ma_*|bullish_arr*|macd_bottom_div*)
           has_morphology=1 ;;
         breakout_up*|2b_fake_breakdown*|breakout*|2b_*)
           has_morphology=1 ;;
@@ -287,6 +287,20 @@ calc_resonance() {
       esac
     fi
   done
+  
+  # 共振修正：顶背离+天量出货 → 买入形态信号作废
+  local has_sell_div=0 has_heavy_vol=0
+  for sig in "$@"; do
+    if echo "$sig" | grep -qE '"(macd_top_div|shooting_star|fake_breakthrough)"'; then
+      has_sell_div=1
+    fi
+    if echo "$sig" | grep -qE '"(turnover_abnormal|turnover_high|volume_surge)"'; then
+      has_heavy_vol=1
+    fi
+  done
+  if [ "$has_sell_div" -eq 1 ] && [ "$has_heavy_vol" -eq 1 ]; then
+    has_morphology=0
+  fi
   
   local verdict="观望" strength=0
   
