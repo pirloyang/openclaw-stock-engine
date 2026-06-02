@@ -77,12 +77,13 @@ update_single() {
     [ -z "$raw" ] && return 1
     local parsed=$(parse_ohlcv "$raw")
     [ -z "$parsed" ] && return 1
-    echo "$parsed" > "$cache_file"
+    # 按日期排序写入（API返回从新到旧，需倒序保存）
+    echo "$parsed" | sort -k3 -t' ' > "$cache_file"
     return 0
   fi
 
-  # 正常增量：取cache最后一行的日期，对比API最新日期
-  local last_date=$(tail -1 "$cache_file" | awk '{print $3}')
+  # 正常增量：取cache中按日期排序的最后一行的日期
+  local last_date=$(sort -k3 "$cache_file" | tail -1 | awk '{print $3}')
   local raw=$(fetch_60d "$code")
   [ -z "$raw" ] && return 1
 
@@ -118,9 +119,9 @@ except: pass' 2>/dev/null)
   # 追加最新数据
   echo "$latest" >> "$cache_file"
 
-  # 保留最近60行
+  # 按日期排序后保留最近60行
   local tmp_file="${cache_file}.tmp"
-  tail -60 "$cache_file" > "$tmp_file" && mv "$tmp_file" "$cache_file"
+  sort -k3 -t' ' "$cache_file" | tail -60 > "$tmp_file" && mv "$tmp_file" "$cache_file"
 }
 
 update_all() {

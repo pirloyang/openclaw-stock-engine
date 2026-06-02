@@ -2,13 +2,22 @@
 # support_resistance.sh — 突破/2B法则/筹码密集区/前高阻力（纯计算，用缓存数据）
 # args: code name price change open high low yclose vol ma5 ma10 ma20 ma60 avg5v high20 low20 dif prev_dif prev_close mkt_sh mkt_cy
 
+
 rule_breakout() {
-  local price="$3" high20="${15}" low20="${16}"
+  local code="$1" price="$3" high20="${15}" low20="${16}"
   [ -z "$high20" ] || [ -z "$low20" ] && return
   
-  if [ "$(echo "$price > $high20" | bc -l 2>/dev/null)" = "1" ]; then
-    local breach=$(echo "scale=2; ($price-$high20)/$high20*100" | bc -l 2>/dev/null)
-    echo "{\"rule\":\"breakout_up\",\"direction\":\"breakout\",\"strength\":\"high\",\"note\":\"突破20日高点+${breach}%\"}"
+  # 从cache读取最近60日的真实最高价作为突破参照
+  local cache="$SIGNAL_DIR/cache/${code}.day"
+  local high60="$high20"
+  if [ -f "$cache" ] && [ "$(wc -l < "$cache")" -ge 5 ]; then
+    local cache_high60=$(sort -k3 -t' ' "$cache" | tail -60 | awk '{if(max=="") max=$1; if($1>max) max=$1} END{print max}')
+    [ -n "$cache_high60" ] && [ "$(echo "$cache_high60 > $high20" | bc -l 2>/dev/null)" = "1" ] && high60=$cache_high60
+  fi
+
+  if [ "$(echo "$price > $high60" | bc -l 2>/dev/null)" = "1" ]; then
+    local breach=$(echo "scale=2; ($price-$high60)/$high60*100" | bc -l 2>/dev/null)
+    echo "{\"rule\":\"breakout_up\",\"direction\":\"breakout\",\"strength\":\"high\",\"note\":\"突破${high60}.00高点+${breach}%\"}"
   elif [ "$(echo "$price < $low20" | bc -l 2>/dev/null)" = "1" ]; then
     local breach=$(echo "scale=2; ($low20-$price)/$low20*100" | bc -l 2>/dev/null)
     echo "{\"rule\":\"breakdown\",\"direction\":\"breakdown\",\"strength\":\"high\",\"note\":\"跌破20日低点-${breach}%\"}"

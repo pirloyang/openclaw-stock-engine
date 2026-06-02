@@ -728,24 +728,124 @@ def run_trading_session():
     save_account(acc)
     return executed, snapshot
 
+def load_signals_cache():
+    """从统一信号源加载最新信号数据，用于补充买入/卖出时的评分形态信息"""
+    try:
+        with open("/tmp/stock_alerts/engine_signals.json") as f:
+            return json.load(f)
+    except:
+        return []
+
+def get_buy_signal_detail(code, name, price, signals):
+    """查找该标的买入时的信号详情：评分、形态信号、共振判定"""
+    for s in signals:
+        if s.get('code') == code:
+            morph = s.get('morph_score','?')
+            total = s.get('total_score_ext','?')
+            qs = s.get('quality_score','?')
+            signals_list = s.get('signals', [])
+            signal_notes = []
+            for sig in signals_list[:4]:
+                direction = sig.get('direction','')
+                rule = sig.get('rule','')
+                note = sig.get('note','')
+                signal_notes.append(f"{direction}: {rule} ({note[:40]})")
+            reson = s.get('resonance', {})
+            verdict = reson.get('verdict', '')
+            buy_s = reson.get('buy_signals', 0)
+            sell_s = reson.get('sell_signals', 0)
+            return {
+                'total_score': total,
+                'morph_score': morph,
+                'quality_score': qs,
+                'signals': signal_notes[:3],
+                'resonance_verdict': verdict,
+                'buy_signals': buy_s,
+                'sell_signals': sell_s,
+            }
+    return None
+
 def daily_report():
     acc = load_account()
     today = datetime.now().strftime("%Y-%m-%d")
+    signals = load_signals_cache()
     r = []
     r.append(f"## 模拟交易日报 | {today}\n")
     r.append(f"**总资产:** ¥{acc['total_value']:.2f}")
-    r.append(f"**收益率:** {(acc['total_value']-acc['initial_capital'])/acc['initial_capital']*100:+.2f}%")
-    r.append(f"**现金:** ¥{acc['cash']:.2f}  **持仓:** {len(acc['holdings'])}只\n")
+    r.append(f"**累计收益率:** {(acc['total_value']-acc['initial_capital'])/acc['initial_capital']*100:+.2f}%")
+    r.append(f"**可用现金:** ¥{acc['cash']:.2f}\n")
+    
+    # --- 持仓明细（含买入时间、理由、评分、形态、盈亏） ---
+    r.append(f"---\n### 📋 持仓明细\n")
     for c, h in acc["holdings"].items():
-        r.append(f"- {h['name']}({c}): {h['qty']}股 成本{h['avg_cost']:.2f}")
+        name = h['name']
+        qty = h['qty']
+        cost = h['avg_cost']
+        buy_date = h.get('last_buy_date','?')
+        
+        # 查找买入理由（从trades历史取最近一笔买入记录）
+        buy_reason = ''
+        for t in reversed(acc['trades']):
+            if t['type'] == 'BUY' and t['code'] == c:
+                buy_reason = t.get('reason','')
+                break
+        
+        # 补充信号评分
+        sig_detail = get_buy_signal_detail(c, name, cost, signals)
+        
+        # 当前盈亏（从信号缓存读最新价）
+        cur_price = None
+        for s in signals:
+            if s.get('code') == c:
+                try: cur_price = float(s['price'])
+                except: pass
+                break
+        
+        if cur_price:
+            pl_amt = (cur_price - cost) * qty
+            pl_pct = (cur_price / cost - 1) * 100
+            pl_emoji = '🟢' if pl_amt >= 0 else '🔴'
+        else:
+            pl_amt = 0
+            pl_pct = 0
+            pl_emoji = '⚪'
+        
+        r.append(f"{pl_emoji} **{name}({c})** {qty}股")
+        r.append(f"  - 买入: **{buy_date}**  @ **{cost:.2f}**")
+        r.append(f"  - 理由: {buy_reason}")
+        if sig_detail:
+            r.append(f"  - 信号: 总分{sig_detail['total_score']} | 形态{sig_detail['morph_score']} | 品质{sig_detail['quality_score']}")
+            if sig_detail['signals']:
+                for sn in sig_detail['signals']:
+                    r.append(f"    · {sn}")
+            r.append(f"  - 共振: {sig_detail['resonance_verdict']} (买入{sig_detail['buy_signals']} 卖出{sig_detail['sell_signals']})")
+        if cur_price:
+            r.append(f"  - 现价: **{cur_price:.2f}**  盈亏: **{pl_amt:+.0f}元 ({pl_pct:+.2f}%)**")
+        r.append("")
+    
+    # --- 今日交易 ---
     trades = [t for t in acc["trades"] if t["time"].startswith(today)]
     if trades:
-        r.append(f"\n### 今日交易 ({len(trades)}笔)\n")
+        r.append(f"---\n### 📝 今日交易 ({len(trades)}笔)\n")
         for t in trades:
             if t["type"] == "BUY":
-                r.append(f"- 买入 {t['name']} {t['qty']}股@{t['price']:.2f}")
+                r.append(f"🟩 买入 **{t['name']}** {t['qty']}股 **@{t['price']:.2f}")
             else:
-                r.append(f"- 卖出 {t['name']} {t['qty']}股@{t['price']:.2f} 盈亏{t.get('profit',0):+.2f}")
+                profit = t.get('profit',0)
+                emoji = '🟩' if profit >= 0 else '🟥'
+                r.append(f"{emoji} 卖出 **{t['name']}** {t['qty']}股 **@{t['price']:.2f}** 盈亏**{profit:+.2f}**")
+            reason = t.get('reason','')
+            if reason:
+                r.append(f"    → {reason}")
+    
+    # --- 今日盈亏汇总 ---
+    today_trades = [t for t in acc["trades"] if t["time"].startswith(today) and t['type'] == 'SELL']
+    if today_trades:
+        total_loss = sum(t.get('profit',0) for t in today_trades)
+        r.append(f"\n**今日已实现盈亏:** {total_loss:+.2f}")
+    
+    r.append(f"\n**现金仓位:** ¥{acc['cash']:.2f} ({acc['cash']/acc['total_value']*100:.0f}%) | **持仓市值:** ¥{acc['total_value']-acc['cash']:.2f} ({100-acc['cash']/acc['total_value']*100:.0f}%)")
+    
     report = "\n".join(r)
     os.makedirs(f"{WORKSPACE}/reports", exist_ok=True)
     with open(f"{WORKSPACE}/reports/daily_{today}.md", 'w') as f:

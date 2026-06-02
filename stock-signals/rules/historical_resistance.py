@@ -43,10 +43,25 @@ peaks = [p for p in peaks if p['price'] > current_price * 0.7]
 peaks.sort(key=lambda x: x['sig'], reverse=True)
 peaks = peaks[:8]
 
+# 取最近60日的绝对最高价作为全局前高
+window_60 = max([r['close'] for r in rows[-60:]]) if len(rows) >= 60 else max([r['close'] for r in rows])
+
 # 检查当前价接近某个前高
 for p in peaks:
     if p['price'] > current_price * 1.3:
         continue
+    
+    # 过滤：该局部高点之后如果有更高的新高，说明已被覆盖，不再作为突破/压制参考
+    peak_date = p['date']
+    later_high = False
+    for row in rows:
+        if peak_date and row['date'] > peak_date:
+            if row['close'] > p['price'] * 1.02:  # 后续有收盘比该高点高2%以上
+                later_high = True
+                break
+    if later_high:
+        continue
+    
     dist_pct = abs(current_price - p['price']) / p['price'] * 100
     if current_price <= p['price'] and dist_pct < 4 and p['price'] >= current_price * 0.85:
         # 股价在阻力位下方逼近 → 前高压制
