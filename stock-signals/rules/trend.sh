@@ -70,6 +70,23 @@ rule_macd_zone() {
   fi
 }
 
+# v3.0: MACD金叉/死叉检测（DIF vs DEA）
+# 参数: price dif prev_dif ... (需要额外从cache计算DEA)
+rule_macd_cross() {
+  local dif="${17}" prev_dif="${18}"
+  [ -z "$dif" ] || [ -z "$prev_dif" ] && return
+
+  # DIF上穿零轴 → 金叉确认（简化判定：prev_dif<0且dif>0）
+  if [ "$(echo "$prev_dif < 0 && $dif > 0" | bc -l 2>/dev/null)" = "1" ]; then
+    echo "{\"rule\":\"macd_golden_cross\",\"direction\":\"buy_signal\",\"dif\":$dif,\"prev_dif\":$prev_dif,\"strength\":\"high\",\"note\":\"MACD零轴金叉-DIF上穿零轴\"}"
+  fi
+
+  # DIF下穿零轴 → 死叉确认
+  if [ "$(echo "$prev_dif > 0 && $dif < 0" | bc -l 2>/dev/null)" = "1" ]; then
+    echo "{\"rule\":\"macd_death_cross\",\"direction\":\"sell_signal\",\"dif\":$dif,\"prev_dif\":$prev_dif,\"strength\":\"high\",\"note\":\"MACD零轴死叉-DIF下穿零轴\"}"
+  fi
+}
+
 rule_ma_convergence() {
   local price="$3" ma5="${10}" ma10="${11}" ma20="${12}"
   [ -z "$ma5" ] || [ -z "$ma10" ] || [ -z "$ma20" ] && return

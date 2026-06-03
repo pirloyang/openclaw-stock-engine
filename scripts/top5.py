@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Top5 精选 — 入库标的综合评分排名 v2.0
-v2.2 (2026-06-04): MACD完整金叉判定(DIF>DEA)/共振全覆盖
+v3.0 (2026-06-04): 波动率衰减/死叉扣分/多空冲突降权/短中期背离惩罚
 直接从 gtimg 行情 + 日线缓存独立评分，不依赖 engine.sh
 用法: python3 scripts/top5.py
 """
@@ -225,7 +225,27 @@ def load_resonance():
             pass
     return resonance
 
-# ---------- 评分 v2.0 ----------
+
+# ---------- 共振冲突检测 ----------
+def check_resonance_conflict(code):
+    """检测engine_signals中是否存在多空信号冲突(buy≥1且sell≥1)"""
+    engine_path = "/tmp/stock_alerts/engine_signals.json"
+    if not os.path.exists(engine_path):
+        return False
+    try:
+        with open(engine_path) as f:
+            data = json.load(f)
+        for item in data:
+            if item.get('code', '') == code:
+                r = item.get('resonance', {})
+                buy_n = r.get('buy_signals', 0)
+                sell_n = r.get('sell_signals', 0)
+                return buy_n >= 1 and sell_n >= 1
+    except:
+        pass
+    return False
+
+# ---------- 评分 v3.0 ----------
 def compute_score(code, name, price, change, vol, cache, sector_strength, resonance_data):
     score = 0.0
     details = []
@@ -234,20 +254,34 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
     abs_chg = abs(float(change or 0))
     chg = float(change or 0)
 
-    # 1️⃣ 涨幅因子 v2.0 (0-1): 区间打分
+    # 1️⃣ 涨幅因子 v3.0 (0-1): 区间打分 + 波动率衰减
+    chg_score = 0.0
     if 1.0 <= abs_chg <= 3.0:
-        score += 1.0; details.append("涨幅:1.0")
+        chg_score = 1.0
     elif 3.0 < abs_chg <= 5.0:
-        score += 0.7; details.append("涨幅:0.7")
+        chg_score = 0.7
     elif 5.0 < abs_chg <= 8.0:
-        score += 0.3; details.append("涨幅:0.3")
+        chg_score = 0.3
     elif abs_chg < 1.0:
-        score += 0.2; details.append("涨幅:0.2")
+        chg_score = 0.2
     else:
-        score += 0.1; details.append("涨幅:0.1")
+        chg_score = 0.1
+    details.append(f"涨幅:{chg_score:.2f}")
+    score += chg_score
 
     if not cache:
         return score, morph, '|'.join(details)
+
+    # 波动率衰减: 5日内有过-5%以上单日暴跌 → 涨幅因子×0.5
+    p_for_vol = cache['prices'] if cache else []
+    if len(p_for_vol) >= 6:
+        recent_5 = p_for_vol[-6:-1]  # day-5 ~ day-1
+        for i in range(1, len(recent_5)):
+            daily_chg = (recent_5[i] - recent_5[i-1]) / recent_5[i-1] * 100
+            if daily_chg <= -5.0:
+                score -= chg_score * 0.5  # 涨幅得分减半
+                details[-1] = f"涨幅:{chg_score*0.5:.2f}(衰减)"
+                break
 
     ma5 = ma_n(cache, 5)
     ma10 = ma_n(cache, 10)
@@ -295,7 +329,7 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
     score += pos_score
     details.append(f"位置:{pos_score:.2f}")
 
-    # 4️⃣ 趋势因子 (0-1)
+    # 4️⃣ 趋势因子 v3.0 (0-1): MA20斜率 + 短中期背离惩罚
     trend_score = 0.0
     if ma20 and ma20 > 0 and len(cache['prices']) >= 25:
         prev_ma20_vals = cache['prices'][-25:-5]
@@ -311,46 +345,70 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
             dist_pct = (price - ma20) / ma20 * 100
             if dist_pct > 15:
                 trend_score *= 0.5
+            # 短中期背离惩罚: MA20向上但价格<MA5且MACD死叉 → 中期趋势滞后
+            if trend_score > 0.5 and ma5 and price < ma5:
+                # 进一步判定MACD是否死叉
+                ema12_t = calc_ema(cache['prices'], 12)
+                ema26_t = calc_ema(cache['prices'], 26)
+                if ema12_t and ema26_t:
+                    dif_t = ema12_t - ema26_t
+                    if dif_t > 0:
+                        p_t = cache['prices']
+                        e12v, e26v = [], []
+                        for i, pr in enumerate(p_t):
+                            if i == 0: e12v.append(pr); e26v.append(pr)
+                            else: e12v.append(pr*2/13+e12v[-1]*(1-2/13)); e26v.append(pr*2/27+e26v[-1]*(1-2/27))
+                        dif_v = [a-b for a,b in zip(e12v, e26v)]
+                        dea_v = []
+                        for i, d in enumerate(dif_v):
+                            if i == 0: dea_v.append(d)
+                            else: dea_v.append(d*2/10+dea_v[-1]*(1-2/10))
+                        if dif_t <= dea_v[-1]:
+                            trend_score = 0.5  # 死叉+价格<MA5→趋势降级
     elif ma20 and price > ma20:
         trend_score = 0.5
     score += trend_score
     details.append(f"趋势:{trend_score:.2f}")
 
-    # 5️⃣ 技术指标因子 v2.2 (0-0.5): 完整MACD金叉判定(DIF>DEA)
+    # 5️⃣ 技术指标因子 v3.0 (-0.35~+0.5): 加分+扣分双向
     tech_score = 0.0
+    tech_cost = 0.0
+    macd_dead = False
     if ma5 and ma10 and ma20 and ma5 > ma10 > ma20:
         tech_score += 0.3  # 均线多头排列
     if ma5 and price > ma5:
         tech_score += 0.15  # 站上5日线
-    # MACD完整判定: DIF>0 且 DIF>DEA(金叉)
+    else:
+        tech_cost -= 0.15  # 跌破MA5扣分
+    # MACD完整判定
     ema12 = calc_ema(cache['prices'], 12)
     ema26 = calc_ema(cache['prices'], 26)
     if ema12 is not None and ema26 is not None:
         dif = ema12 - ema26
         if dif > 0:
-            # 进一步计算DEA(EMA9 of DIF完整序列)
-            p = cache['prices']
-            if len(p) >= 12:
-                # 完整序列EMA
-                e12_vals, e26_vals = [], []
-                k12, k26 = 2/13, 2/27
-                for i, pr in enumerate(p):
-                    if i == 0:
-                        e12_vals.append(pr); e26_vals.append(pr)
-                    else:
-                        e12_vals.append(pr*k12 + e12_vals[-1]*(1-k12))
-                        e26_vals.append(pr*k26 + e26_vals[-1]*(1-k26))
-                dif_vals = [a-b for a,b in zip(e12_vals, e26_vals)]
-                dea_vals = []; k9 = 2/10
-                for i, d in enumerate(dif_vals):
-                    if i == 0: dea_vals.append(d)
-                    else: dea_vals.append(d*k9 + dea_vals[-1]*(1-k9))
-                latest_dea = dea_vals[-1]
-                if dif > latest_dea:  # 完整金叉判定
+            # 计算DEA完整序列
+            p_tech = cache['prices']
+            if len(p_tech) >= 12:
+                e12v, e26v = [], []
+                for i, pr in enumerate(p_tech):
+                    if i == 0: e12v.append(pr); e26v.append(pr)
+                    else: e12v.append(pr*2/13+e12v[-1]*(1-2/13)); e26v.append(pr*2/27+e26v[-1]*(1-2/27))
+                difv = [a-b for a,b in zip(e12v, e26v)]
+                dea_v = []
+                for i, d in enumerate(difv):
+                    if i == 0: dea_v.append(d)
+                    else: dea_v.append(d*2/10+dea_v[-1]*(1-2/10))
+                if dif > dea_v[-1]:
                     tech_score += 0.15  # MACD金叉多头区域
-    if tech_score > 0:
-        details.append(f"技术:{tech_score:.2f}")
-        score += tech_score
+                else:
+                    macd_dead = True
+                    tech_cost -= 0.20  # MACD死叉扣分
+    tech_net = tech_score + tech_cost
+    if tech_net > 0:
+        details.append(f"技术:{tech_net:.2f}")
+    elif tech_net < 0:
+        details.append(f"技术:{tech_net:.2f}")
+    score += tech_net
 
     # 6️⃣ 板块强度因子 v2.1 (0-0.5): 板块均值TS归一化
     sector = SECTOR_MAP.get(code)
@@ -367,16 +425,19 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
         score += sector_bonus
         details.append(f"板块:{sector_bonus:.2f}")
 
-    # 7️⃣ 信号共振因子 v2.2 (-0.3~+0.5): 全量覆盖
-    # buy(+2)→+0.5, observe(+1)→+0.5, observe_weak(+0.5)→+0.15
-    # single/warn(0)→0, sell(-1)→-0.3
+    # 7️⃣ 信号共振因子 v3.0 (-0.3~+0.5): 多空冲突减半
     resonance_bonus = 0.0
     if code in resonance_data:
         r = resonance_data[code]
         if r >= 2:       # buy: 三重共振
             resonance_bonus = 0.5
         elif r >= 1:     # observe: 双重确认
-            resonance_bonus = 0.5
+            # 检查 engine_signals 中是否 buy/sell 同时存在 ≥1 → 冲突降权
+            conflict = check_resonance_conflict(code)
+            if conflict:
+                resonance_bonus = 0.25  # 多空冲突 → 减半
+            else:
+                resonance_bonus = 0.5
         elif r >= 0.5:   # observe_weak: 单一信号看多
             resonance_bonus = 0.15
         elif r <= -1:    # sell: 卖出确认

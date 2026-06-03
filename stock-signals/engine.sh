@@ -266,6 +266,8 @@ calc_resonance() {
     # 规则名也参与判定（兼容旧输出信号）
     [[ $sig == *"golden_cross"* || $sig == *"washout"* || $sig == *"2b_fake_breakdown"* ]] && is_buy=1
     [[ $sig == *"death_cross"* || $sig == *"should_rise_fail"* || $sig == *"2b_fake_breakout"* ]] && is_sell=1
+    # v3.0: MACD死叉=卖出信号
+    [[ $sig == *"macd_death_cross"* ]] && is_sell=1
     [ "$is_buy" -eq 1 ] && ((buy++))
     [ "$is_sell" -eq 1 ] && ((sell++))
     # 信号类型分类（买入信号才参与维度判定）
@@ -320,6 +322,15 @@ calc_resonance() {
   # 卖出信号优先
   [ "$sell" -ge 2 ] && { verdict="卖出确认-减仓"; strength=-2; }
   [ "$sell" -eq 1 ] && [ "$buy" -lt 2 ] && { verdict="卖出预警-关注"; strength=-1; }
+
+  # 🔴 v3.0 多空冲突降级: buy≥2且sell≥1 → 强制降一级
+  if [ "$buy" -ge 2 ] && [ "$sell" -ge 1 ] && [ "$strength" -ge 2 ]; then
+    if [ "$strength" -ge 3 ]; then
+      verdict="双重确认-可参与(冲突降级)"; strength=2
+    elif [ "$strength" -eq 2 ]; then
+      verdict="单一信号-观察(冲突降级)"; strength=1
+    fi
+  fi
   
   # P0评分卡降级：质量分<2.5时降低买入信号等级
   if [ "$buy" -ge 2 ] && [ "$(echo "$quality_score < 2.5" | bc -l 2>/dev/null)" = "1" ]; then
@@ -368,7 +379,9 @@ scan_morphology_signals() {
 
       # MACD形态
       macd_bottom_div)       bs=0.40; desc="MACD底背离" ;;
+      macd_golden_cross)     bs=0.35; desc="MACD零轴金叉" ;;
       macd_above_zero)       bs=0.15; desc="MACD零轴上方" ;;
+      macd_death_cross)      bs=-0.35; desc="MACD零轴死叉" ;;
 
       # 突破形态
       breakout_up)           bs=0.35; desc="突破20日高点" ;;
