@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Top5 精选 — 入库标的综合评分排名
+Top5 精选 — 入库标的综合评分排名 v2.0
+v2.0 (2026-06-04): 修复涨幅反向计分/量能缩量适配/位置逻辑/新增板块强度+信号共振
 直接从 gtimg 行情 + 日线缓存独立评分，不依赖 engine.sh
 用法: python3 scripts/top5.py
 """
@@ -12,22 +13,22 @@ import urllib.request
 WORKSPACE = "/root/.openclaw/workspace"
 CACHE_DIR = os.path.join(WORKSPACE, "stock-signals", "cache")
 TOOLS_SH = os.path.join(WORKSPACE, "scripts", "tools.sh")
+SIGNALS_DIR = os.path.join(WORKSPACE, "stock-signals")
+SIGNALS_SUMMARY = "/tmp/stock_alerts/signals_summary.json"
+FOCUS_FILE = os.path.join(SIGNALS_DIR, "focus_watchlist.json")
 
 # ---------- 获取标的代码 ----------
 def get_all_codes():
     codes = set()
-    # 持仓
     import subprocess
     r = subprocess.run(["bash", TOOLS_SH, "holdings"], capture_output=True, text=True, timeout=10)
     for line in r.stdout.strip().split('\n'):
         parts = line.strip().split()
         if parts: codes.add(parts[0])
-    # 历史自选
     r = subprocess.run(["bash", TOOLS_SH, "history"], capture_output=True, text=True, timeout=10)
     for line in r.stdout.strip().split('\n'):
         parts = line.strip().split()
         if parts: codes.add(parts[0])
-    # ETF + 概念 + 监控 + 商业航天 + 风口
     extras = """516640 159667 159858 159928 512400 688008 300308 300394 002230 300750
     300502 600522 300456 002281 300620 601138 000977 300476 000034 002837 300499
     301018 300738 300383 001309 300475 002119 300302 300661 688798 300223 603881
@@ -40,7 +41,6 @@ def get_all_codes():
 
 # ---------- gtimg API ----------
 def fetch_prices(codes):
-    """一次拉取全部行情"""
     batch = []
     for c in codes:
         prefix = "sh" if c[0] == '6' or c == '000001' else "sz"
@@ -49,7 +49,6 @@ def fetch_prices(codes):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     raw = urllib.request.urlopen(req, timeout=20).read()
     raw = raw.decode('gbk', errors='replace')
-    # 拆分多行
     lines = re.sub(r'";v_', '";\nv_', raw).strip().split('\n')
     result = {}
     for line in lines:
@@ -62,7 +61,6 @@ def fetch_prices(codes):
             name = parts[1].strip()
             price = float(parts[3].strip() or 0)
             change = parts[32].replace('%', '').strip() if len(parts) > 32 else '0'
-            # vol 是手数（字段36格式: price/vol/amt）
             vol_field = parts[35].strip() if len(parts) > 35 else '0'
             if '/' in vol_field:
                 vol = float(vol_field.split('/')[1]) if len(vol_field.split('/')) > 1 else 0
@@ -116,8 +114,74 @@ def calc_ema(prices, n):
         ema = p * k + ema * (1 - k)
     return ema
 
-# ---------- 评分 ----------
-def compute_score(code, name, price, change, vol, cache):
+# ---------- 板块映射 ----------
+SECTOR_MAP = {
+    '601600': '有色', '000960': '有色', '600549': '有色', '603993': '有色',
+    '002428': '有色', '600961': '有色', '000969': '有色',
+    '688008': '半导体', '300223': '半导体', '603893': '半导体', '002049': '半导体',
+    '002185': '半导体', '600584': '半导体', '603986': '半导体', '688525': '半导体',
+    '301308': '半导体', '300661': '半导体', '688798': '半导体', '002119': '半导体',
+    '300308': 'CPO', '300394': 'CPO', '300502': 'CPO', '002281': 'CPO',
+    '000988': 'CPO', '300620': 'CPO',
+    '601138': 'AI算力', '000977': 'AI算力', '000938': 'AI算力', '002837': 'AI算力',
+    '300499': 'AI算力', '301018': 'AI算力', '300738': 'AI算力', '300383': 'AI算力',
+    '603881': 'AI算力', '000034': 'AI算力', '002230': 'AI算力',
+    '300476': 'PCB', '002916': 'PCB', '002938': 'PCB', '002384': 'PCB',
+    '600183': 'PCB', '002463': 'PCB', '603256': 'PCB',
+    '002594': '新能源', '300750': '新能源', '300390': '新能源', '300450': '新能源',
+    '002865': '新能源', '603799': '新能源',
+    '600580': '机器人', '300124': '机器人', '002896': '机器人', '600835': '机器人',
+    '600592': '机器人', '002553': '机器人', '300660': '机器人',
+    '300058': 'AI应用', '002131': 'AI应用', '300364': 'AI应用', '301171': 'AI应用',
+    '600118': '商业航天', '002025': '商业航天', '300045': '商业航天', '688568': '商业航天',
+    '300762': '商业航天', '600343': '商业航天', '300455': '商业航天', '688523': '商业航天',
+    '301306': '商业航天', '600391': '商业航天', '000901': '商业航天', '600151': '商业航天',
+    '003009': '商业航天',
+    '002465': '军工', '600879': '军工', '000547': '军工', '002413': '军工',
+    '300102': '半导体', '603618': '电缆', '600487': '光纤', '601869': '光纤',
+    '002195': '科技', '300113': '算力', '300442': '算力',
+}
+
+# ---------- 板块强度 ----------
+def load_sector_strength():
+    """从 signals_summary.json 的 top_scored 解析板块强度（TS分数归一化）"""
+    sector_map = {}
+    if os.path.exists(SIGNALS_SUMMARY):
+        try:
+            with open(SIGNALS_SUMMARY) as f:
+                data = json.load(f)
+            for item in data.get('top_scored', []):
+                m = re.match(r'.+?\((\d+)\)', item)
+                if not m: continue
+                code = m.group(1)
+                ts_match = re.search(r'TS:([\d.]+)', item)
+                ts_val = float(ts_match.group(1)) if ts_match else 0
+                sector_map[code] = min(ts_val / 5.0, 1.0)
+        except:
+            pass
+    return sector_map
+
+# ---------- 信号共振 ----------
+def load_resonance():
+    """从 signals_summary.json 的 resonance 解析信号共振数"""
+    resonance = {}
+    if os.path.exists(SIGNALS_SUMMARY):
+        try:
+            with open(SIGNALS_SUMMARY) as f:
+                data = json.load(f)
+            r = data.get('resonance', {})
+            for level, weight in [('observe', 1), ('sell', 2), ('warn', 1)]:
+                for item in r.get(level, []):
+                    m = re.match(r'.+?\((\d+)\)', item)
+                    if m:
+                        code = m.group(1)
+                        resonance[code] = max(resonance.get(code, 0), weight)
+        except:
+            pass
+    return resonance
+
+# ---------- 评分 v2.0 ----------
+def compute_score(code, name, price, change, vol, cache, sector_strength, resonance_data):
     score = 0.0
     details = []
     morph = 0.0
@@ -125,15 +189,17 @@ def compute_score(code, name, price, change, vol, cache):
     abs_chg = abs(float(change or 0))
     chg = float(change or 0)
 
-    # 1️⃣ 涨幅因子 (0-1)
-    if abs_chg <= 1:
-        score += 1.0
-        details.append("涨幅:1.0")
-    elif abs_chg <= 3:
-        score += 0.5
-        details.append("涨幅:0.5")
+    # 1️⃣ 涨幅因子 v2.0 (0-1): 区间打分
+    if 1.0 <= abs_chg <= 3.0:
+        score += 1.0; details.append("涨幅:1.0")
+    elif 3.0 < abs_chg <= 5.0:
+        score += 0.7; details.append("涨幅:0.7")
+    elif 5.0 < abs_chg <= 8.0:
+        score += 0.3; details.append("涨幅:0.3")
+    elif abs_chg < 1.0:
+        score += 0.2; details.append("涨幅:0.2")
     else:
-        details.append("涨幅:0")
+        score += 0.1; details.append("涨幅:0.1")
 
     if not cache:
         return score, morph, '|'.join(details)
@@ -145,29 +211,41 @@ def compute_score(code, name, price, change, vol, cache):
     low20 = low_n(cache, 20)
     avg10v = avgvol_n(cache, 10)
 
-    # 2️⃣ 量能因子 (0-1)
+    # 2️⃣ 量能因子 v2.0 (0-1): 缩量自适应
     ratio = 0
     if avg10v and avg10v > 0:
         ratio = vol / avg10v
     if ratio >= 1.5:
-        score += 1.0
-        details.append("量能:1.0")
+        score += 1.0; details.append("量能:1.0")
     elif ratio >= 1.3:
-        score += 0.5
-        details.append("量能:0.5")
+        score += 0.7; details.append("量能:0.7")
+    elif ratio >= 1.0:
+        score += 0.4; details.append("量能:0.4")
+    elif ratio >= 0.8:
+        score += 0.2; details.append("量能:0.2")
     else:
-        details.append(f"量能:0")
+        if ma5 and ma10 and ma20 and price > ma20 and ma5 > ma10:
+            score += 0.3; details.append("量能:0.3(缩量回踩)")
+        else:
+            details.append("量能:0")
 
-    # 3️⃣ 位置因子 (0-1)
+    # 3️⃣ 位置因子 v2.0 (0-1): 距MA20合理区间
     pos_score = 0.0
     if ma20 and ma20 > 0:
-        dist = abs((price - ma20) / ma20 * 100)
-        if dist <= 5:
+        dist = (price - ma20) / ma20 * 100
+        abs_dist = abs(dist)
+        if abs_dist <= 5:
             pos_score = 0.5
+        elif abs_dist <= 10:
+            pos_score = 0.7
+        elif abs_dist <= 15:
+            pos_score = 0.4
+        else:
+            pos_score = 0.2
         if high20 and price >= high20:
-            pos_score += 0.5
+            pos_score += 0.3
             pos_score = min(pos_score, 1.0)
-        if dist > 10:
+        if dist < 0:
             pos_score *= 0.5
     score += pos_score
     details.append(f"位置:{pos_score:.2f}")
@@ -186,53 +264,75 @@ def compute_score(code, name, price, change, vol, cache):
             else:
                 trend_score = 0.5
             dist_pct = (price - ma20) / ma20 * 100
-            if dist_pct > 10:
+            if dist_pct > 15:
                 trend_score *= 0.5
     elif ma20 and price > ma20:
         trend_score = 0.5
     score += trend_score
     details.append(f"趋势:{trend_score:.2f}")
 
-    # 5️⃣ 盘前缓冲因子：量能不可用（缩量）时，用均线排列+MACD补充
+    # 5️⃣ 缓冲因子 (0-0.5)
     buffer_score = 0.0
-    # 检查最近一次量能是否明显
     if ratio < 1.3:
-        # A: 均线多头
         if ma5 and ma10 and ma20 and ma5 > ma10 > ma20:
-            buffer_score += 0.5
+            buffer_score += 0.3
         if ma5 and price > ma5:
-            buffer_score += 0.25
-        # MACD DIF > 0
+            buffer_score += 0.15
         dif = calc_ema(cache['prices'], 12)
         if dif is not None:
             ema12 = dif
             ema26 = calc_ema(cache['prices'], 26)
             if ema26 is not None and ema12 - ema26 > 0:
-                buffer_score += 0.25
+                buffer_score += 0.15
         if buffer_score > 0:
             details.append(f"缓:{buffer_score:.2f}")
             score += buffer_score
 
-    # 形态因子（基于日线）
+    # 6️⃣ 板块强度因子 v2.0 (0-0.5)
+    sector = SECTOR_MAP.get(code)
+    sector_bonus = 0.0
+    strength = sector_strength.get(code, 0)
+    if strength > 0:
+        if strength >= 0.7:
+            sector_bonus = 0.5
+        elif strength >= 0.4:
+            sector_bonus = 0.3
+        elif strength >= 0.1:
+            sector_bonus = 0.15
+    if sector_bonus > 0:
+        score += sector_bonus
+        details.append(f"板块:{sector_bonus:.2f}")
+
+    # 7️⃣ 信号共振因子 v2.0 (0-0.5)
+    resonance_bonus = 0.0
+    if code in resonance_data:
+        r = resonance_data[code]
+        if r >= 3:
+            resonance_bonus = 0.5
+        elif r >= 2:
+            resonance_bonus = 0.3
+        elif r >= 1:
+            resonance_bonus = 0.15
+    if resonance_bonus > 0:
+        score += resonance_bonus
+        details.append(f"共振:{resonance_bonus:.2f}")
+
+    # 形态因子 (0-1)
     p = cache['prices']
     if len(p) >= 5:
-        # 红三兵：连续3根阳线（收涨）
         if p[-1] > p[-2] > p[-3] > p[-4]:
             morph += 0.5
-        # 放量突破最后2日涨幅递增
         if len(p) >= 3:
             d1 = (p[-1] - p[-2]) / p[-2] * 100
             d2 = (p[-2] - p[-3]) / p[-3] * 100
             if d1 > 0 and d1 > d2:
                 morph += 0.3
-        # 缩量回踩不破
         v = cache['vols']
         if len(v) >= 3 and v[-1] < v[-2] < v[-3]:
             morph += 0.2
 
     morph = min(morph, 1.0)
     total = score + morph
-
     return total, morph, '|'.join(details)
 
 # ---------- 主流程 ----------
@@ -245,6 +345,11 @@ def main():
         return
     print(f" ✅ {len(prices)}只标的", file=sys.stderr)
 
+    print("⏳ 加载板块+共振数据...", file=sys.stderr, end='')
+    sector_strength = load_sector_strength()
+    resonance_data = load_resonance()
+    print(f" ✅ 板块{len(sector_strength)}个, 共振{len(resonance_data)}只", file=sys.stderr)
+
     print("⏳ 计算评分中...", file=sys.stderr, end='')
     results = []
     for code in codes:
@@ -252,17 +357,17 @@ def main():
         info = prices[code]
         cache = read_cache(code)
         total, morph, details = compute_score(
-            code, info['name'], info['price'], info['change'], info['vol'], cache
+            code, info['name'], info['price'], info['change'], info['vol'],
+            cache, sector_strength, resonance_data
         )
         results.append((total, code, info['name'], info['price'], info['change'], morph, details))
     print(" ✅", file=sys.stderr)
 
     results.sort(key=lambda x: x[0], reverse=True)
 
-    # ======== 输出 ========
     print()
     print('══════════════════════════════════════════════')
-    print('🏆  TOP5 精选 — 入库标的综合评分排名')
+    print('🏆  TOP5 精选 — 入库标的综合评分排名 v2.0')
     print('══════════════════════════════════════════════')
     print()
 
@@ -272,11 +377,10 @@ def main():
         chg_s = f'+{chg_f}%' if chg_f >= 0 else f'{chg_f}%'
         score_no_morph = total - morph
         print(f'  #{i}  {name} ({code})  {arrow} {chg_s}')
-        print(f'      价{price}  综合分{total:.2f} = 四因子{score_no_morph:.2f}+形态{morph:.2f}')
+        print(f'      价{price}  综合分{total:.2f} = 因子{score_no_morph:.2f}+形态{morph:.2f}')
         print(f'      评分明细: {details}')
         print()
 
-    # 完整前15
     print('📋 完整评分排序（前15）:')
     print()
     for i, (total, code, name, price, change, morph, details) in enumerate(results[:15], 1):
@@ -284,16 +388,12 @@ def main():
         chg = f'{change}' if float(change or 0) < 0 else f'+{change}'
         print(f'  {i:2d}. {name:<10s}({code:<6s}) {arrow}{chg:>7s}  总分{total:5.2f}  价{price}')
 
-    # 形态激活
     morph_active = [(n, c, m) for t, c, n, p, ch, m, d in results if m >= 0.5]
     if morph_active:
         print(f'\n🎯 形态激活({len(morph_active)})')
         for name, code, ms in morph_active[:15]:
             print(f'  {name}({code}): 形态{ms:.2f}')
-        if len(morph_active) > 15:
-            print(f'  ...共{len(morph_active)}只')
 
-    # 分布
     bins = {'4.0+': 0, '3.0-3.9': 0, '2.0-2.9': 0, '1.0-1.9': 0, '<1.0': 0}
     for total, *_ in results:
         if total >= 4.0: bins['4.0+'] += 1
@@ -303,7 +403,6 @@ def main():
         else: bins['<1.0'] += 1
     parts = [f'{k}: {v}' for k, v in bins.items() if v > 0]
     print(f'\n📊 共{len(results)}只入库 | {" | ".join(parts)}')
-
     print(f'\n⏱ {datetime.now().strftime("%Y-%m-%d %H:%M")}')
 
 if __name__ == '__main__':
