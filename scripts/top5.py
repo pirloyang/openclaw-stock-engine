@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Top5 精选 — 入库标的综合评分排名 v2.0
-v2.1 (2026-06-04): 板块均值替代个股TS/共振方向修正/形态量价约束/技术指标独立
+v2.1 (2026-06-04): 板块均值(全量行情)/共振方向修正/形态量价约束/技术指标独立
 直接从 gtimg 行情 + 日线缓存独立评分，不依赖 engine.sh
 用法: python3 scripts/top5.py
 """
@@ -143,36 +143,31 @@ SECTOR_MAP = {
 }
 
 # ---------- 板块强度 ----------
-def load_sector_strength():
-    """板块强度 = 同板块所有标的 TS 均值归一化（以点代面→以面代点）"""
-    # 第一步：从 top_scored 解析每个标的的 TS
-    stock_ts = {}
-    if os.path.exists(SIGNALS_SUMMARY):
-        try:
-            with open(SIGNALS_SUMMARY) as f:
-                data = json.load(f)
-            for item in data.get('top_scored', []):
-                m = re.match(r'.+?\((\d+)\)', item)
-                if not m: continue
-                code = m.group(1)
-                ts_match = re.search(r'TS:([\d.]+)', item)
-                if ts_match:
-                    stock_ts[code] = float(ts_match.group(1))
-        except:
-            pass
-    # 第二步：按板块聚合，计算均值
-    sector_scores = {}
-    for code, ts in stock_ts.items():
+def load_sector_strength(prices):
+    """板块强度 = 同板块所有标的当日涨跌幅均值归一化
+    从行情数据(prices)中取所有已映射到板块的标的，独立于top_scored的15只限制"""
+    # 第一步：按板块聚合涨跌幅
+    sector_changes = {}
+    for code, info in prices.items():
         sector = SECTOR_MAP.get(code)
         if not sector: continue
-        if sector not in sector_scores:
-            sector_scores[sector] = []
-        sector_scores[sector].append(ts)
-    # 第三步：均值归一化到 0-1
+        try:
+            chg = float(info['change'] or 0)
+        except ValueError:
+            continue
+        if sector not in sector_changes:
+            sector_changes[sector] = []
+        sector_changes[sector].append(chg)
+    # 第二步：计算板块均值，映射到0-1
+    # 涨跌幅均值 0%→0.5基准, 每+1%加0.1, 每-1%减0.1, 封顶0-1
     sector_map = {}
-    for sector, scores in sector_scores.items():
-        avg_ts = sum(scores) / len(scores)
-        sector_map[sector] = min(avg_ts / 5.0, 1.0)
+    for sector, changes in sector_changes.items():
+        if len(changes) < 2:  # 至少2只才构成板块
+            continue
+        avg_chg = sum(changes) / len(changes)
+        # 线性映射: avg_chg=0→0.5, avg_chg=+3→0.8, avg_chg=-2→0.3
+        strength = 0.5 + avg_chg * 0.1
+        sector_map[sector] = max(0.0, min(1.0, strength))
     return sector_map
 
 # ---------- 信号共振 ----------
@@ -374,7 +369,7 @@ def main():
     print(f" ✅ {len(prices)}只标的", file=sys.stderr)
 
     print("⏳ 加载板块+共振数据...", file=sys.stderr, end='')
-    sector_strength = load_sector_strength()
+    sector_strength = load_sector_strength(prices)
     resonance_data = load_resonance()
     print(f" ✅ 板块{len(sector_strength)}个, 共振{len(resonance_data)}只", file=sys.stderr)
 
