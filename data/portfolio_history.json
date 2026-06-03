@@ -6,5 +6,13 @@
     "estimated_cash": 84000.0,
     "progress_pct": 38.1,
     "timestamp": "2026-06-01T01:37:30.835580"
+  },
+  {
+    "date": "2026-06-03",
+    "net_worth": 81340.15,
+    "market_value": 49216.8,
+    "estimated_cash": 32123.35,
+    "progress_pct": 0,
+    "timestamp": "2026-06-03T17:00:44.820317"
   }
 ]
