@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Top5 精选 — 入库标的综合评分排名 v2.0
-v2.0 (2026-06-04): 修复涨幅反向计分/量能缩量适配/位置逻辑/新增板块强度+信号共振
+v2.1 (2026-06-04): 板块均值替代个股TS/共振方向修正/形态量价约束/技术指标独立
 直接从 gtimg 行情 + 日线缓存独立评分，不依赖 engine.sh
 用法: python3 scripts/top5.py
 """
@@ -144,8 +144,9 @@ SECTOR_MAP = {
 
 # ---------- 板块强度 ----------
 def load_sector_strength():
-    """从 signals_summary.json 的 top_scored 解析板块强度（TS分数归一化）"""
-    sector_map = {}
+    """板块强度 = 同板块所有标的 TS 均值归一化（以点代面→以面代点）"""
+    # 第一步：从 top_scored 解析每个标的的 TS
+    stock_ts = {}
     if os.path.exists(SIGNALS_SUMMARY):
         try:
             with open(SIGNALS_SUMMARY) as f:
@@ -155,27 +156,44 @@ def load_sector_strength():
                 if not m: continue
                 code = m.group(1)
                 ts_match = re.search(r'TS:([\d.]+)', item)
-                ts_val = float(ts_match.group(1)) if ts_match else 0
-                sector_map[code] = min(ts_val / 5.0, 1.0)
+                if ts_match:
+                    stock_ts[code] = float(ts_match.group(1))
         except:
             pass
+    # 第二步：按板块聚合，计算均值
+    sector_scores = {}
+    for code, ts in stock_ts.items():
+        sector = SECTOR_MAP.get(code)
+        if not sector: continue
+        if sector not in sector_scores:
+            sector_scores[sector] = []
+        sector_scores[sector].append(ts)
+    # 第三步：均值归一化到 0-1
+    sector_map = {}
+    for sector, scores in sector_scores.items():
+        avg_ts = sum(scores) / len(scores)
+        sector_map[sector] = min(avg_ts / 5.0, 1.0)
     return sector_map
 
 # ---------- 信号共振 ----------
 def load_resonance():
-    """从 signals_summary.json 的 resonance 解析信号共振数"""
+    """从 signals_summary.json 的 resonance 解析信号共振方向
+    observe=+1(看多), warn=0(中性), sell=-1(看空)
+    同一标的取最极端方向"""
     resonance = {}
     if os.path.exists(SIGNALS_SUMMARY):
         try:
             with open(SIGNALS_SUMMARY) as f:
                 data = json.load(f)
             r = data.get('resonance', {})
-            for level, weight in [('observe', 1), ('sell', 2), ('warn', 1)]:
+            for level, direction in [('observe', 1), ('warn', 0), ('sell', -1)]:
                 for item in r.get(level, []):
                     m = re.match(r'.+?\((\d+)\)', item)
                     if m:
                         code = m.group(1)
-                        resonance[code] = max(resonance.get(code, 0), weight)
+                        # 取绝对值最大的方向（sell=-1 比 observe=+1 更极端时覆盖）
+                        if code not in resonance or abs(direction) > abs(resonance[code]):
+                            resonance[code] = direction
         except:
             pass
     return resonance
@@ -271,27 +289,27 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
     score += trend_score
     details.append(f"趋势:{trend_score:.2f}")
 
-    # 5️⃣ 缓冲因子 (0-0.5)
-    buffer_score = 0.0
-    if ratio < 1.3:
-        if ma5 and ma10 and ma20 and ma5 > ma10 > ma20:
-            buffer_score += 0.3
-        if ma5 and price > ma5:
-            buffer_score += 0.15
-        dif = calc_ema(cache['prices'], 12)
-        if dif is not None:
-            ema12 = dif
-            ema26 = calc_ema(cache['prices'], 26)
-            if ema26 is not None and ema12 - ema26 > 0:
-                buffer_score += 0.15
-        if buffer_score > 0:
-            details.append(f"缓:{buffer_score:.2f}")
-            score += buffer_score
+    # 5️⃣ 技术指标因子 v2.1 (0-0.5): 取消缩量限制，独立评估技术状态
+    tech_score = 0.0
+    if ma5 and ma10 and ma20 and ma5 > ma10 > ma20:
+        tech_score += 0.3  # 均线多头排列
+    if ma5 and price > ma5:
+        tech_score += 0.15  # 站上5日线
+    dif = calc_ema(cache['prices'], 12)
+    if dif is not None:
+        ema12 = dif
+        ema26 = calc_ema(cache['prices'], 26)
+        dea = calc_ema(cache['prices'], 9)
+        if ema26 is not None and ema12 - ema26 > 0:
+            tech_score += 0.15  # MACD DIF>0 多头区域
+    if tech_score > 0:
+        details.append(f"技术:{tech_score:.2f}")
+        score += tech_score
 
-    # 6️⃣ 板块强度因子 v2.0 (0-0.5)
+    # 6️⃣ 板块强度因子 v2.1 (0-0.5): 板块均值TS归一化
     sector = SECTOR_MAP.get(code)
     sector_bonus = 0.0
-    strength = sector_strength.get(code, 0)
+    strength = sector_strength.get(sector, 0) if sector else 0
     if strength > 0:
         if strength >= 0.7:
             sector_bonus = 0.5
@@ -303,31 +321,41 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
         score += sector_bonus
         details.append(f"板块:{sector_bonus:.2f}")
 
-    # 7️⃣ 信号共振因子 v2.0 (0-0.5)
+    # 7️⃣ 信号共振因子 v2.1 (-0.3~+0.5): 看多加/看空扣
     resonance_bonus = 0.0
     if code in resonance_data:
         r = resonance_data[code]
-        if r >= 3:
+        if r == 1:       # observe: 看多共振
             resonance_bonus = 0.5
-        elif r >= 2:
-            resonance_bonus = 0.3
-        elif r >= 1:
-            resonance_bonus = 0.15
-    if resonance_bonus > 0:
+        elif r == 0:     # warn: 中性
+            resonance_bonus = 0.1
+        elif r == -1:    # sell: 看空共振
+            resonance_bonus = -0.3
+    if resonance_bonus != 0:
         score += resonance_bonus
-        details.append(f"共振:{resonance_bonus:.2f}")
+        details.append(f"共振:{resonance_bonus:+.2f}")
 
-    # 形态因子 (0-1)
+    # 形态因子 v2.1 (0-1): 量价配合约束
     p = cache['prices']
-    if len(p) >= 5:
+    v = cache['vols']
+    avg5v = sum(v[-5:]) / 5 if len(v) >= 5 else 0
+    if len(p) >= 5 and len(v) >= 5:
+        # 红三兵: 连续4阳 + 最后2日量>5日均量
         if p[-1] > p[-2] > p[-3] > p[-4]:
-            morph += 0.5
+            if v[-1] > avg5v and v[-2] > avg5v:
+                morph += 0.5
+            else:
+                morph += 0.2  # 缩量红三兵降级
+        # 涨幅加速: 涨幅递增 + 量比>1
         if len(p) >= 3:
             d1 = (p[-1] - p[-2]) / p[-2] * 100
             d2 = (p[-2] - p[-3]) / p[-3] * 100
             if d1 > 0 and d1 > d2:
-                morph += 0.3
-        v = cache['vols']
+                if v[-1] > avg5v:
+                    morph += 0.3
+                else:
+                    morph += 0.1
+        # 缩量回踩: 连续3日缩量（形态本身含缩量，逻辑正确）
         if len(v) >= 3 and v[-1] < v[-2] < v[-3]:
             morph += 0.2
 
