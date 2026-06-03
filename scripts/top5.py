@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Top5 精选 — 入库标的综合评分排名 v2.0
-v2.2 (2026-06-04): 共振覆盖率15%→100%(observe_weak/single/sell全量)
+v2.2 (2026-06-04): MACD完整金叉判定(DIF>DEA)/共振全覆盖
 直接从 gtimg 行情 + 日线缓存独立评分，不依赖 engine.sh
 用法: python3 scripts/top5.py
 """
@@ -316,19 +316,38 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
     score += trend_score
     details.append(f"趋势:{trend_score:.2f}")
 
-    # 5️⃣ 技术指标因子 v2.1 (0-0.5): 取消缩量限制，独立评估技术状态
+    # 5️⃣ 技术指标因子 v2.2 (0-0.5): 完整MACD金叉判定(DIF>DEA)
     tech_score = 0.0
     if ma5 and ma10 and ma20 and ma5 > ma10 > ma20:
         tech_score += 0.3  # 均线多头排列
     if ma5 and price > ma5:
         tech_score += 0.15  # 站上5日线
-    dif = calc_ema(cache['prices'], 12)
-    if dif is not None:
-        ema12 = dif
-        ema26 = calc_ema(cache['prices'], 26)
-        dea = calc_ema(cache['prices'], 9)
-        if ema26 is not None and ema12 - ema26 > 0:
-            tech_score += 0.15  # MACD DIF>0 多头区域
+    # MACD完整判定: DIF>0 且 DIF>DEA(金叉)
+    ema12 = calc_ema(cache['prices'], 12)
+    ema26 = calc_ema(cache['prices'], 26)
+    if ema12 is not None and ema26 is not None:
+        dif = ema12 - ema26
+        if dif > 0:
+            # 进一步计算DEA(EMA9 of DIF完整序列)
+            p = cache['prices']
+            if len(p) >= 12:
+                # 完整序列EMA
+                e12_vals, e26_vals = [], []
+                k12, k26 = 2/13, 2/27
+                for i, pr in enumerate(p):
+                    if i == 0:
+                        e12_vals.append(pr); e26_vals.append(pr)
+                    else:
+                        e12_vals.append(pr*k12 + e12_vals[-1]*(1-k12))
+                        e26_vals.append(pr*k26 + e26_vals[-1]*(1-k26))
+                dif_vals = [a-b for a,b in zip(e12_vals, e26_vals)]
+                dea_vals = []; k9 = 2/10
+                for i, d in enumerate(dif_vals):
+                    if i == 0: dea_vals.append(d)
+                    else: dea_vals.append(d*k9 + dea_vals[-1]*(1-k9))
+                latest_dea = dea_vals[-1]
+                if dif > latest_dea:  # 完整金叉判定
+                    tech_score += 0.15  # MACD金叉多头区域
     if tech_score > 0:
         details.append(f"技术:{tech_score:.2f}")
         score += tech_score
