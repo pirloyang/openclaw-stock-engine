@@ -70,20 +70,57 @@ rule_macd_zone() {
   fi
 }
 
-# v3.0: MACD金叉/死叉检测（DIF vs DEA）
-# 参数: price dif prev_dif ... (需要额外从cache计算DEA)
+# v3.0: MACD金叉/死叉检测（DIF vs DEA 完整序列，从缓存计算DEA）
+# 参数: code price ... dif prev_dif ...
+# 用python一次计算全序列DIF/DEA，准确判定金叉/死叉/持续状态
 rule_macd_cross() {
-  local dif="${17}" prev_dif="${18}"
+  local code="${1}" dif="${17}" prev_dif="${18}"
   [ -z "$dif" ] || [ -z "$prev_dif" ] && return
 
-  # DIF上穿零轴 → 金叉确认（简化判定：prev_dif<0且dif>0）
-  if [ "$(echo "$prev_dif < 0 && $dif > 0" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "{\"rule\":\"macd_golden_cross\",\"direction\":\"buy_signal\",\"dif\":$dif,\"prev_dif\":$prev_dif,\"strength\":\"high\",\"note\":\"MACD零轴金叉-DIF上穿零轴\"}"
-  fi
+  local cache="$CACHE_DIR/${code}.day"
+  [ ! -f "$cache" ] && return
 
-  # DIF下穿零轴 → 死叉确认
-  if [ "$(echo "$prev_dif > 0 && $dif < 0" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "{\"rule\":\"macd_death_cross\",\"direction\":\"sell_signal\",\"dif\":$dif,\"prev_dif\":$prev_dif,\"strength\":\"high\",\"note\":\"MACD零轴死叉-DIF下穿零轴\"}"
+  local result=$(python3 -c "
+prices=[]
+with open('$cache') as f:
+  for line in f:
+    try: prices.append(float(line.split()[0]))
+    except: pass
+n=len(prices)
+if n<26: exit(0)
+k12,k26,k9=2/13,2/27,2/10
+e12_v=[]; e26_v=[]
+for p in prices:
+  if not e12_v: e12_v.append(p); e26_v.append(p)
+  else: e12_v.append(p*k12+e12_v[-1]*(1-k12)); e26_v.append(p*k26+e26_v[-1]*(1-k26))
+dif_v=[a-b for a,b in zip(e12_v,e26_v)]
+dea_v=[]
+for d in dif_v:
+  if not dea_v: dea_v.append(d)
+  else: dea_v.append(d*k9+dea_v[-1]*(1-k9))
+prev_state = 1 if dif_v[-2] > dea_v[-2] else (-1 if dif_v[-2] < dea_v[-2] else 0)
+cur_state = 1 if dif_v[-1] > dea_v[-1] else (-1 if dif_v[-1] < dea_v[-1] else 0)
+print(f'{dif_v[-2]:.4f} {dea_v[-2]:.4f} {dif_v[-1]:.4f} {dea_v[-1]:.4f} {prev_state} {cur_state}')
+" 2>/dev/null)
+  [ -z "$result" ] && return
+
+  local prev_dif_full=$(echo "$result" | awk '{print $1}')
+  local prev_dea_full=$(echo "$result" | awk '{print $2}')
+  local cur_dif_full=$(echo "$result" | awk '{print $3}')
+  local cur_dea_full=$(echo "$result" | awk '{print $4}')
+  local prev_state=$(echo "$result" | awk '{print $5}')
+  local cur_state=$(echo "$result" | awk '{print $6}')
+  [ -z "$cur_dif_full" ] || [ -z "$cur_dea_full" ] && return
+
+  # 金叉: prev死叉→cur金叉（刚发生穿越）
+  if [ "$prev_state" = "-1" ] && [ "$cur_state" = "1" ]; then
+    echo "{\"rule\":\"macd_golden_cross\",\"direction\":\"buy_signal\",\"dif\":$cur_dif_full,\"dea\":$cur_dea_full,\"strength\":\"high\",\"note\":\"MACD金叉-DIF上穿DEA\"}"
+  # 死叉: prev金叉→cur死叉（刚发生穿越）
+  elif [ "$prev_state" = "1" ] && [ "$cur_state" = "-1" ]; then
+    echo "{\"rule\":\"macd_death_cross\",\"direction\":\"sell_signal\",\"dif\":$cur_dif_full,\"dea\":$cur_dea_full,\"strength\":\"high\",\"note\":\"MACD死叉-DIF下穿DEA\"}"
+  # 持续死叉状态（DIF<DEA且前一天也<DEA）→ 警告但不报新信号
+  elif [ "$prev_state" = "-1" ] && [ "$cur_state" = "-1" ]; then
+    echo "{\"rule\":\"macd_death_ongoing\",\"direction\":\"bearish_warn\",\"dif\":$cur_dif_full,\"dea\":$cur_dea_full,\"strength\":\"medium\",\"note\":\"MACD持续死叉-DIF仍低于DEA\"}"
   fi
 }
 

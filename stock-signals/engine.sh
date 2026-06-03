@@ -266,8 +266,8 @@ calc_resonance() {
     # 规则名也参与判定（兼容旧输出信号）
     [[ $sig == *"golden_cross"* || $sig == *"washout"* || $sig == *"2b_fake_breakdown"* ]] && is_buy=1
     [[ $sig == *"death_cross"* || $sig == *"should_rise_fail"* || $sig == *"2b_fake_breakout"* ]] && is_sell=1
-    # v3.0: MACD死叉=卖出信号
-    [[ $sig == *"macd_death_cross"* ]] && is_sell=1
+    # v3.0: MACD死叉/持续死叉=卖出信号
+    [[ $sig == *"macd_death_cross"* || $sig == *"macd_death_ongoing"* ]] && is_sell=1
     [ "$is_buy" -eq 1 ] && ((buy++))
     [ "$is_sell" -eq 1 ] && ((sell++))
     # 信号类型分类（买入信号才参与维度判定）
@@ -381,7 +381,8 @@ scan_morphology_signals() {
       macd_bottom_div)       bs=0.40; desc="MACD底背离" ;;
       macd_golden_cross)     bs=0.35; desc="MACD零轴金叉" ;;
       macd_above_zero)       bs=0.15; desc="MACD零轴上方" ;;
-      macd_death_cross)      bs=-0.35; desc="MACD零轴死叉" ;;
+      macd_death_cross)      bs=-0.35; desc="MACD死叉" ;;
+      macd_death_ongoing)     bs=-0.20; desc="MACD持续死叉" ;;
 
       # 突破形态
       breakout_up)           bs=0.35; desc="突破20日高点" ;;
