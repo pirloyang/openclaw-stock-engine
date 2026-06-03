@@ -80,6 +80,17 @@ if [ -f "$ALERT_DIR/sector_flow.json" ]; then
     } || echo "  ⚠️ industry_chain 执行失败"
 fi
 
+# ===== 6. 净值快照刷新（仅收盘后16:00轮次）=====
+HOUR=$(date +%H)
+if [ "$HOUR" -ge 15 ]; then
+    echo "  📊 刷新净值快照..."
+    python3 "$WORKSPACE/scripts/portfolio_engine.py" 2>/dev/null && {
+        if [ -f "$WORKSPACE/data/portfolio_snapshot.json" ]; then
+            echo "     ✅ snapshot: $(wc -c < "$WORKSPACE/data/portfolio_snapshot.json") bytes"
+        fi
+    } || echo "  ⚠️ portfolio_engine 执行失败"
+fi
+
 ELAPSED=$(($(date +%s) - START_TS))
 echo "✅ [$(date '+%H:%M:%S')] 流水线完成 (${ELAPSED}s)"
 flock -u 9

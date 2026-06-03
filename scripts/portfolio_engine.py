@@ -113,10 +113,12 @@ def _parse_real_positions():
         shares = int(m.group(3))
         cost = float(m.group(4))
 
-        # 跳过明确已清仓的
+        # 跳过明确已清仓的（如"清仓@"成本价，但保留"误报清仓纠正"/"截图纠正"等非清仓描述）
         if '清仓' in line and ('【' in line or '】' in line):
-            # 但保留有加仓且未清仓的
-            if re.search(r'加仓', line) and not re.search(r'清仓@', line):
+            # 保留"误报清仓"/"截图纠正"/"实际未清仓"的行
+            if re.search(r'(误报清仓|截图纠正|实际未清仓)', line):
+                pass  # 保留
+            elif re.search(r'加仓', line) and not re.search(r'清仓@', line):
                 pass  # 保留
             else:
                 continue
@@ -130,6 +132,23 @@ def _parse_real_positions():
         })
 
     return positions
+
+
+def _parse_cash_from_tools():
+    """从 TOOLS.md 截图可用资金行解析现金余额"""
+    if not TOOLS_FILE.exists():
+        return None
+    try:
+        text = TOOLS_FILE.read_text(encoding='utf-8')
+        for line in text.splitlines():
+            if '截图可用资金' in line or '可用资金' in line:
+                # 匹配如 "32,123.35" 或 "84000.00" 的金额
+                m = re.search(r'(\d{1,3}(?:,\d{3})*(?:\.\d+)?)', line)
+                if m:
+                    return float(m.group(1).replace(',', ''))
+    except Exception:
+        pass
+    return None
 
 
 # ======================== 核心计算 ========================
@@ -175,14 +194,18 @@ def compute_net_worth(positions, live_prices):
             "pnl_pct": round(pnl_pct, 2),
         })
 
-    # 现金估算：简单用市值反推（后续可接真实数据）
-    initial_capital = 84000.0  # fallback
-    goals = load_goals()
-    if goals:
-        initial_capital = float(goals["target"]["initial_capital"])
+    # 现金估算：优先从 TOOLS.md 截图可用资金读取，否则从投资配置读
+    cash_from_screenshot = _parse_cash_from_tools()
+    initial_capital = cash_from_screenshot
+    if not cash_from_screenshot:
+        goals = load_goals()
+        if goals:
+            initial_capital = float(goals["target"]["initial_capital"])
+        if not initial_capital:
+            initial_capital = 84000.0  # 最后兜底
 
-    # 从 history 取上一次现金，否则用初始
-    prev_cash = _get_last_cash(initial_capital)
+    # 从截图读取可用现金（最高优先级），没有截图才回退到历史/配置
+    prev_cash = cash_from_screenshot if cash_from_screenshot else _get_last_cash(initial_capital)
     estimated_net = total_market_value + prev_cash
 
     details.sort(key=lambda x: x["market_value"], reverse=True)

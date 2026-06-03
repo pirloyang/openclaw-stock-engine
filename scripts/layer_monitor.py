@@ -257,8 +257,37 @@ def compute_l2_holdings(stocks, holdings):
     return alerts
 
 def compute_l3_focus(stocks, focus_codes, holdings, l6_data=None):
-    """L3: 重点关注标的（周一池+风口）"""
-    FOCUS_ENTRY = {
+    """L3: 重点关注标的（focus_watchlist.json + 静态池 + 风口）"""
+    # 从 focus_watchlist.json 读取完整的重点关注清单
+    FOCUS_ENTRY = {}
+    focus_json_path = f"{WORKSPACE}/stock-signals/focus_watchlist.json"
+    if os.path.exists(focus_json_path):
+        try:
+            with open(focus_json_path) as ff:
+                focus_data = json.load(ff)
+            for item in focus_data.get('focus_list', []):
+                code = item.get('code', '')
+                if not code:
+                    continue
+                entry_val = item.get('entry_low', 0) or item.get('entry_high', 0)
+                stop_val = item.get('stop_loss', 0)
+                target_val = item.get('target', 0)
+                status = item.get('status', '监控')
+                signals = '; '.join(item.get('signals', []))
+                note = item.get('note', '')
+                catalyst = item.get('catalyst', '')[:30]
+                FOCUS_ENTRY[code] = {
+                    "entry": entry_val if entry_val > 0 else 0,
+                    "stop": stop_val if stop_val > 0 else 0,
+                    "target": target_val if target_val > 0 else 0,
+                    "note": f"{status}|{catalyst}{'|'+signals if signals else ''}",
+                    "is_focus": True,
+                }
+        except Exception as e:
+            pass  # fallback to static
+    
+    # 静态池作为兜底（补一些可能在focus里没有的）
+    STATIC_FOCUS = {
         "000969": {"entry": 22.74, "stop": 22.40, "target": 26.60, "note": "安泰-突破介入"},
         "300660": {"entry": 48.06, "stop": 44.60, "target": 53.89, "note": "雷利-站稳介入"},
         "002938": {"entry": 100.0, "stop": 82.0, "target": 130.0, "note": "鹏鼎-回踩100-102介入"},
@@ -266,6 +295,11 @@ def compute_l3_focus(stocks, focus_codes, holdings, l6_data=None):
         "000988": {"entry": 148.0, "stop": 140.0, "target": 170.0, "note": "华工-回踩148-150"},
         "000636": {"entry": 34.0, "stop": 32.0, "target": 40.0, "note": "风华-回调34-35介入"},
     }
+    
+    # focus_watchlist.json 优先级高于静态池，但静态池补漏
+    for code, rule in STATIC_FOCUS.items():
+        if code not in FOCUS_ENTRY:
+            FOCUS_ENTRY[code] = rule
     
     signals = []
     for code, rule in FOCUS_ENTRY.items():
@@ -510,8 +544,19 @@ def main():
             urgent_signals.append(f"【ETF】{e['name']} {e['change']:+.2f}% {e['level']}")
     # 自选大涨
     for w in l5[:3]:
-        if abs(w['change']) >= 5:
-            urgent_signals.append(f"【自选】{w['name']} {w['change']:+.2f}% 大异动")
+        if abs(w['change']) >= 8:
+            # 区分涨停板：主板10%，创业板/科创板20%
+            code = w.get('code', '')
+            is_20pct_board = code.startswith('30') or code.startswith('688')
+            if is_20pct_board:
+                threshold_approach = 18.0  # 距涨停20%差2%视为涨停级
+            else:
+                threshold_approach = 9.5   # 距涨停10%差0.5%视为涨停级
+            if abs(w['change']) >= threshold_approach:
+                label = "🔥涨停级"
+            else:
+                label = "大异动"
+            urgent_signals.append(f"【自选】{w['name']}({code}) {w['change']:+.2f}% {label}")
     
     with open(f"{ALERT_DIR}/urgent.txt", 'w') as f:
         for s in urgent_signals:

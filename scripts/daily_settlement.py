@@ -27,11 +27,11 @@ HISTORY_FILE = WORKSPACE / "data" / "portfolio_history.json"
 SETTLEMENT_FILE = WORKSPACE / "data" / "settlement.json"
 
 sys.path.insert(0, str(WORKSPACE / "scripts"))
-from portfolio_engine import load_goals, _parse_real_positions, _read_live_prices, compute_net_worth, compute_progress, compute_risk_stage, compute_milestones, compute_alerts
+from portfolio_engine import load_goals, _parse_real_positions, _read_live_prices, compute_net_worth, compute_progress, compute_risk_stage, compute_milestones, compute_alerts, save_snapshot
 
 
 def load_or_compute_snapshot():
-    """优先从已有快照读，否则重新计算"""
+    """优先从已有快照读，否则重新计算，并写回快照文件"""
     if SNAPSHOT_FILE.exists():
         try:
             with open(SNAPSHOT_FILE) as f:
@@ -51,7 +51,7 @@ def load_or_compute_snapshot():
     milestones = compute_milestones(nw["net_worth"], goals or {})
     alerts = compute_alerts(nw["net_worth"], progress, risk, goals or {})
 
-    return {
+    snap = {
         "date": date.today().isoformat(),
         "timestamp": datetime.now().isoformat(),
         "net_worth": nw["net_worth"],
@@ -64,6 +64,10 @@ def load_or_compute_snapshot():
         "milestones": milestones,
         "alerts": alerts,
     }
+    
+    # 写回快照文件，确保其他脚本能同步
+    save_snapshot(snap)
+    return snap
 
 
 def calc_daily_change():
