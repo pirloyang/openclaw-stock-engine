@@ -17,7 +17,7 @@ def main():
     with open(INPUT) as f:
         data = json.load(f)
 
-    resonance = {"buy": [], "observe": [], "sell": [], "warn": []}
+    resonance = {"buy": [], "observe": [], "observe_weak": [], "sell": [], "warn": [], "single": []}
     morph = {}
     score_ranking = []
     urgent = []
@@ -43,15 +43,19 @@ def main():
         # 简洁条目格式
         e = f"{name}({code}) ¥{price:.2f} {pct:+.1f}%"
 
-        # 共振分组
+        # 共振分组（v2.1: 全量覆盖，不丢弃任何标的）
         if "三重共振" in v:
             resonance["buy"].append(e)
         elif "双重确认" in v:
             resonance["observe"].append(e)
+        elif "单一信号" in v:
+            resonance["observe_weak"].append(e)
         elif "卖出确认" in v:
             resonance["sell"].append(e)
         elif "卖出预警" in v:
             resonance["warn"].append(e)
+        elif "观望" in v:
+            resonance["single"].append(e)
 
         # 评分TOP15
         score_ranking.append((ts, ms, e, v[:6]))
@@ -124,8 +128,8 @@ def main():
     score_ranking.sort(key=lambda x: -x[0])
     top_scored = [f"{e} | TS:{ts:.2f} MS:{ms:+.2f} | {v}" for ts,ms,e,v in score_ranking[:15]]
 
-    # 卖出确认只保留TOP8最严重
-    resonance["sell"] = resonance["sell"][:8]
+    # 不再裁剪——sell层全量保留供top5扣分，observe_weak也一样
+    # （文件大小从3-5KB增加到~8-12KB，仍可接受）
 
     # 过滤空组
     resonance = {k: v for k, v in resonance.items() if v}

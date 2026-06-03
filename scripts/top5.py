@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Top5 精选 — 入库标的综合评分排名 v2.0
-v2.1 (2026-06-04): sector_history.json引擎数据/共振方向修正/形态量价约束/技术指标独立
+v2.2 (2026-06-04): 共振覆盖率15%→100%(observe_weak/single/sell全量)
 直接从 gtimg 行情 + 日线缓存独立评分，不依赖 engine.sh
 用法: python3 scripts/top5.py
 """
@@ -202,20 +202,23 @@ def load_sector_strength():
 # ---------- 信号共振 ----------
 def load_resonance():
     """从 signals_summary.json 的 resonance 解析信号共振方向
-    observe=+1(看多), warn=0(中性), sell=-1(看空)
-    同一标的取最极端方向"""
+    buy=+2(三重共振), observe=+1(双重确认), observe_weak=+0.5(单一信号看多)
+    warn=0(中性), single=0(观望), sell=-1(卖出确认)
+    同一标的取绝对值最大的方向"""
     resonance = {}
     if os.path.exists(SIGNALS_SUMMARY):
         try:
             with open(SIGNALS_SUMMARY) as f:
                 data = json.load(f)
             r = data.get('resonance', {})
-            for level, direction in [('observe', 1), ('warn', 0), ('sell', -1)]:
+            for level, direction in [
+                ('buy', 2), ('observe', 1), ('observe_weak', 0.5),
+                ('warn', 0), ('single', 0), ('sell', -1)
+            ]:
                 for item in r.get(level, []):
                     m = re.match(r'.+?\((\d+)\)', item)
                     if m:
                         code = m.group(1)
-                        # 取绝对值最大的方向（sell=-1 比 observe=+1 更极端时覆盖）
                         if code not in resonance or abs(direction) > abs(resonance[code]):
                             resonance[code] = direction
         except:
@@ -345,16 +348,21 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
         score += sector_bonus
         details.append(f"板块:{sector_bonus:.2f}")
 
-    # 7️⃣ 信号共振因子 v2.1 (-0.3~+0.5): 看多加/看空扣
+    # 7️⃣ 信号共振因子 v2.2 (-0.3~+0.5): 全量覆盖
+    # buy(+2)→+0.5, observe(+1)→+0.5, observe_weak(+0.5)→+0.15
+    # single/warn(0)→0, sell(-1)→-0.3
     resonance_bonus = 0.0
     if code in resonance_data:
         r = resonance_data[code]
-        if r == 1:       # observe: 看多共振
+        if r >= 2:       # buy: 三重共振
             resonance_bonus = 0.5
-        elif r == 0:     # warn: 中性
-            resonance_bonus = 0.1
-        elif r == -1:    # sell: 看空共振
+        elif r >= 1:     # observe: 双重确认
+            resonance_bonus = 0.5
+        elif r >= 0.5:   # observe_weak: 单一信号看多
+            resonance_bonus = 0.15
+        elif r <= -1:    # sell: 卖出确认
             resonance_bonus = -0.3
+        # r==0: warn/single 中性，不加分
     if resonance_bonus != 0:
         score += resonance_bonus
         details.append(f"共振:{resonance_bonus:+.2f}")
