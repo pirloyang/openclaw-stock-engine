@@ -111,7 +111,7 @@ def calc_ema(prices, n):
     if len(prices) < n: return None
     k = 2 / (n + 1)
     ema = prices[0]
-    for p in prices[1:n]:
+    for p in prices[1:]:
         ema = p * k + ema * (1 - k)
     return ema
 
@@ -398,7 +398,21 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
             tech_score += 0.15  # MACD金叉多头区域
         else:
             macd_dead = True
-            tech_cost -= 0.20  # MACD死叉扣分
+            # 死叉收敛判定：DIF连续上升趋向DEA（差距缩小）+ 价格同步向上 → 即将金叉
+            gap_now = difv[-1] - dea_v[-1]
+            gap_prev = difv[-2] - dea_v[-2] if len(difv) >= 2 else 0
+            gap_prev2 = difv[-3] - dea_v[-3] if len(difv) >= 3 else 0
+            if len(difv) >= 3:
+                # DIF连续上升 + 死叉差距缩小 + 价格同步上涨 → 收敛中即将金叉
+                dif_rising = difv[-1] > difv[-2] > difv[-3]
+                price_up = p_tech[-1] > p_tech[-2] > p_tech[-3]
+                gap_narrowing = gap_now > gap_prev > gap_prev2  # 差距从负值缩小（往0靠拢）
+                if dif_rising and gap_narrowing and price_up:
+                    tech_cost -= 0.05  # 死叉收敛·即将金叉 → 减量扣分（-0.05 而不是 -0.20）
+                elif dif_rising and gap_narrowing:
+                    tech_cost -= 0.10  # 死叉收敛（价格未同步确认）→ 适度扣分
+                else:
+                    tech_cost -= 0.20  # 死叉持续扩大 → 全额扣分
     tech_net = tech_score + tech_cost
     if tech_net > 0:
         details.append(f"技术:{tech_net:.2f}")
@@ -606,7 +620,19 @@ def main():
                             if dif > dea_v[-1]:
                                 tech_items.append('MACD金叉+0.15')
                             else:
-                                tech_items.append('MACD死叉-0.20')
+                                # 输出拆解也需要判断收敛
+                                gap_now = difv[-1] - dea_v[-1]
+                                gap_prev = difv[-2] - dea_v[-2]
+                                gap_prev2 = difv[-3] - dea_v[-3]
+                                dif_rising = difv[-1] > difv[-2] > difv[-3]
+                                price_up = p_tech[-1] > p_tech[-2] > p_tech[-3]
+                                gap_narrowing = gap_now > gap_prev > gap_prev2
+                                if dif_rising and gap_narrowing and price_up:
+                                    tech_items.append('MACD死叉收敛(即将金叉)-0.05')
+                                elif dif_rising and gap_narrowing:
+                                    tech_items.append('MACD死叉收敛-0.10')
+                                else:
+                                    tech_items.append('MACD死叉-0.20')
                         else:
                             tech_items.append('MACD翻绿-0.20')
                 if tech_items:
