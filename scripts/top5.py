@@ -393,9 +393,12 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
         latest_dif = difv[-1]
         latest_dea = dea_v[-1]
         if latest_dif > latest_dea:
-            if difv[-1] > 0 and difv[-2] <= dea_v[-2]:
+            # 金叉 vs 持续多头：DIF上穿DEA才是金叉，持续在DEA上方是趋势延续
+            if difv[-2] <= dea_v[-2]:
                 macd_golden = True
-            tech_score += 0.15  # MACD金叉多头区域
+                tech_score += 0.15  # 新金叉
+            else:
+                tech_score += 0.08  # 持续多头区域（趋势延续而非新信号）
         else:
             macd_dead = True
             # 死叉收敛判定：DIF连续上升趋向DEA（差距缩小）+ 价格同步向上 → 即将金叉
@@ -618,7 +621,10 @@ def main():
                                 if j == 0: dea_v.append(d)
                                 else: dea_v.append(d*2/10+dea_v[-1]*(1-2/10))
                             if dif > dea_v[-1]:
-                                tech_items.append('MACD金叉+0.15')
+                                if difv[-2] <= dea_v[-2]:
+                                    tech_items.append('MACD金叉+0.15')
+                                else:
+                                    tech_items.append('MACD多头延续+0.08')
                             else:
                                 # 输出拆解也需要判断收敛
                                 gap_now = difv[-1] - dea_v[-1]
