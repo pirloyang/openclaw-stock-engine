@@ -272,16 +272,25 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
     if not cache:
         return score, morph, '|'.join(details)
 
-    # 波动率衰减: 5日内有过-5%以上单日暴跌 → 涨幅因子×0.5
+    # 波动率衰减 v3.5: 5日内有过-8%以上单日暴跌 → 涨幅因子×0.5
+    # 如果暴跌后已涨停反包（方向逆转），取消衰减
     p_for_vol = cache['prices'] if cache else []
     if len(p_for_vol) >= 6:
         recent_5 = p_for_vol[-6:-1]  # day-5 ~ day-1
+        has_reversal = False
+        # 先检查是否有反转：暴跌后涨停反包
         for i in range(1, len(recent_5)):
             daily_chg = (recent_5[i] - recent_5[i-1]) / recent_5[i-1] * 100
-            if daily_chg <= -5.0:
-                score -= chg_score * 0.5  # 涨幅得分减半
-                details[-1] = f"涨幅:{chg_score*0.5:.2f}(衰减)"
+            if daily_chg >= 9.5:  # 涨停反包
+                has_reversal = True
                 break
+        if not has_reversal:
+            for i in range(1, len(recent_5)):
+                daily_chg = (recent_5[i] - recent_5[i-1]) / recent_5[i-1] * 100
+                if daily_chg <= -8.0:
+                    score -= chg_score * 0.5  # 涨幅得分减半
+                    details[-1] = f"涨幅:{chg_score*0.5:.2f}(衰减)"
+                    break
 
     ma5 = ma_n(cache, 5)
     ma10 = ma_n(cache, 10)
@@ -359,8 +368,8 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
                     for i, d in enumerate(dif_v):
                         if i == 0: dea_v.append(d)
                         else: dea_v.append(d*2/10+dea_v[-1]*(1-2/10))
-                        if dif_v[-1] <= dea_v[-1]:
-                            trend_score = 0.5  # 死叉+价格<MA5→趋势降级
+                    if dif_v[-1] <= dea_v[-1]:
+                        trend_score = 0.5  # 死叉+价格<MA5→趋势降级
     elif ma20 and price > ma20:
         trend_score = 0.5
     score += trend_score
@@ -411,9 +420,9 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
                 price_up = p_tech[-1] > p_tech[-2] > p_tech[-3]
                 gap_narrowing = gap_now > gap_prev > gap_prev2  # 差距从负值缩小（往0靠拢）
                 if dif_rising and gap_narrowing and price_up:
-                    tech_cost -= 0.05  # 死叉收敛·即将金叉 → 减量扣分（-0.05 而不是 -0.20）
+                    tech_cost += 0.00  # 死叉收敛·即将金叉 → 正向信号，不扣分
                 elif dif_rising and gap_narrowing:
-                    tech_cost -= 0.10  # 死叉收敛（价格未同步确认）→ 适度扣分
+                    tech_cost += 0.00  # 死叉收敛 → 不扣分
                 else:
                     tech_cost -= 0.20  # 死叉持续扩大 → 全额扣分
     tech_net = tech_score + tech_cost
@@ -634,11 +643,11 @@ def main():
                                 price_up = p_tech[-1] > p_tech[-2] > p_tech[-3]
                                 gap_narrowing = gap_now > gap_prev > gap_prev2
                                 if dif_rising and gap_narrowing and price_up:
-                                    tech_items.append('MACD死叉收敛(即将金叉)-0.05')
+                                    tech_items.append('MACD死叉收敛(即将金叉)+0.00')
                                 elif dif_rising and gap_narrowing:
-                                    tech_items.append('MACD死叉收敛-0.10')
+                                    tech_items.append('MACD死叉收敛+0.00')
                                 else:
-                                    tech_items.append('MACD死叉-0.20')
+                                    tech_items.append('MACD死叉持续-0.20')
                         else:
                             tech_items.append('MACD翻绿-0.20')
                 if tech_items:
