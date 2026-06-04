@@ -485,14 +485,14 @@ def main():
         json.dump(data, f, ensure_ascii=False, indent=2)
     
     # L1 可读文本
-    with open(f"{ALERT_DIR}/L1_market.txt", 'w') as f:
+    with open(f"{ALERT_DIR}/L1_market.md", 'w') as f:
         for idx in l1['indices']:
             f.write(f"{idx['name']} {idx['price']} {idx['trend']}({idx['change']:+.2f}%) {idx['level']}\n")
         f.write(f"判断：{l1['verdict']}\n")
         f.write(f"[采集耗时{fetch_time}s | {len(stocks)}只]\n")
     
     # L2 可读文本
-    with open(f"{ALERT_DIR}/L2_holdings.txt", 'w') as f:
+    with open(f"{ALERT_DIR}/L2_holdings.md", 'w') as f:
         if l2:
             for h in l2:
                 warn_tag = f" {h['warning']}" if h['warning'] else ""
@@ -501,7 +501,7 @@ def main():
             f.write("无持仓\n")
     
     # L3 可读文本
-    with open(f"{ALERT_DIR}/L3_focus.txt", 'w') as f:
+    with open(f"{ALERT_DIR}/L3_focus.md", 'w') as f:
         for foc in l3:
             if foc['is_holding']:
                 label = "【持仓】"
@@ -513,7 +513,7 @@ def main():
             f.write(f"{label}{foc['name']}({foc['code']}) {foc['price']}元 {foc['change']:+.2f}% | 介入{foc['entry']} 现距{status}({foc['gap_pct']:+.2f}%) | 止损{foc['stop']} 目标{foc['target']}\n")
     
     # L4 可读文本
-    with open(f"{ALERT_DIR}/L4_etf_concept.txt", 'w') as f:
+    with open(f"{ALERT_DIR}/L4_etf_concept.md", 'w') as f:
         f.write("【ETF】\n")
         for e in l4['etf']:
             f.write(f"{e['name']} {e['price']}元 ({e['change']:+.2f}%) {e['level']}\n")
@@ -522,7 +522,7 @@ def main():
             f.write(f"{c['name']} 平均{c['avg_change']:+.2f}% {c['level']}\n")
     
     # L5 可读文本
-    with open(f"{ALERT_DIR}/L5_watchlist.txt", 'w') as f:
+    with open(f"{ALERT_DIR}/L5_watchlist.md", 'w') as f:
         if l5:
             for w in l5:
                 f.write(f"{w['direction']}{w['name']}({w['code']}) {w['price']}元 ({w['change']:+.2f}%)\n")
@@ -559,7 +559,7 @@ def main():
                 label = "大异动"
             urgent_signals.append(f"【自选】{w['name']}({code}) {w['change']:+.2f}% {label}")
     
-    with open(f"{ALERT_DIR}/urgent.txt", 'w') as f:
+    with open(f"{ALERT_DIR}/urgent.md", 'w') as f:
         for s in urgent_signals:
             f.write(s + '\n')
         if not urgent_signals:

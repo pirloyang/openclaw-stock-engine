@@ -190,7 +190,7 @@ def compute_l6_hot(l5_stocks, etf_signals):
     }
     
     # 写入信号文件
-    with open(f"{ALERT_DIR}/L6_hot_alerts.txt", 'w') as f:
+    with open(f"{ALERT_DIR}/L6_hot_alerts.md", 'w') as f:
         if not hot_alerts:
             f.write("今日无±5%以上异动\n")
             return result
@@ -235,4 +235,4 @@ if __name__ == "__main__":
     print(f"热门板块: {result['hot_sectors']}")
     for a in result['buyable_alerts'][:5]:
         print(f"  {a['direction']}{a['name']} +{a['change']:+.2f}% P0{a['p0_total']} 评分{a['composite_score']} → {a['reason'][:40]}")
-    print(f"\n输出已写入 L6_hot_alerts.txt")
+    print(f"\n输出已写入 L6_hot_alerts.md")
