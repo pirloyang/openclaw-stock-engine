@@ -516,9 +516,138 @@ def main():
         arrow = '🟢' if chg_f >= 0 else '🔴'
         chg_s = f'+{chg_f}%' if chg_f >= 0 else f'{chg_f}%'
         score_no_morph = total - morph
+        info = prices.get(code, {})
         print(f'  #{i}  {name} ({code})  {arrow} {chg_s}')
         print(f'      价{price}  综合分{total:.2f} = 因子{score_no_morph:.2f}+形态{morph:.2f}')
-        print(f'      评分明细: {details}')
+        # 详细拆解每个因子
+        parts = details.split('|')
+        for p in parts:
+            if not p: continue
+            kv = p.split(':', 1)
+            if len(kv) != 2: continue
+            k, v = kv[0], kv[1]
+            vf = float(v) if v.replace('.','').replace('-','').isdigit() else 0
+            if k == '涨幅':
+                abs_chg = abs(chg_f)
+                if '衰减' in v:
+                    print(f'      📈 涨幅因子 {v} ← 今日{chg_s}({abs_chg:.1f}%绝对值) × 5日内有过-5%暴跌衰减')
+                elif abs_chg >= 8:
+                    print(f'      📈 涨幅因子 {v} ← 今日{chg_s}({abs_chg:.1f}%绝对值) 涨超8%衰减至0.1')
+                elif abs_chg >= 5:
+                    print(f'      📈 涨幅因子 {v} ← 今日{chg_s}({abs_chg:.1f}%绝对值) 5-8%区间衰减至0.3')
+                elif abs_chg >= 3:
+                    print(f'      📈 涨幅因子 {v} ← 今日{chg_s}({abs_chg:.1f}%绝对值) 3-5%区间衰减至0.7')
+                elif abs_chg >= 1:
+                    print(f'      📈 涨幅因子 {v} ← 今日{chg_s}({abs_chg:.1f}%绝对值) 1-3%最优区间满分')
+                else:
+                    print(f'      📈 涨幅因子 {v} ← 今日{chg_s}({abs_chg:.1f}%绝对值) 不足1%衰减至0.2')
+            elif k == '量能':
+                cache = read_cache(code)
+                if cache:
+                    avg10v = avgvol_n(cache, 10)
+                    ratio = info['vol'] / avg10v if avg10v and avg10v > 0 else 0
+                    if '缩量回踩' in v:
+                        print(f'      📊 量能因子 {v} ← 量比{ratio:.2f}(<0.8)但均线多头+价>MA20→缩量回踩加分')
+                    else:
+                        print(f'      📊 量能因子 {v} ← 量比{ratio:.2f}(今日量/{avg10v:.0f}均量)')
+            elif k == '位置':
+                cache = read_cache(code)
+                if cache:
+                    ma20 = ma_n(cache, 20)
+                    high20 = high_n(cache, 20)
+                    if ma20:
+                        dist = (price - ma20) / ma20 * 100
+                        dist_label = '上方' if dist >= 0 else '下方'
+                        extra = ''
+                        if high20 and price >= high20:
+                            extra = '+0.3(创20日新高)'
+                        if dist < 0:
+                            extra += '×0.5(价在MA20下方)'
+                        print(f'      📍 位置因子 {v} ← 距MA20({ma20:.2f}) {abs(dist):.1f}%{dist_label}{extra}')
+            elif k == '趋势':
+                cache = read_cache(code)
+                if cache:
+                    ma20 = ma_n(cache, 20)
+                    if ma20 and len(cache['prices']) >= 25:
+                        prev_ma20 = sum(cache['prices'][-25:-5]) / len(cache['prices'][-25:-5])
+                        slope = (ma20 - prev_ma20) / prev_ma20 * 100
+                        slope_label = '上升' if slope > 0.3 else ('走平' if slope > -0.3 else '下降')
+                        print(f'      📉 趋势因子 {v} ← MA20斜率{slope:+.2f}%({slope_label})')
+            elif k == '技术':
+                cache = read_cache(code)
+                tech_items = []
+                if cache:
+                    ma5 = ma_n(cache, 5)
+                    ma10 = ma_n(cache, 10)
+                    ma20 = ma_n(cache, 20)
+                    if ma5 and ma10 and ma20 and ma5 > ma10 > ma20:
+                        tech_items.append('多头排列+0.3')
+                    if ma5 and price > ma5:
+                        tech_items.append('站上MA5+0.15')
+                    elif ma5:
+                        tech_items.append('跌破MA5-0.15')
+                    ema12 = calc_ema(cache['prices'], 12)
+                    ema26 = calc_ema(cache['prices'], 26)
+                    if ema12 and ema26:
+                        dif = ema12 - ema26
+                        if dif > 0:
+                            p_tech = cache['prices']
+                            e12v, e26v = [], []
+                            for j, pr in enumerate(p_tech):
+                                if j == 0: e12v.append(pr); e26v.append(pr)
+                                else: e12v.append(pr*2/13+e12v[-1]*(1-2/13)); e26v.append(pr*2/27+e26v[-1]*(1-2/27))
+                            difv = [a-b for a,b in zip(e12v, e26v)]
+                            dea_v = []
+                            for j, d in enumerate(difv):
+                                if j == 0: dea_v.append(d)
+                                else: dea_v.append(d*2/10+dea_v[-1]*(1-2/10))
+                            if dif > dea_v[-1]:
+                                tech_items.append('MACD金叉+0.15')
+                            else:
+                                tech_items.append('MACD死叉-0.20')
+                if tech_items:
+                    print(f'      🔧 技术因子 {v} ← {" | ".join(tech_items)}')
+                else:
+                    print(f'      🔧 技术因子 {v}')
+            elif k == '板块':
+                sector = SECTOR_MAP.get(code, '未归类')
+                print(f'      🏭 板块因子 {v} ← 所属{sector}板块强度加分')
+            elif k == '共振':
+                r_val = resonance_data.get(code, 0)
+                r_label = {2: '三重共振', 1: '双重确认', 0.5: '单一信号看多', 0: '中性', -1: '卖出确认'}.get(r_val, str(r_val))
+                conflict = check_resonance_conflict(code)
+                if conflict:
+                    print(f'      📡 共振因子 {v} ← {r_label} 但多空冲突→减半')
+                else:
+                    print(f'      📡 共振因子 {v} ← {r_label}')
+        # 形态拆解
+        if morph > 0:
+            cache = read_cache(code)
+            if cache:
+                p = cache['prices']
+                v = cache['vols']
+                avg5v = sum(v[-5:]) / 5 if len(v) >= 5 else 0
+                morph_items = []
+                if len(p) >= 5 and len(v) >= 5:
+                    if p[-1] > p[-2] > p[-3] > p[-4]:
+                        if v[-1] > avg5v and v[-2] > avg5v:
+                            morph_items.append('红三兵(放量)+0.5')
+                        else:
+                            morph_items.append('红三兵(缩量降级)+0.2')
+                    if len(p) >= 3:
+                        d1 = (p[-1] - p[-2]) / p[-2] * 100
+                        d2 = (p[-2] - p[-3]) / p[-3] * 100
+                        if d1 > 0 and d1 > d2:
+                            if v[-1] > avg5v:
+                                morph_items.append('涨幅加速(放量)+0.3')
+                            else:
+                                morph_items.append('涨幅加速(缩量)+0.1')
+                    if len(v) >= 3 and v[-1] < v[-2] < v[-3]:
+                        morph_items.append('缩量回踩+0.2')
+                if morph_items:
+                    print(f'      🎯 形态因子 {morph:.2f} ← {" | ".join(morph_items)}')
+                else:
+                    print(f'      🎯 形态因子 {morph:.2f}')
         print()
 
     print('📋 完整评分排序（前15）:')
