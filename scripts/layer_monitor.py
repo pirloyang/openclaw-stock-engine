@@ -56,8 +56,8 @@ def get_current_holdings():
                     break
                 m = re.search(r'-\s*(.+?)\s+(\d{6})\s*[（(](\d+)股.*?成本([\d.]+)', line)
                 if m:
-                    # 跳过已清仓的（含'清仓'标识的行）
-                    if '清仓' in line:
+                    # 跳过已清仓的（含'清仓'标识的行，但排除"误报清仓"等否定表述）
+                    if '清仓' in line and '误报' not in line:
                         continue
                     name = m.group(1).strip()
                     code = m.group(2)
@@ -269,6 +269,9 @@ def compute_l3_focus(stocks, focus_codes, holdings, l6_data=None):
                 code = item.get('code', '')
                 if not code:
                     continue
+                # 跳过已清仓标的（hold=False 或 status含"清仓"）
+                if not item.get('hold', True) or '清仓' in item.get('status', ''):
+                    continue
                 entry_val = item.get('entry_low', 0) or item.get('entry_high', 0)
                 stop_val = item.get('stop_loss', 0)
                 target_val = item.get('target', 0)
@@ -288,11 +291,9 @@ def compute_l3_focus(stocks, focus_codes, holdings, l6_data=None):
     
     # 静态池作为兜底（补一些可能在focus里没有的）
     STATIC_FOCUS = {
-        "000969": {"entry": 22.74, "stop": 22.40, "target": 26.60, "note": "安泰-突破介入"},
         "300660": {"entry": 48.06, "stop": 44.60, "target": 53.89, "note": "雷利-站稳介入"},
         "002938": {"entry": 100.0, "stop": 82.0, "target": 130.0, "note": "鹏鼎-回踩100-102介入"},
         "002881": {"entry": 49.14, "stop": 41.49, "target": 53.0, "note": "美格-突破介入"},
-        "000988": {"entry": 148.0, "stop": 140.0, "target": 170.0, "note": "华工-回踩148-150"},
         "000636": {"entry": 34.0, "stop": 32.0, "target": 40.0, "note": "风华-回调34-35介入"},
     }
     
