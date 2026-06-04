@@ -447,13 +447,19 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
         score += resonance_bonus
         details.append(f"共振:{resonance_bonus:+.2f}")
 
-    # 形态因子 v2.1 (0-1): 量价配合约束
+    # 形态因子 v2.2 (0-1): 量价配合约束
     p = cache['prices']
     v = cache['vols']
     avg5v = sum(v[-5:]) / 5 if len(v) >= 5 else 0
     if len(p) >= 5 and len(v) >= 5:
-        # 红三兵: 连续4阳 + 最后2日量>5日均量
-        if p[-1] > p[-2] > p[-3] > p[-4]:
+        # 红三兵: 最近3日连续阳线(收盘>开盘，用收盘>前日收盘近似) + 价格递增 + 量能配合
+        # 注意: 不能只看价格递增，必须确认是阳线（收盘高于前日收盘）
+        d_1 = (p[-1] - p[-2]) / p[-2] * 100  # day0涨跌
+        d_2 = (p[-2] - p[-3]) / p[-3] * 100  # day-1涨跌
+        d_3 = (p[-3] - p[-4]) / p[-4] * 100  # day-2涨跌
+        three_red = d_1 > 0 and d_2 > 0 and d_3 > 0  # 连续3阳
+        price_rising = p[-1] > p[-2] > p[-3]  # 价格递增
+        if three_red and price_rising:
             if v[-1] > avg5v and v[-2] > avg5v:
                 morph += 0.5
             else:
@@ -629,7 +635,12 @@ def main():
                 avg5v = sum(v[-5:]) / 5 if len(v) >= 5 else 0
                 morph_items = []
                 if len(p) >= 5 and len(v) >= 5:
-                    if p[-1] > p[-2] > p[-3] > p[-4]:
+                    d_1 = (p[-1] - p[-2]) / p[-2] * 100
+                    d_2 = (p[-2] - p[-3]) / p[-3] * 100
+                    d_3 = (p[-3] - p[-4]) / p[-4] * 100
+                    three_red = d_1 > 0 and d_2 > 0 and d_3 > 0
+                    price_rising = p[-1] > p[-2] > p[-3]
+                    if three_red and price_rising:
                         if v[-1] > avg5v and v[-2] > avg5v:
                             morph_items.append('红三兵(放量)+0.5')
                         else:
