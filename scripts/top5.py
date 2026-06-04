@@ -347,23 +347,19 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
                 trend_score *= 0.5
             # 短中期背离惩罚: MA20向上但价格<MA5且MACD死叉 → 中期趋势滞后
             if trend_score > 0.5 and ma5 and price < ma5:
-                # 进一步判定MACD是否死叉
-                ema12_t = calc_ema(cache['prices'], 12)
-                ema26_t = calc_ema(cache['prices'], 26)
-                if ema12_t and ema26_t:
-                    dif_t = ema12_t - ema26_t
-                    if dif_t > 0:
-                        p_t = cache['prices']
-                        e12v, e26v = [], []
-                        for i, pr in enumerate(p_t):
-                            if i == 0: e12v.append(pr); e26v.append(pr)
-                            else: e12v.append(pr*2/13+e12v[-1]*(1-2/13)); e26v.append(pr*2/27+e26v[-1]*(1-2/27))
-                        dif_v = [a-b for a,b in zip(e12v, e26v)]
-                        dea_v = []
-                        for i, d in enumerate(dif_v):
-                            if i == 0: dea_v.append(d)
-                            else: dea_v.append(d*2/10+dea_v[-1]*(1-2/10))
-                        if dif_t <= dea_v[-1]:
+                # 进一步判定MACD是否死叉（完整序列法）
+                p_t = cache['prices']
+                if len(p_t) >= 12:
+                    e12v, e26v = [], []
+                    for i, pr in enumerate(p_t):
+                        if i == 0: e12v.append(pr); e26v.append(pr)
+                        else: e12v.append(pr*2/13+e12v[-1]*(1-2/13)); e26v.append(pr*2/27+e26v[-1]*(1-2/27))
+                    dif_v = [a-b for a,b in zip(e12v, e26v)]
+                    dea_v = []
+                    for i, d in enumerate(dif_v):
+                        if i == 0: dea_v.append(d)
+                        else: dea_v.append(d*2/10+dea_v[-1]*(1-2/10))
+                        if dif_v[-1] <= dea_v[-1]:
                             trend_score = 0.5  # 死叉+价格<MA5→趋势降级
     elif ma20 and price > ma20:
         trend_score = 0.5
@@ -380,29 +376,29 @@ def compute_score(code, name, price, change, vol, cache, sector_strength, resona
         tech_score += 0.15  # 站上5日线
     else:
         tech_cost -= 0.15  # 跌破MA5扣分
-    # MACD完整判定
-    ema12 = calc_ema(cache['prices'], 12)
-    ema26 = calc_ema(cache['prices'], 26)
-    if ema12 is not None and ema26 is not None:
-        dif = ema12 - ema26
-        if dif > 0:
-            # 计算DEA完整序列
-            p_tech = cache['prices']
-            if len(p_tech) >= 12:
-                e12v, e26v = [], []
-                for i, pr in enumerate(p_tech):
-                    if i == 0: e12v.append(pr); e26v.append(pr)
-                    else: e12v.append(pr*2/13+e12v[-1]*(1-2/13)); e26v.append(pr*2/27+e26v[-1]*(1-2/27))
-                difv = [a-b for a,b in zip(e12v, e26v)]
-                dea_v = []
-                for i, d in enumerate(difv):
-                    if i == 0: dea_v.append(d)
-                    else: dea_v.append(d*2/10+dea_v[-1]*(1-2/10))
-                if dif > dea_v[-1]:
-                    tech_score += 0.15  # MACD金叉多头区域
-                else:
-                    macd_dead = True
-                    tech_cost -= 0.20  # MACD死叉扣分
+    # MACD完整判定（用完整的DIF/DEA序列，确保与DEA序列EMA初始化一致）
+    p_tech = cache['prices']
+    macd_dead = False
+    macd_golden = False
+    if len(p_tech) >= 12:
+        e12v, e26v = [], []
+        for i, pr in enumerate(p_tech):
+            if i == 0: e12v.append(pr); e26v.append(pr)
+            else: e12v.append(pr*2/13+e12v[-1]*(1-2/13)); e26v.append(pr*2/27+e26v[-1]*(1-2/27))
+        difv = [a-b for a,b in zip(e12v, e26v)]
+        dea_v = []
+        for i, d in enumerate(difv):
+            if i == 0: dea_v.append(d)
+            else: dea_v.append(d*2/10+dea_v[-1]*(1-2/10))
+        latest_dif = difv[-1]
+        latest_dea = dea_v[-1]
+        if latest_dif > latest_dea:
+            if difv[-1] > 0 and difv[-2] <= dea_v[-2]:
+                macd_golden = True
+            tech_score += 0.15  # MACD金叉多头区域
+        else:
+            macd_dead = True
+            tech_cost -= 0.20  # MACD死叉扣分
     tech_net = tech_score + tech_cost
     if tech_net > 0:
         details.append(f"技术:{tech_net:.2f}")
@@ -611,6 +607,8 @@ def main():
                                 tech_items.append('MACD金叉+0.15')
                             else:
                                 tech_items.append('MACD死叉-0.20')
+                        else:
+                            tech_items.append('MACD翻绿-0.20')
                 if tech_items:
                     print(f'      🔧 技术因子 {v} ← {" | ".join(tech_items)}')
                 else:
