@@ -1,21 +1,32 @@
 {
-  "date": "2026-06-03",
-  "timestamp": "2026-06-03T17:00:44.820317",
-  "net_worth": 81340.15,
-  "market_value": 49216.8,
+  "date": "2026-06-04",
+  "timestamp": "2026-06-04T16:01:53.224923",
+  "net_worth": 88352.35,
+  "market_value": 56229.0,
   "estimated_cash": 32123.35,
   "position_count": 5,
   "positions": [
+    {
+      "code": "300223",
+      "name": "北京君正",
+      "shares": 100,
+      "cost": 147.89,
+      "avg_cost": 147.89,
+      "current_price": 150.41,
+      "market_value": 15041.0,
+      "pnl": 252.0,
+      "pnl_pct": 1.7
+    },
     {
       "code": "601600",
       "name": "中国铝业",
       "shares": 1200,
       "cost": 11.309,
       "avg_cost": 11.309,
-      "current_price": 12.01,
-      "market_value": 14412.0,
-      "pnl": 841.2,
-      "pnl_pct": 6.2
+      "current_price": 10.9,
+      "market_value": 13080.0,
+      "pnl": -490.8,
+      "pnl_pct": -3.62
     },
     {
       "code": "600549",
@@ -23,10 +34,10 @@
       "shares": 200,
       "cost": 59.611,
       "avg_cost": 59.611,
-      "current_price": 60.01,
-      "market_value": 12002.0,
-      "pnl": 79.8,
-      "pnl_pct": 0.67
+      "current_price": 63.73,
+      "market_value": 12746.0,
+      "pnl": 823.8,
+      "pnl_pct": 6.91
     },
     {
       "code": "603618",
@@ -34,21 +45,10 @@
       "shares": 200,
       "cost": 42.354,
       "avg_cost": 42.354,
-      "current_price": 42.35,
-      "market_value": 8470.8,
-      "pnl": 0.0,
-      "pnl_pct": 0.0
-    },
-    {
-      "code": "600580",
-      "name": "卧龙电驱",
-      "shares": 200,
-      "cost": 44.455,
-      "avg_cost": 44.455,
-      "current_price": 38.81,
-      "market_value": 7762.0,
-      "pnl": -1129.0,
-      "pnl_pct": -12.7
+      "current_price": 43.58,
+      "market_value": 8716.0,
+      "pnl": 245.2,
+      "pnl_pct": 2.89
     },
     {
       "code": "300115",
@@ -56,22 +56,22 @@
       "shares": 200,
       "cost": 37.569,
       "avg_cost": 37.569,
-      "current_price": 32.85,
-      "market_value": 6570.0,
-      "pnl": -943.8,
-      "pnl_pct": -12.56
+      "current_price": 33.23,
+      "market_value": 6646.0,
+      "pnl": -867.8,
+      "pnl_pct": -11.55
     }
   ],
   "progress": {
-    "net_worth": 81340.15,
+    "net_worth": 88352.35,
     "target_value": 250000.0,
     "initial_capital": 84000.0,
-    "current_gain": -2659.85,
-    "remaining_gain": 168659.85,
-    "progress_pct": 0,
-    "time_progress_pct": 10.8,
-    "remaining_days": 247,
-    "monthly_return_needed_pct": 14.6
+    "current_gain": 4352.35,
+    "remaining_gain": 161647.65,
+    "progress_pct": 2.6,
+    "time_progress_pct": 11.2,
+    "remaining_days": 246,
+    "monthly_return_needed_pct": 13.5
   },
   "risk_stage": {
     "stage": "积累期：可承担较高单票风险",
@@ -84,8 +84,8 @@
       "id": "cleanup",
       "name": "清淤收官",
       "target_value": 100000.0,
-      "current_progress_pct": 81.3,
-      "gap": 18659.85,
+      "current_progress_pct": 88.4,
+      "gap": 11647.65,
       "achieved": false,
       "deadline": "2026-07-31"
     },
@@ -93,8 +93,8 @@
       "id": "wave1",
       "name": "主线1完成",
       "target_value": 180000.0,
-      "current_progress_pct": 45.2,
-      "gap": 98659.85,
+      "current_progress_pct": 49.1,
+      "gap": 91647.65,
       "achieved": false,
       "deadline": "2026-10-31"
     },
@@ -102,8 +102,8 @@
       "id": "sprint",
       "name": "冲刺线",
       "target_value": 250000.0,
-      "current_progress_pct": 32.5,
-      "gap": 168659.85,
+      "current_progress_pct": 35.3,
+      "gap": 161647.65,
       "achieved": false,
       "deadline": "2027-01-31"
     }
