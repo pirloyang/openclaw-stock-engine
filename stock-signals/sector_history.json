@@ -1,13 +1,6 @@
 {
   "CPO/光通信": [
     {
-      "date": "2026-05-30",
-      "avg_chg": -2.59,
-      "level": "D",
-      "up_ratio": 20.0,
-      "strong_count": 0
-    },
-    {
       "date": "2026-06-01",
       "avg_chg": -2.42,
       "level": "D",
@@ -34,16 +27,16 @@
       "level": "D",
       "up_ratio": 20.0,
       "strong_count": 0
+    },
+    {
+      "date": "2026-06-05",
+      "avg_chg": -2.56,
+      "level": "D",
+      "up_ratio": 40.0,
+      "strong_count": 1
     }
   ],
   "HBM/存储": [
-    {
-      "date": "2026-05-30",
-      "avg_chg": -2.52,
-      "level": "D",
-      "up_ratio": 20.0,
-      "strong_count": 0
-    },
     {
       "date": "2026-06-01",
       "avg_chg": -6.15,
@@ -71,16 +64,16 @@
       "level": "A",
       "up_ratio": 100.0,
       "strong_count": 6
+    },
+    {
+      "date": "2026-06-05",
+      "avg_chg": -7.91,
+      "level": "E",
+      "up_ratio": 0.0,
+      "strong_count": 0
     }
   ],
   "PCB/覆铜板": [
-    {
-      "date": "2026-05-30",
-      "avg_chg": 0.5,
-      "level": "C",
-      "up_ratio": 42.9,
-      "strong_count": 3
-    },
     {
       "date": "2026-06-01",
       "avg_chg": -6.73,
@@ -108,16 +101,16 @@
       "level": "A",
       "up_ratio": 85.7,
       "strong_count": 6
+    },
+    {
+      "date": "2026-06-05",
+      "avg_chg": -4.71,
+      "level": "E",
+      "up_ratio": 14.3,
+      "strong_count": 0
     }
   ],
   "半导体/芯片": [
-    {
-      "date": "2026-05-30",
-      "avg_chg": -5.45,
-      "level": "E",
-      "up_ratio": 0.0,
-      "strong_count": 0
-    },
     {
       "date": "2026-06-01",
       "avg_chg": -4.26,
@@ -145,16 +138,16 @@
       "level": "B",
       "up_ratio": 83.3,
       "strong_count": 3
-    }
-  ],
-  "商业航天": [
+    },
     {
-      "date": "2026-05-30",
-      "avg_chg": -7.15,
+      "date": "2026-06-05",
+      "avg_chg": -5.25,
       "level": "E",
       "up_ratio": 0.0,
       "strong_count": 0
-    },
+    }
+  ],
+  "商业航天": [
     {
       "date": "2026-06-01",
       "avg_chg": -1.68,
@@ -182,16 +175,16 @@
       "level": "D",
       "up_ratio": 18.2,
       "strong_count": 1
+    },
+    {
+      "date": "2026-06-05",
+      "avg_chg": 2.7,
+      "level": "B",
+      "up_ratio": 81.8,
+      "strong_count": 8
     }
   ],
   "新能源": [
-    {
-      "date": "2026-05-30",
-      "avg_chg": -2.55,
-      "level": "D",
-      "up_ratio": 25.0,
-      "strong_count": 0
-    },
     {
       "date": "2026-06-01",
       "avg_chg": -0.54,
@@ -219,16 +212,16 @@
       "level": "D",
       "up_ratio": 0.0,
       "strong_count": 0
+    },
+    {
+      "date": "2026-06-05",
+      "avg_chg": 0.38,
+      "level": "C",
+      "up_ratio": 50.0,
+      "strong_count": 1
     }
   ],
   "机器人/工业母机": [
-    {
-      "date": "2026-05-30",
-      "avg_chg": -4.98,
-      "level": "E",
-      "up_ratio": 0.0,
-      "strong_count": 0
-    },
     {
       "date": "2026-06-01",
       "avg_chg": -0.21,
@@ -256,16 +249,16 @@
       "level": "C",
       "up_ratio": 77.8,
       "strong_count": 2
+    },
+    {
+      "date": "2026-06-05",
+      "avg_chg": 2.54,
+      "level": "B",
+      "up_ratio": 90.0,
+      "strong_count": 5
     }
   ],
   "AI应用/大模型": [
-    {
-      "date": "2026-05-30",
-      "avg_chg": 0.86,
-      "level": "C",
-      "up_ratio": 40.0,
-      "strong_count": 2
-    },
     {
       "date": "2026-06-01",
       "avg_chg": 4.29,
@@ -293,16 +286,16 @@
       "level": "D",
       "up_ratio": 25.0,
       "strong_count": 1
+    },
+    {
+      "date": "2026-06-05",
+      "avg_chg": -3.71,
+      "level": "E",
+      "up_ratio": 12.5,
+      "strong_count": 0
     }
   ],
   "液冷/数据中心": [
-    {
-      "date": "2026-05-30",
-      "avg_chg": -5.97,
-      "level": "E",
-      "up_ratio": 0.0,
-      "strong_count": 0
-    },
     {
       "date": "2026-06-01",
       "avg_chg": -2.29,
@@ -330,16 +323,16 @@
       "level": "B",
       "up_ratio": 80.0,
       "strong_count": 4
+    },
+    {
+      "date": "2026-06-05",
+      "avg_chg": -3.95,
+      "level": "E",
+      "up_ratio": 0.0,
+      "strong_count": 0
     }
   ],
   "半导体设备/材料": [
-    {
-      "date": "2026-05-30",
-      "avg_chg": -0.01,
-      "level": "C",
-      "up_ratio": 75.0,
-      "strong_count": 3
-    },
     {
       "date": "2026-06-01",
       "avg_chg": -6.07,
@@ -367,6 +360,13 @@
       "level": "B",
       "up_ratio": 85.7,
       "strong_count": 3
+    },
+    {
+      "date": "2026-06-05",
+      "avg_chg": -1.02,
+      "level": "D",
+      "up_ratio": 50.0,
+      "strong_count": 1
     }
   ]
 }

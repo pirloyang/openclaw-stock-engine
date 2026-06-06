@@ -1,12 +1,12 @@
 {
-  "updated": "2026-06-04T16:01:53.225595",
+  "updated": "2026-06-05T15:49:54.370084",
   "milestones": [
     {
       "id": "cleanup",
       "name": "清淤收官",
       "target_value": 100000.0,
-      "current_progress_pct": 88.4,
-      "gap": 11647.65,
+      "current_progress_pct": 95.7,
+      "gap": 4305.0,
       "achieved": false,
       "deadline": "2026-07-31"
     },
@@ -14,8 +14,8 @@
       "id": "wave1",
       "name": "主线1完成",
       "target_value": 180000.0,
-      "current_progress_pct": 49.1,
-      "gap": 91647.65,
+      "current_progress_pct": 53.2,
+      "gap": 84305.0,
       "achieved": false,
       "deadline": "2026-10-31"
     },
@@ -23,8 +23,8 @@
       "id": "sprint",
       "name": "冲刺线",
       "target_value": 250000.0,
-      "current_progress_pct": 35.3,
-      "gap": 161647.65,
+      "current_progress_pct": 38.3,
+      "gap": 154305.0,
       "achieved": false,
       "deadline": "2027-01-31"
     }
