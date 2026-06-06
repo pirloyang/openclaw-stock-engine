@@ -1,0 +1,62 @@
+{
+  "audit_time": "2026-06-06T23:24:55.851762",
+  "scan_window_days": 30,
+  "total_recommendations": 41,
+  "by_class": {
+    "triple_resonance": {
+      "sample_size": 0,
+      "T+5_winrate": null,
+      "T+10_winrate": null,
+      "T+20_winrate": null,
+      "expect": {
+        "T+5": 0.65,
+        "T+10": 0.7,
+        "T+20": 0.6
+      },
+      "alert": null,
+      "note": "v1.0 简化版：仅统计样本量，胜率计算需接入 akshare 历史 K 线"
+    },
+    "dual_confirm": {
+      "sample_size": 0,
+      "T+5_winrate": null,
+      "T+10_winrate": null,
+      "T+20_winrate": null,
+      "expect": {
+        "T+5": 0.55,
+        "T+10": 0.55,
+        "T+20": 0.5
+      },
+      "alert": null,
+      "note": "v1.0 简化版：仅统计样本量，胜率计算需接入 akshare 历史 K 线"
+    },
+    "single": {
+      "sample_size": 0,
+      "T+5_winrate": null,
+      "T+10_winrate": null,
+      "T+20_winrate": null,
+      "expect": {
+        "T+5": 0.5,
+        "T+10": 0.5,
+        "T+20": 0.45
+      },
+      "alert": null,
+      "note": "v1.0 简化版：仅统计样本量，胜率计算需接入 akshare 历史 K 线"
+    },
+    "bearish": {
+      "sample_size": 0,
+      "T+5_winrate": null,
+      "T+10_winrate": null,
+      "T+20_winrate": null,
+      "expect": {
+        "T+5": 0.6,
+        "T+10": 0.65,
+        "T+20": 0.55
+      },
+      "alert": null,
+      "note": "v1.0 简化版：仅统计样本量，胜率计算需接入 akshare 历史 K 线"
+    }
+  },
+  "samples": [],
+  "version": "v1.0",
+  "limitation": "本版本因缺少历史 K 线数据，胜率字段为 null；样本量字段可用。完整胜率请等待 v2.0 (接入 akshare)。"
+}

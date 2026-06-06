@@ -1,0 +1,12 @@
+[
+  {
+    "audit_time": "2026-06-06T23:24:55.851762",
+    "total_recommendations": 41,
+    "by_class_sample_size": {
+      "triple_resonance": 0,
+      "dual_confirm": 0,
+      "single": 0,
+      "bearish": 0
+    }
+  }
+]

@@ -1,0 +1,75 @@
+{
+  "audit_time": "2026-06-06T13:12:52.587932",
+  "data_source_check": {
+    "holdings_in_tools_md": 6,
+    "cleared_in_tools_md": 40,
+    "focus_hold_count": 0,
+    "inconsistent_focus_hold": [],
+    "consistency": "✅"
+  },
+  "reports_audit": [
+    {
+      "path": "reports/2026-06-05-1600-本周复盘.md",
+      "exists": true,
+      "size": 4587,
+      "R16_self_check": "❌",
+      "R13_whitelist": "✅",
+      "R11_signal_veto": "✅",
+      "data_source_traceable": "✅",
+      "rule_reference": "⚠️ 未引用任何规则编号"
+    },
+    {
+      "path": "reports/2026-06-05-0830-盘前作战.md",
+      "exists": true,
+      "size": 2998,
+      "R16_self_check": "❌",
+      "R13_whitelist": "❌ ['300115']",
+      "R11_signal_veto": "✅",
+      "data_source_traceable": "⚠️ 未引用任何权威数据源",
+      "rule_reference": "⚠️ 未引用任何规则编号"
+    },
+    {
+      "path": "reports/2026-06-05-2100-结构重塑.md",
+      "exists": true,
+      "size": 3108,
+      "R16_self_check": "❌",
+      "R13_whitelist": "✅",
+      "R11_signal_veto": "✅",
+      "data_source_traceable": "⚠️ 未引用任何权威数据源",
+      "rule_reference": "⚠️ 未引用任何规则编号"
+    },
+    {
+      "path": "reports/2026-06-05-1530-盘后审计.md",
+      "exists": true,
+      "size": 4769,
+      "R16_self_check": "❌",
+      "R13_whitelist": "✅",
+      "R11_signal_veto": "✅",
+      "data_source_traceable": "✅",
+      "rule_reference": "⚠️ 未引用任何规则编号"
+    },
+    {
+      "path": "reports/2026-06-05-2200-信息炼金.md",
+      "exists": true,
+      "size": 9557,
+      "R16_self_check": "❌",
+      "R13_whitelist": "✅",
+      "R11_signal_veto": "✅",
+      "data_source_traceable": "✅",
+      "rule_reference": "⚠️ 未引用任何规则编号"
+    }
+  ],
+  "summary": {
+    "total_reports": 5,
+    "with_r16_self_check": 0
+  },
+  "violations": [
+    "reports/2026-06-05-1600-本周复盘.md 缺 R16 自检",
+    "reports/2026-06-05-0830-盘前作战.md 缺 R16 自检",
+    "reports/2026-06-05-0830-盘前作战.md R13 违规：❌ ['300115']",
+    "reports/2026-06-05-2100-结构重塑.md 缺 R16 自检",
+    "reports/2026-06-05-1530-盘后审计.md 缺 R16 自检",
+    "reports/2026-06-05-2200-信息炼金.md 缺 R16 自检"
+  ],
+  "health": "🟡 发现 6 项问题"
+}
