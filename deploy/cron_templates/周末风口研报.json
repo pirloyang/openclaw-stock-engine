@@ -1,0 +1,25 @@
+{
+  "name": "周末风口研报",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 21 * * 0",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "请生成周末风口研报，从以下三部分准备周一盘前输入：1.搜索周末财经要闻+A股消息汇总 2.搜索隔夜美股收盘（三大指数+英伟达+苹果+特斯拉） 3.搜索港股恒生指数收盘。整合后按 docs/周末风口研报模板.md 格式输出完整报告，推送给辉哥\n\n【数据回流——报告结束后执行】\n从周末要闻和研报中提取新发现的可关注标的（包括产业政策催化/业绩超预期/资金异动的个股），写入风口候选池：\nexec python3 -c \"\nimport json\nf = open('${WORKSPACE_ROOT}/stock-signals/fengkou_candidates.json')\nd = json.load(f); f.close()\nnew_stocks = [{'code': 'XXXXXX', 'name': '股票名', 'source': '研报来源/资讯来源', 'catalyst': '催化逻辑一句话', 'entry_low': 00.00, 'entry_high': 00.00}]\nfor ns in new_stocks:\n    if ns['code'] not in [c['code'] for c in d['candidates']]:\n        d['candidates'].append(ns)\nd['last_update'] = '$(date +%Y-%m-%d)'\nf = open('${WORKSPACE_ROOT}/stock-signals/fengkou_candidates.json','w')\njson.dump(d, f, ensure_ascii=False, indent=2); f.close()\nprint(f'✅ 风口候选池已更新至{d[\"last_update\"]}，{len(d[\"candidates\"])}只标的')\n\"",
+    "timeoutSeconds": 600,
+    "fallbacks": [
+      "deepseek-v4-flash"
+    ]
+  },
+  "delivery": {
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  }
+}

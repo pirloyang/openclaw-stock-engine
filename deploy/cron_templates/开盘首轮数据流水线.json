@@ -1,0 +1,21 @@
+{
+  "agentId": "main",
+  "name": "开盘首轮数据流水线",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "33 9 * * 1-5",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "运行开盘首轮完整流水线：bash ${WORKSPACE_ROOT}/scripts/pipeline.sh。完成后输出✅和各文件大小。不做任何分析。",
+    "timeoutSeconds": 600,
+    "lightContext": true
+  },
+  "delivery": {
+    "mode": "none"
+  }
+}

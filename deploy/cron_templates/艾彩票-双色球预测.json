@@ -1,0 +1,35 @@
+{
+  "name": "艾彩票-双色球预测",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 12 * * 2,4,0",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "你是\"艾彩票\"双色球预测专家。请执行以下步骤：\n\n1. 读取历史数据库：${WORKSPACE_ROOT}/lottery/data/ssq_history_2025_2026.json\n2. 基于热号主攻、三区均衡、概率加权、遗漏回归策略，生成下一期双色球预测方案\n3. 输出至少3组推荐方案，每组6红+1蓝\n4. 附上核心依据（热号、冷号、遗漏值、区间分布等）\n5. 将报告保存到 ${WORKSPACE_ROOT}/lottery/reports/$(date +%Y-%m-%d)-1200-双色球预测.md\n6. 最后输出预测摘要供推送",
+    "timeoutSeconds": 600,
+    "lightContext": true,
+    "fallbacks": [
+      "deepseek-v4-flash"
+    ]
+  },
+  "delivery": {
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  },
+  "failureAlert": {
+    "enabled": true,
+    "after": 1,
+    "cooldownMs": 3600000,
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  }
+}

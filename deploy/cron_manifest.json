@@ -1,0 +1,372 @@
+{
+  "exported_at": "2026-06-06T23:52:40.636337+08:00",
+  "workspace": "/root/.openclaw/workspace",
+  "jobs_file": "/root/.openclaw/cron/jobs.json",
+  "total_jobs": 25,
+  "enabled_jobs": 25,
+  "disabled_jobs": 0,
+  "jobs": [
+    {
+      "name": "信息炼金-推送",
+      "file": "cron_templates/信息炼金-推送.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "10 22 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "信息炼金：风口与研报精要",
+      "file": "cron_templates/信息炼金_风口与研报精要.json",
+      "enabled": true,
+      "schedule": {
+        "expr": "0 22 * * 1-5",
+        "tz": "Asia/Shanghai",
+        "kind": "cron"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "none",
+      "description": ""
+    },
+    {
+      "name": "午间盘面复盘&多源资讯&策略修正",
+      "file": "cron_templates/午间盘面复盘_多源资讯_策略修正.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 12 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "周末风口研报",
+      "file": "cron_templates/周末风口研报.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 21 * * 0",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "市场结构与逻辑重塑报告",
+      "file": "cron_templates/市场结构与逻辑重塑报告.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 21 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "开盘首轮数据流水线",
+      "file": "cron_templates/开盘首轮数据流水线.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "33 9 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "none",
+      "description": ""
+    },
+    {
+      "name": "收盘数据流水线-即时",
+      "file": "cron_templates/收盘数据流水线-即时.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "5 15 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "none",
+      "description": ""
+    },
+    {
+      "name": "收盘缓存更新-日线追加",
+      "file": "cron_templates/收盘缓存更新-日线追加.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "15 15 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": "每日收盘后追加价格+成交量到日线缓存"
+    },
+    {
+      "name": "数据流水线-分层数据生产",
+      "file": "cron_templates/数据流水线-分层数据生产.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "3,18,33,48 9-11,13-15 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "none",
+      "description": "每15分钟运行完整数据流水线：engine.sh→layer_monitor→signals_summary→sector_fund→industry_chain。比盘中监控cron早2分钟执行。"
+    },
+    {
+      "name": "早盘竞价验证-多维度策略",
+      "file": "cron_templates/早盘竞价验证-多维度策略.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "25 9 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "月度绩效审计-月末自动生成",
+      "file": "cron_templates/月度绩效审计-月末自动生成.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 18 28-31 * *",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": "每月28-31日18:00自动生成结构化月报，存入 reports/monthly/"
+    },
+    {
+      "name": "模拟交易-收盘报告",
+      "file": "cron_templates/模拟交易-收盘报告.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "25 15 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "none",
+      "description": ""
+    },
+    {
+      "name": "每周复盘",
+      "file": "cron_templates/每周复盘.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 16 * * 5",
+        "tz": "Asia/Shanghai",
+        "staggerMs": 30000
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": "每周五16:00生成交易周复盘报告"
+    },
+    {
+      "name": "盘中监控-午盘",
+      "file": "cron_templates/盘中监控-午盘.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "5,20,35,50 13-14 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "盘中监控-早盘",
+      "file": "cron_templates/盘中监控-早盘.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "35,50 9 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "盘中监控-早盘B",
+      "file": "cron_templates/盘中监控-早盘B.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "5,20,35,50 10-11 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "盘前作战指令",
+      "file": "cron_templates/盘前作战指令.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 8 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "盘前数据流水线",
+      "file": "cron_templates/盘前数据流水线.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "15 8 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "none",
+      "description": ""
+    },
+    {
+      "name": "盘前隔夜信息采集",
+      "file": "cron_templates/盘前隔夜信息采集.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 8 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "none",
+      "description": ""
+    },
+    {
+      "name": "盘后交割单与绩效审计",
+      "file": "cron_templates/盘后交割单与绩效审计.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 16 * * 1-5",
+        "tz": "Asia/Shanghai",
+        "staggerMs": 0
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "竞价数据流水线",
+      "file": "cron_templates/竞价数据流水线.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "23 9 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "none",
+      "description": ""
+    },
+    {
+      "name": "艾彩票-双色球开奖回顾",
+      "file": "cron_templates/艾彩票-双色球开奖回顾.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 22 * * 2,4,0",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "艾彩票-双色球预测",
+      "file": "cron_templates/艾彩票-双色球预测.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 12 * * 2,4,0",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": ""
+    },
+    {
+      "name": "规则执行体检-周末",
+      "file": "cron_templates/规则执行体检-周末.json",
+      "enabled": true,
+      "schedule": {
+        "expr": "0 18 * * 0",
+        "kind": "cron",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": "每周日18:00跑rules_audit.py扫描本周报告R16/R11/R13合规性"
+    },
+    {
+      "name": "里程碑告警-每日收盘检查",
+      "file": "cron_templates/里程碑告警-每日收盘检查.json",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "15 16 * * 1-5",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "payload_kind": "agentTurn",
+      "delivery_mode": "announce",
+      "description": "每日收盘后跑 milestone_alert.py，进度偏离超阈值时自动推送辉哥。无告警则静默。"
+    }
+  ],
+  "tokens": {
+    "${WECHAT_USER_ID}": "o9cq80z60LaB2jyf8JO9xNWsynN4@im.wechat",
+    "${WECHAT_BOT_ACCOUNT_ID}": "75c2b3e86437-im-bot",
+    "${WORKSPACE_ROOT}": "/root/.openclaw/workspace"
+  },
+  "env_template": [
+    "WECHAT_USER_ID",
+    "WECHAT_BOT_ACCOUNT_ID",
+    "WORKSPACE_ROOT"
+  ]
+}

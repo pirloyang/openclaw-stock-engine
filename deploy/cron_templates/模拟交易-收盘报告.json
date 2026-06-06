@@ -1,0 +1,25 @@
+{
+  "name": "模拟交易-收盘报告",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "25 15 * * 1-5",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "当前时间15:25，收盘了，生成模拟交易V2.0日报。\n\n【前置·规则加载】exec cat ${WORKSPACE_ROOT}/docs/模拟交易工作机制.md。严格遵守隔离原则（B1/B2）：模拟数据不推送辉哥、不混入其他报告。\n\n运行 bash ${WORKSPACE_ROOT}/sim_trading/run_sim.sh",
+    "timeoutSeconds": 360,
+    "fallbacks": [
+      "deepseek-v4-flash"
+    ]
+  },
+  "delivery": {
+    "mode": "none",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  }
+}

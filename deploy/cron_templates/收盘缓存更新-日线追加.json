@@ -1,0 +1,24 @@
+{
+  "name": "收盘缓存更新-日线追加",
+  "description": "每日收盘后追加价格+成交量到日线缓存",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "15 15 * * 1-5",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "收盘了。用exec运行: bash ${WORKSPACE_ROOT}/stock-signals/price_cache.sh update。追加今日收盘价和成交量到所有标的日线缓存。",
+    "timeoutSeconds": 300
+  },
+  "delivery": {
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}",
+    "bestEffort": true
+  }
+}

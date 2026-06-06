@@ -1,0 +1,24 @@
+{
+  "agentId": "main",
+  "name": "盘前隔夜信息采集",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 8 * * 1-5",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "【盘前隔夜信息采集任务 — 08:10执行】\n\n采集以下信息并保存到 /tmp/stock_alerts/overnight_news.json：\n\n1. web_search 搜索\"隔夜美股三大指数收盘 英伟达 科技股\" time_range=day count=5\n2. web_search 搜索\"A股今日早间重磅资讯 政策 板块催化\" time_range=day count=5\n3. web_search 搜索\"中东局势 原油 黄金 最新\" time_range=day count=3\n\n汇总为JSON格式保存：\n{\n  \"date\": \"$(date +%Y-%m-%d)\",\n  \"us_market\": { \"summary\": \"一句话总结\", \"details\": [\"要点1\", \"要点2\"] },\n  \"a_share_news\": { \"summary\": \"一句话总结\", \"details\": [\"要点1\", \"要点2\"] },\n  \"geopolitics\": { \"summary\": \"一句话总结\", \"details\": [\"要点1\"] },\n  \"key_catalysts\": [\"催化1\", \"催化2\"]\n}\n\n用write保存到 /tmp/stock_alerts/overnight_news.json。\n完成后输出✅文件大小。不做任何分析报告。",
+    "timeoutSeconds": 300,
+    "lightContext": true,
+    "fallbacks": [
+      "deepseek-v4-flash"
+    ]
+  },
+  "delivery": {
+    "mode": "none"
+  }
+}

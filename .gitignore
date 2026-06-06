@@ -81,3 +81,7 @@ skills/
 # IDE
 .vscode/
 .idea/
+
+# === deploy ===
+deploy/.env
+deploy/cron_deploy_actions.json

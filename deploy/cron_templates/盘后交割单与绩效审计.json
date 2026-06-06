@@ -1,0 +1,37 @@
+{
+  "name": "盘后交割单与绩效审计",
+  "enabled": true,
+  "deleteAfterRun": false,
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 16 * * 1-5",
+    "tz": "Asia/Shanghai",
+    "staggerMs": 0
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "# 盘后交割单与绩效审计\n\n【前置·规则加载】\nexec cat ${WORKSPACE_ROOT}/docs/交易风控规则.md\nexec cat ${WORKSPACE_ROOT}/docs/持仓变更登记规则.md\nexec cat ${WORKSPACE_ROOT}/docs/信号引擎规则手册.md\n明日操作建议必须符合规则 v2.0。报告中引用的信号名称严格按《信号引擎规则手册》定义。\n\n先运行: cd ${WORKSPACE_ROOT} && python3 scripts/daily_settlement.py\n\n然后 exec cat data/settlement.json 读取完整结算数据生成盘后审计报告。\n\n报告必须包含:\n1. 账户总览（净值/日变动/周期盈亏）\n2. 持仓明细（逐只：成本/现价/浮盈/目标/止损/方向建议）\n   ⚠️ R2 v2.0：浮亏 ≤ -5% 顶部置顶「⚠️ L0 软提示」，≤ -15% 标注「🔴 L1 强熔断·已执行/待执行」\n3. 盈亏归因（每只权重+盈亏贡献）\n4. 模拟交易对照（独立一节）：\n   - exec cat ${WORKSPACE_ROOT}/sim_trading/reports/$(date +%Y-%m-%d).md 2>/dev/null || exec ls ${WORKSPACE_ROOT}/sim_trading/reports/ 2>/dev/null | tail -1 | xargs -I {} cat ${WORKSPACE_ROOT}/sim_trading/reports/{}\n   - 列出今日模拟交易动作、模拟净值、模拟收益率\n   - 与真实持仓对比：差异点、策略偏差、值得学习的模拟操作\n5. 里程碑（当前进度/差距）\n6. 告警\n\n然后补充 AI 解读（自然语言）：\n- 今天做对了什么\n- 哪里需要修正\n- 明天怎么办（必须遵守《风控规则》v2.0 R1/R2/R3/R3b/R10/R11）\n\n【盘间呼应】开头引述今日08:30盘前作战的关键判断，与12:00午间分析相呼应。结尾预告21:00结构重塑。\n\n【风控自检】末尾必须输出（依据《风控规则》v2.0 R16）：\n```\n【风控自检 · 风控规则 v2.0】\n✅ R1 T+1：N 只当日建仓，已排除卖出建议\n✅ R2 v2.0 梯度止损：L0(-5%) N 只软提示 / L1(-15%) N 只强熔断已执行\n✅ R3 v1.1 单票上限：最大占比 X%（<30%）\n✅ R3b 100股黑名单：N 只禁建仓\n✅ R7 总仓位：当前 X%\n✅ R9 止盈：N 只达出仓梯度\n✅ R10 移动止损：N 只浮盈>10%，止损位已上移\n✅ R13 白名单：已清仓 0 出现\n```\n\n【自律规则】\n⚠️ 持仓以 daily_settlement.py 从 TOOLS.md 解析的输出为准\n⚠️ 净值/盈亏/里程碑/告警必须从 settlement.json 读取\n⚠️ 模拟交易数据与真实持仓严格分节，不得交叉\n⚠️ 完成后用 write 保存到 reports/$(date +%Y-%m-%d)-1600-盘后审计.md\n⚠️ 最后 exec cat reports/$(date +%Y-%m-%d)-1600-盘后审计.md 输出报告正文确保推送",
+    "timeoutSeconds": 600,
+    "lightContext": true,
+    "fallbacks": [
+      "deepseek-v4-flash"
+    ]
+  },
+  "delivery": {
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  },
+  "failureAlert": {
+    "enabled": true,
+    "after": 1,
+    "cooldownMs": 3600000,
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  }
+}

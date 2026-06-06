@@ -1,0 +1,27 @@
+{
+  "name": "每周复盘",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 16 * * 5",
+    "tz": "Asia/Shanghai",
+    "staggerMs": 30000
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "现在是周五收盘后，执行本周复盘。\n\n【前置·规则+模板加载】\nexec cat ${WORKSPACE_ROOT}/docs/交易风控规则.md\nexec cat ${WORKSPACE_ROOT}/docs/每周复盘工作机制.md\nexec cat ${WORKSPACE_ROOT}/docs/每周复盘模板.md\n严格按《每周复盘模板》七节结构生成。\n\n先运行 python3 ${WORKSPACE_ROOT}/scripts/monitor_full.py 获取最新行情。\n\n然后按模板生成周报（数据从 TOOLS.md + settlement.json + portfolio_snapshot.json 读取）。\n\n【自律规则】\n⚠️ 持仓以TOOLS.md为准，净值从portfolio_snapshot.json读\n⚠️ 本周清仓记录从TOOLS.md \"今日清仓记录\"节聚合\n⚠️ 一周数据不够5天时标注天数\n⚠️ 末尾输出风控自检（R16）\n⚠️ 完成后 write 到 reports/weekly/$(date +%Y)-W$(date +%V)-周复盘.md 并推送辉哥",
+    "timeoutSeconds": 600,
+    "fallbacks": [
+      "deepseek-v4-flash"
+    ]
+  },
+  "delivery": {
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  },
+  "description": "每周五16:00生成交易周复盘报告"
+}

@@ -1,0 +1,21 @@
+{
+  "agentId": "main",
+  "name": "盘前数据流水线",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "15 8 * * 1-5",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "运行盘前数据流水线：bash ${WORKSPACE_ROOT}/scripts/pipeline.sh。完成后只输出✅和各文件大小。注意：这是后台数据生产任务，不做任何分析或写报告。",
+    "timeoutSeconds": 360,
+    "lightContext": true
+  },
+  "delivery": {
+    "mode": "none"
+  }
+}

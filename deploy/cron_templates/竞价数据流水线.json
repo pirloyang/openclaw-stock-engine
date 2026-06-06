@@ -1,0 +1,21 @@
+{
+  "agentId": "main",
+  "name": "竞价数据流水线",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "23 9 * * 1-5",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "运行竞价数据流水线（跳过engine.sh，只跑layer_monitor+signals_summary）：cd ${WORKSPACE_ROOT} && python3 scripts/layer_monitor.py && python3 scripts/signals_summary.py。完成后输出✅和各文件大小。不做任何分析。",
+    "timeoutSeconds": 300,
+    "lightContext": true
+  },
+  "delivery": {
+    "mode": "none"
+  }
+}

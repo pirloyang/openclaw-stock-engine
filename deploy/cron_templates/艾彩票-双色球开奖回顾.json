@@ -1,0 +1,34 @@
+{
+  "name": "艾彩票-双色球开奖回顾",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "30 22 * * 2,4,0",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "你是\"艾彩票\"双色球开奖回顾专家。请执行以下步骤：\n\n1. 从网络抓取最新一期双色球开奖结果\n2. 读取历史数据库：${WORKSPACE_ROOT}/lottery/data/ssq_history_2025_2026.json，更新数据库\n3. 读取最近的预测报告：${WORKSPACE_ROOT}/lottery/reports/ 下的最新预测文件\n4. 将每组预测方案与开奖结果对比，显式标注命中情况（红球命中N个、蓝球是否命中）\n5. 输出完整回顾分析（号码特征、冷热分布、预测复盘）\n6. 将回顾保存到 ${WORKSPACE_ROOT}/lottery/reports/$(date +%Y-%m-%d)-2230-双色球回顾.md\n7. 最后输出回顾摘要供推送",
+    "timeoutSeconds": 600,
+    "fallbacks": [
+      "deepseek-v4-flash"
+    ]
+  },
+  "delivery": {
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  },
+  "failureAlert": {
+    "enabled": true,
+    "after": 1,
+    "cooldownMs": 3600000,
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "agentId": "main",
+  "name": "月度绩效审计-月末自动生成",
+  "description": "每月28-31日18:00自动生成结构化月报，存入 reports/monthly/",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 18 28-31 * *",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "运行月度绩效审计引擎。\n\n【前置·规则加载】exec cat ${WORKSPACE_ROOT}/docs/月度绩效审计规则.md。月报结构按规则 §三 执行。\n\ncd ${WORKSPACE_ROOT} && python3 scripts/monthly_review.py\n\n获取输出后：\n- 生成了月报 → 读取 reports/monthly/$(date +%Y-%m).md，推送辉哥\n- 今日非月末 → 静默，回复 HEARTBEAT_OK",
+    "timeoutSeconds": 600,
+    "fallbacks": [
+      "deepseek-v4-flash"
+    ]
+  },
+  "delivery": {
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  }
+}

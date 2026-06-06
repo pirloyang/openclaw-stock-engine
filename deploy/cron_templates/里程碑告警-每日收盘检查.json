@@ -1,0 +1,27 @@
+{
+  "agentId": "main",
+  "name": "里程碑告警-每日收盘检查",
+  "description": "每日收盘后跑 milestone_alert.py，进度偏离超阈值时自动推送辉哥。无告警则静默。",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "15 16 * * 1-5",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "运行里程碑告警引擎。\n\n【前置·规则加载】exec cat ${WORKSPACE_ROOT}/docs/里程碑告警规则.md。告警推送格式严格按规则 §三。\n\ncd ${WORKSPACE_ROOT} && python3 scripts/milestone_alert.py\n\n获取输出后：\n- 有告警内容 → 按《里程碑告警规则》格式发送给辉哥\n- 输出为空 → 回复 HEARTBEAT_OK",
+    "timeoutSeconds": 300,
+    "fallbacks": [
+      "deepseek-v4-flash"
+    ]
+  },
+  "delivery": {
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  }
+}

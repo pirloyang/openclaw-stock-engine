@@ -1,0 +1,33 @@
+{
+  "agentId": "main",
+  "name": "信息炼金-推送",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "10 22 * * 1-5",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "读取 reports/$(date +%Y-%m-%d)-2200-信息炼金.md，将完整内容发送给辉哥。如果文件不存在，回复 HEARTBEAT_OK。",
+    "timeoutSeconds": 300,
+    "fallbacks": [
+      "deepseek-v4-flash"
+    ]
+  },
+  "delivery": {
+    "mode": "announce",
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  },
+  "failureAlert": {
+    "after": 1,
+    "channel": "openclaw-weixin",
+    "to": "${WECHAT_USER_ID}",
+    "mode": "announce",
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "agentId": "main",
+  "name": "规则执行体检-周末",
+  "description": "每周日18:00跑rules_audit.py扫描本周报告R16/R11/R13合规性",
+  "enabled": true,
+  "schedule": {
+    "expr": "0 18 * * 0",
+    "kind": "cron",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "lightContext": true,
+    "message": "执行规则体检。\n\ncd ${WORKSPACE_ROOT} && python3 scripts/rules_audit.py\n\n然后读取 data/rules_audit_latest.json，按以下结构推送给辉哥：\n\n📊 本周规则执行体检报告（YYYY-MM-DD）\n\n【数据源一致性】<consistency>\n【本周扫描】N 份报告\n【健康度】<health>\n\n【违规清单】\n（若无违规：✅ 本周所有报告符合规则）\n（若有违规：逐项列出 +「修复建议」）\n\n【建议】\n- 若 R16 缺失 >2 → 检查 cron prompt 是否未注入规则\n- 若 R13 误报 → 检查 TOOLS.md 清仓节是否有同标的复活情况\n- 若 R11 嫌疑 → 人工审阅该报告\n\n推送结束。",
+    "timeoutSeconds": 300,
+    "fallbacks": [
+      "deepseek-v4-flash"
+    ]
+  },
+  "delivery": {
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}",
+    "channel": "openclaw-weixin",
+    "mode": "announce",
+    "to": "${WECHAT_USER_ID}"
+  },
+  "failureAlert": {
+    "accountId": "${WECHAT_BOT_ACCOUNT_ID}",
+    "after": 1,
+    "channel": "openclaw-weixin",
+    "cooldownMs": 3600000,
+    "mode": "announce",
+    "to": "${WECHAT_USER_ID}"
+  }
+}

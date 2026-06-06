@@ -1,0 +1,21 @@
+{
+  "agentId": "main",
+  "name": "数据流水线-分层数据生产",
+  "description": "每15分钟运行完整数据流水线：engine.sh→layer_monitor→signals_summary→sector_fund→industry_chain。比盘中监控cron早2分钟执行。",
+  "enabled": true,
+  "schedule": {
+    "kind": "cron",
+    "expr": "3,18,33,48 9-11,13-15 * * 1-5",
+    "tz": "Asia/Shanghai"
+  },
+  "sessionTarget": "isolated",
+  "wakeMode": "now",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "运行数据流水线：bash ${WORKSPACE_ROOT}/scripts/pipeline.sh。完成后输出✅。注意：这是后台数据生产任务，不需要做任何分析或写报告，只需执行脚本并返回结果。",
+    "timeoutSeconds": 600
+  },
+  "delivery": {
+    "mode": "none"
+  }
+}
