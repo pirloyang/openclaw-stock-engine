@@ -1,0 +1,373 @@
+{
+  "agents": {
+    "defaults": {
+      "workspace": "/root/.openclaw/workspace",
+      "sandbox": {
+        "browser": {
+          "enabled": false
+        }
+      },
+      "model": {
+        "primary": "arkcode/deepseek-v4-pro"
+      }
+    },
+    "list": [
+      {
+        "id": "main",
+        "identity": {
+          "name": "自媒体达人",
+          "emoji": "✍️",
+          "avatar": "https://cloudcache.tencent-cloud.com/qcloud/ui/static/ai_site/fd9c0341-0d26-4e64-b9dc-0ab324f9628e.png"
+        }
+      }
+    ]
+  },
+  "gateway": {
+    "mode": "local",
+    "auth": {
+      "mode": "token",
+      "token": "${GATEWAY_AUTH_TOKEN}"
+    },
+    "port": 33690,
+    "bind": "lan",
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "controlUi": {
+      "allowedOrigins": [
+        "http://111.229.226.30:33690"
+      ],
+      "allowInsecureAuth": true,
+      "dangerouslyDisableDeviceAuth": true,
+      "basePath": "/2e27p6"
+    }
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "tools": {
+    "profile": "full",
+    "deny": []
+  },
+  "skills": {
+    "install": {
+      "nodeManager": "npm"
+    },
+    "entries": {
+      "1password": {
+        "enabled": false
+      },
+      "apple-notes": {
+        "enabled": false
+      },
+      "apple-reminders": {
+        "enabled": false
+      },
+      "bear-notes": {
+        "enabled": false
+      },
+      "blogwatcher": {
+        "enabled": false
+      },
+      "blucli": {
+        "enabled": false
+      },
+      "camsnap": {
+        "enabled": false
+      },
+      "coding-agent": {
+        "enabled": false
+      },
+      "discord": {
+        "enabled": false
+      },
+      "eightctl": {
+        "enabled": false
+      },
+      "gemini": {
+        "enabled": false
+      },
+      "gifgrep": {
+        "enabled": false
+      },
+      "gog": {
+        "enabled": false
+      },
+      "goplaces": {
+        "enabled": false
+      },
+      "himalaya": {
+        "enabled": false
+      },
+      "imsg": {
+        "enabled": false
+      },
+      "lightclawbot-cron": {
+        "enabled": false
+      },
+      "mcporter": {
+        "enabled": false
+      },
+      "model-usage": {
+        "enabled": false
+      },
+      "nano-pdf": {
+        "enabled": false
+      },
+      "obsidian": {
+        "enabled": false
+      },
+      "openai-whisper": {
+        "enabled": false
+      },
+      "openai-whisper-api": {
+        "enabled": false
+      },
+      "openhue": {
+        "enabled": false
+      },
+      "oracle": {
+        "enabled": false
+      },
+      "ordercli": {
+        "enabled": false
+      },
+      "peekaboo": {
+        "enabled": false
+      },
+      "sag": {
+        "enabled": false
+      },
+      "session-logs": {
+        "enabled": false
+      },
+      "sherpa-onnx-tts": {
+        "enabled": false
+      },
+      "slack": {
+        "enabled": false
+      },
+      "songsee": {
+        "enabled": false
+      },
+      "sonoscli": {
+        "enabled": false
+      },
+      "spotify-player": {
+        "enabled": false
+      },
+      "summarize": {
+        "enabled": false
+      },
+      "tencent-cloud-cos": {
+        "enabled": false
+      },
+      "tencent-meeting-mcp": {
+        "enabled": false
+      },
+      "things-mac": {
+        "enabled": false
+      },
+      "trello": {
+        "enabled": false
+      },
+      "voice-call": {
+        "enabled": false
+      },
+      "wacli": {
+        "enabled": false
+      },
+      "xurl": {
+        "enabled": false
+      }
+    }
+  },
+  "wizard": {
+    "lastRunAt": "2026-06-01T02:21:37.405Z",
+    "lastRunVersion": "2026.5.27",
+    "lastRunCommand": "doctor",
+    "lastRunMode": "local"
+  },
+  "meta": {
+    "lastTouchedVersion": "2026.5.27",
+    "lastTouchedAt": "2026-06-01T02:21:37.537Z"
+  },
+  "browser": {
+    "enabled": true,
+    "executablePath": "/root/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome",
+    "noSandbox": true,
+    "defaultProfile": "user",
+    "profiles": {
+      "user": {
+        "cdpUrl": "http://localhost:9222",
+        "driver": "existing-session",
+        "attachOnly": true,
+        "color": "#4285F4",
+        "userDataDir": "/root/.openclaw/browser-existing-session"
+      }
+    },
+    "ssrfPolicy": {
+      "dangerouslyAllowPrivateNetwork": true
+    }
+  },
+  "models": {
+    "providers": {
+      "deepseek": {
+        "baseUrl": "https://api.deepseek.com/v1",
+        "apiKey": "${DEEPSEEK_API_KEY}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "deepseek-v4-flash",
+            "name": "DeepSeek V4 Flash"
+          },
+          {
+            "id": "deepseek-v4-pro",
+            "name": "DeepSeek V4 Pro"
+          }
+        ]
+      },
+      "arkcode": {
+        "baseUrl": "https://ark.cn-beijing.volces.com/api/coding/v3",
+        "apiKey": "${ARKCODE_API_KEY}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "doubao-seed-2.0-code",
+            "name": "Doubao Seed 2.0 Code",
+            "input": [
+              "text",
+              "image"
+            ]
+          },
+          {
+            "id": "doubao-seed-2.0-pro",
+            "name": "Doubao Seed 2.0 Pro",
+            "input": [
+              "text",
+              "image"
+            ]
+          },
+          {
+            "id": "ark-code-latest",
+            "name": "ARK Code Latest",
+            "input": [
+              "text",
+              "image"
+            ]
+          },
+          {
+            "id": "doubao-seed-code",
+            "name": "Doubao Seed Code",
+            "input": [
+              "text",
+              "image"
+            ]
+          },
+          {
+            "id": "glm-4.7",
+            "name": "glm-4.7"
+          },
+          {
+            "id": "glm-5.1",
+            "name": "GLM-5.1"
+          },
+          {
+            "id": "deepseek-v3.2",
+            "name": "DeepSeek V3.2"
+          },
+          {
+            "id": "minimax-m2.5",
+            "name": "minimax-m2.5"
+          },
+          {
+            "id": "minimax-m2.7",
+            "name": "minimax-m2.7"
+          },
+          {
+            "id": "kimi-k2.5",
+            "name": "kimi-k2.5"
+          },
+          {
+            "id": "kimi-k2.6",
+            "name": "Kimi K2.6",
+            "input": [
+              "text",
+              "image"
+            ]
+          },
+          {
+            "id": "deepseek-v4-pro",
+            "name": "DeepSeek V4 Pro"
+          }
+        ]
+      }
+    },
+    "mode": "merge"
+  },
+  "channels": {
+    "lightclawbot": {
+      "accounts": {
+        "100003159947": {
+          "apiKey": "${LIGHTCLAWBOT_API_KEY}"
+        }
+      },
+      "enabled": false
+    },
+    "openclaw-weixin": {
+      "accounts": {},
+      "enabled": true
+    }
+  },
+  "messages": {
+    "groupChat": {
+      "visibleReplies": "automatic"
+    }
+  },
+  "plugins": {
+    "entries": {
+      "browser": {
+        "enabled": true
+      },
+      "deepseek": {
+        "enabled": true
+      },
+      "qqbot": {
+        "enabled": false
+      },
+      "openclaw-lark": {
+        "enabled": false
+      },
+      "wecom-openclaw-plugin": {
+        "enabled": false
+      },
+      "dingtalk-connector": {
+        "enabled": false
+      },
+      "openclaw-plugin-yuanbao": {
+        "enabled": false
+      },
+      "openclaw-weixin": {
+        "enabled": true
+      },
+      "lightclawbot": {
+        "enabled": false
+      },
+      "memory-tencentdb": {
+        "enabled": true,
+        "hooks": {
+          "allowConversationAccess": true
+        }
+      },
+      "tavily": {
+        "enabled": true,
+        "config": {
+          "webSearch": {
+            "apiKey": "${TAVILY_API_KEY}"
+          }
+        }
+      }
+    }
+  }
+}

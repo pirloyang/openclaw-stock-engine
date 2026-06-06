@@ -1,0 +1,15 @@
+# Python 依赖 — 股票量化系统
+# 用法：pip install -r requirements.txt
+# 部署时建议建虚拟环境：python3 -m venv .venv && source .venv/bin/activate
+
+# 数据采集
+akshare>=1.18,<2.0          # A 股行情/财务/板块
+requests>=2.31              # HTTP 客户端
+beautifulsoup4>=4.12        # HTML 解析
+
+# 数据处理（akshare 隐式依赖，显式声明以锁版本）
+pandas>=2.0                 # 注意：3.x 与 2.x API 有差异，本项目当前用 3.0.3
+numpy>=1.24
+
+# 配置
+PyYAML>=6.0
