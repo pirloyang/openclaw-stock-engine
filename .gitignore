@@ -66,6 +66,7 @@ projects/
 
 # 双色球
 ssq_history_2025_2026.json
+lottery/
 
 # OpenClaw 技能（不属于股票系统，由 OpenClaw 自动管理）
 skills/
