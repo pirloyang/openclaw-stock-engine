@@ -61,8 +61,41 @@ try:
                 close = row[2]
                 vol = float(row[5]) * 100
                 day = row[0]
-                print(f'{close} {int(vol)} {day}')
+                open_ = row[1]
+                high = row[3]
+                low = row[4]
+                print(f'{close} {open_} {high} {low} {int(vol)} {day}')
 except: pass" 2>/dev/null
+}
+
+# --------------- 全量回补时也用新格式（兼容旧格式升级） ---------------
+
+parse_ohlcv_v2() {
+  local raw="$1"
+  [ -z "$raw" ] && return 1
+  echo "$raw" | python3 -c '
+import sys, json
+try:
+    txt = sys.stdin.read()
+    if "=" in txt:
+        txt = txt.split("=",1)[1].split(";")[0]
+    data = json.loads(txt)
+    d = data.get("data", {})
+    keys = list(d.keys())
+    if not keys:
+        sys.exit(0)
+    kline = d[keys[0]].get("qfqday") or d[keys[0]].get("day") or []
+    if isinstance(kline, list):
+        for row in kline:
+            if len(row) >= 6:
+                close = row[2]
+                open_ = row[1]
+                high = row[3]
+                low = row[4]
+                vol = float(row[5]) * 100
+                day = row[0]
+                print(f"{close} {open_} {high} {low} {int(vol)} {day}")
+except: pass' 2>/dev/null
 }
 
 # --------------- 增量更新（每日收盘后运行） ---------------
@@ -87,7 +120,7 @@ update_single() {
   local raw=$(fetch_60d "$code")
   [ -z "$raw" ] && return 1
 
-  # 取API返回的最新一天（解析嵌套结构，qfqday数组第一个元素是最新）
+  # 取API返回的最新一天（OHLCV格式）
   local latest=$(echo "$raw" | python3 -c '
 import sys, json
 try:
@@ -103,12 +136,15 @@ try:
     if isinstance(kline, list) and len(kline) > 0:
         row = kline[0]
         close = row[2]
+        open_ = row[1]
+        high = row[3]
+        low = row[4]
         vol = float(row[5]) * 100
         day = row[0]
-        print(f"{close} {int(vol)} {day}")
+        print(f"{close} {open_} {high} {low} {int(vol)} {day}")
 except: pass' 2>/dev/null)
 
-  local latest_date=$(echo "$latest" | awk '{print $3}')
+  local latest_date=$(echo "$latest" | awk '{print $6}')
   [ -z "$latest_date" ] && return 1
 
   # 去重：如果最新日期与cache最后一行相同，跳过
@@ -217,7 +253,14 @@ status() {
 # --------------- 主入口 ---------------
 
 case "${1:-status}" in
-  update)  update_all ;;
+  update)
+    DOW=$(date +%u)
+    if [[ $DOW -ge 6 ]]; then
+      echo "⏸️  非交易日（周$DOW），跳过日线缓存更新"
+      exit 0
+    fi
+    update_all
+    ;;
   status)  status ;;
   backfill) backfill_all ;;
   *)

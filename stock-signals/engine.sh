@@ -405,6 +405,9 @@ scan_morphology_signals() {
       volume_pullback_support) bs=0.50; desc="缩量回踩支撑+主力未出走" ;;
       # 🔥 缩量见底+放量反包（辉哥指定：永鼎案例）
       shrink_reversal)       bs=0.50; desc="缩量见底+放量反包" ;;
+      morning_star)           bs=0.60; desc="早晨之星-底部反转" ;;
+      fairy_guide_confirmed)  bs=0.45; desc="仙人指路-已触发" ;;
+      fairy_guide_forming)    bs=0.25; desc="仙人指路-即将触发" ;;
 
       # === K线卖出形态（减分） ===
       shooting_star)         bs=-0.50; desc="射击之星-高位反转" ;;

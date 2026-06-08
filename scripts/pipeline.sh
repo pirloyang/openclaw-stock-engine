@@ -20,6 +20,14 @@ fi
 
 mkdir -p "$ALERT_DIR"
 START_TS=$(date +%s)
+
+# 交易日判断：非交易日只做只读验证，不写产物
+DOW=$(date +%u)  # 1=Mon..5=Fri, 6=Sat, 7=Sun
+if [[ $DOW -ge 6 ]]; then
+    echo "⏸️  [$(date '+%H:%M:%S')] 非交易日（周$DOW），跳过数据生产"
+    exit 0
+fi
+
 echo "🔄 [$(date '+%H:%M:%S')] 数据流水线启动..."
 
 # ===== 1. 引擎信号采集 =====

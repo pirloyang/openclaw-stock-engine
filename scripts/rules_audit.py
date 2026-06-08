@@ -18,6 +18,10 @@ import sys
 from pathlib import Path
 from datetime import datetime, timedelta
 
+# 复用 portfolio_engine 的持仓解析器（唯一权威实现）
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from portfolio_engine import _parse_real_positions
+
 WORKSPACE = Path("/root/.openclaw/workspace")
 REPORTS_DIR = WORKSPACE / "reports"
 TOOLS_MD = WORKSPACE / "TOOLS.md"
@@ -25,27 +29,6 @@ FOCUS_JSON = WORKSPACE / "stock-signals" / "focus_watchlist.json"
 
 TODAY = os.environ.get("AUDIT_DATE", datetime.now().strftime("%Y-%m-%d"))
 WEEK_AGO = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-
-
-def parse_holdings_from_tools():
-    """从 TOOLS.md 持仓节解析当前持仓代码列表"""
-    if not TOOLS_MD.exists():
-        return []
-    text = TOOLS_MD.read_text(encoding="utf-8")
-    holdings = []
-    in_block = False
-    for line in text.split("\n"):
-        if re.match(r"^###\s*持仓", line):
-            in_block = True
-            continue
-        if in_block and line.startswith("##"):
-            break
-        if in_block and "【" in line and "清仓" not in line:
-            # 形如 - 长江通信 600345（200股...
-            m = re.search(r"([\u4e00-\u9fa5A-Z0-9]+)\s+(\d{6})", line)
-            if m:
-                holdings.append({"name": m.group(1), "code": m.group(2)})
-    return holdings
 
 
 def parse_cleared_from_tools():
@@ -57,7 +40,7 @@ def parse_cleared_from_tools():
     for m in re.finditer(r"([\u4e00-\u9fa5A-Z0-9]+)\s+(\d{6})[^\n]*清仓", text):
         cleared.add(m.group(2))
     # 排除当前仍持仓的（如长盈精密 300115 误报清仓后又确认持仓）
-    current = {h["code"] for h in parse_holdings_from_tools()}
+    current = {h["code"] for h in _parse_real_positions()}
     cleared -= current
     return sorted(cleared)
 
@@ -66,9 +49,18 @@ def load_focus_watchlist():
     if not FOCUS_JSON.exists():
         return []
     try:
-        return json.loads(FOCUS_JSON.read_text(encoding="utf-8"))
+        data = json.loads(FOCUS_JSON.read_text(encoding="utf-8"))
     except Exception:
         return []
+    # Support both legacy list-shape and current {version, focus_list:[...]} shape
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        for key in ("focus_list", "watchlist", "items", "stocks"):
+            val = data.get(key)
+            if isinstance(val, list):
+                return val
+    return []
 
 
 def check_report(report_path: Path, holdings, cleared):
@@ -115,7 +107,7 @@ def check_report(report_path: Path, holdings, cleared):
 
 
 def main():
-    holdings = parse_holdings_from_tools()
+    holdings = _parse_real_positions()
     cleared = parse_cleared_from_tools()
     focus = load_focus_watchlist()
 

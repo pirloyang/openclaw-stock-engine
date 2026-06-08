@@ -1,7 +1,3 @@
-Added: 长江通信 (600345)
-Added: 信维通信 (300136)
-Added: 长盈精密 (300115)
-Fixed: 卧龙电驱 hold=false
 {
   "version": 2,
   "last_update": "2026-06-05",
@@ -10,8 +6,8 @@ Fixed: 卧龙电驱 hold=false
       "code": "601600",
       "name": "中国铝业",
       "stars": 3,
-      "hold": true,
-      "status": "持仓",
+      "hold": false,
+      "status": "清仓",
       "catalyst": "几内亚铝土矿出口管控驱动，有色板块独立走强",
       "entry_low": 11.3,
       "entry_high": 11.3,
@@ -21,7 +17,9 @@ Fixed: 卧龙电驱 hold=false
         "持有不动",
         "前高11.84-11.88突破确认"
       ],
-      "note": "持仓1200股，成本11.30。全账户最省心仓位"
+      "note": "持仓1200股，成本11.30。全账户最省心仓位",
+      "exit_price": 10.02,
+      "exit_note": "恒指纳入+上证50调入双利好未兑现，-15.8%止损"
     },
     {
       "code": "000988",
@@ -44,8 +42,8 @@ Fixed: 卧龙电驱 hold=false
       "code": "603618",
       "name": "杭电股份",
       "stars": 3,
-      "hold": true,
-      "status": "持仓",
+      "hold": false,
+      "status": "清仓",
       "catalyst": "电缆龙头+5月29日涨停+6月2日深V反包，突破前高形态",
       "entry_low": 40.5,
       "entry_high": 41.0,
@@ -55,7 +53,8 @@ Fixed: 卧龙电驱 hold=false
         "放量突破42.71开盘介入",
         "回踩40.5-41缩量企稳低吸"
       ],
-      "note": "2026-06-02凌晨加入重点关注。洗盘→反包→突破前夜"
+      "note": "2026-06-02凌晨加入重点关注。洗盘→反包→突破前夜",
+      "exit_price": 39.41
     },
     {
       "code": "601985",

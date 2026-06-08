@@ -7,8 +7,9 @@
 - 无推送，永不超时
 """
 import os, json, subprocess, time, re, sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict
+from pathlib import Path
 from l6_hot_alerts import compute_l6_hot
 
 WORKSPACE = "/root/.openclaw/workspace"
@@ -222,6 +223,168 @@ def compute_l1_market(stocks):
     
     return {"indices": signals, "verdict": verdict}
 
+# ──────────────────────────────────────────────
+# 量价证伪位分析（核心工具）
+# 三栏：量相对MAV5 | 关键位动作 | 一句话定性
+# ──────────────────────────────────────────────
+
+CACHE_DIR = f"{WORKSPACE}/stock-signals/cache"
+
+def _read_cache_volumes(code):
+    """读价格缓存，返回最近6个交易日成交量列表（手），用于算MAV5"""
+    # code 是6位数字，找缓存文件（前缀 sh/sz）
+    for prefix in ("sh", "sz"):
+        path = f"{CACHE_DIR}/{prefix}{code}"
+        if os.path.exists(path):
+            break
+    else:
+        return None
+    try:
+        vols = []
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split()
+                if len(parts) >= 2:
+                    vol = float(parts[1])
+                    if vol > 0:
+                        vols.append(vol)
+        if len(vols) >= 2:
+            return vols
+        return None
+    except:
+        return None
+
+def compute_volume_verdict(code, current_volume):
+    """
+    量相对判断：对比MAV5（近5日成交均量）
+    返回: "放" | "平" | "缩"
+    """
+    vols = _read_cache_volumes(code)
+    if vols is None or len(vols) < 3:
+        return "-"
+    # MAV5：取最近5个交易日成交量（不含当天）
+    past = vols[-5:] if len(vols) >= 5 else vols
+    mav5 = sum(past) / len(past)
+    if mav5 == 0:
+        return "-"
+    ratio = current_volume / mav5
+    if ratio >= 1.5:
+        return "放"
+    elif ratio <= 0.6:
+        return "缩"
+    else:
+        return "平"
+
+def compute_key_level(code, name, price, prev_close, high, low, holdings, focus_codes, stocks):
+    """
+    关键位动作判断：突破/回踩/破位
+    返回: (关键位描述, 动作)
+    """
+    # 从 holdings 或 focus 取成本/止损/目标
+    entry = None
+    stop = None
+    target = None
+    
+    # 从 holdings
+    if code in holdings:
+        h = holdings[code]
+        entry = h.get('cost', 0)
+        stop = entry * 0.95 if entry else 0
+    
+    # 从 focus_watchlist
+    if not entry:
+        try:
+            fj = f"{WORKSPACE}/stock-signals/focus_watchlist.json"
+            if os.path.exists(fj):
+                dd = json.load(open(fj))
+                for item in dd.get('focus_list', []):
+                    if item.get('code') == code:
+                        entry = item.get('entry_low') or item.get('entry_high') or 0
+                        stop = item.get('stop_loss') or 0
+                        target = item.get('target') or 0
+                        break
+        except:
+            pass
+    
+    # 从 stocks 拿 MA20
+    s = stocks.get(code)
+    if s:
+        chg = s.get('change_pct', 0)
+    else:
+        chg = 0
+    
+    desc = ""
+    
+    # 前高突破检测：当前价 > 近期最高（用高/收比近似）
+    if high > 0 and prev_close > 0:
+        # 突破前高/今日创新高: 今日高 > 前收 * 1.03 且涨幅>2%
+        if high > prev_close * 1.03 and chg > 2:
+            desc = "突破前高"
+        # 破位/跌破: 今日低 < 前收 * 0.97 且跌幅<-2%
+        elif low < prev_close * 0.97 and chg < -2:
+            desc = "破位"
+        # 回踩MA20或成本价
+        elif stop and price >= stop and price <= entry * 1.02 if entry else False:
+            desc = "回踩成本"
+        elif entry and 0 < entry and abs(price - entry) / price < 0.02:
+            desc = "成本附近"
+    
+    if not desc:
+        # 兜底：看价格相对前收
+        if chg > 2:
+            desc = "上冲"
+        elif chg < -2:
+            desc = "下探"
+        else:
+            desc = "窄幅"
+    
+    return desc
+
+def compute_vp_verdict(code, name, price, prev_close, high, low, current_volume, holdings, focus_codes, stocks):
+    """
+    完整量价证伪位判定
+    返回: {"vol_rel": "放/平/缩", "key_level": "描述", "verdict": "推进/试探/洗盘/派发松动/弱势反抽"}
+    """
+    vol_rel = compute_volume_verdict(code, current_volume)
+    key_level = compute_key_level(code, name, price, prev_close, high, low, holdings, focus_codes, stocks)
+    
+    s = stocks.get(code, {})
+    chg = s.get('change_pct', 0)
+    
+    # ── 一句话定性（核心判断逻辑）──
+    # 推进：放量上涨/突破关键位
+    if vol_rel == "放" and chg >= 1.5 and ("突破" in key_level or "上冲" in key_level):
+        verdict = "推进"
+    # 试探：到压力位但量不确认（放量但没涨、或缩量到压力）
+    elif ("前高" in key_level or "成本附近" in key_level or "上冲" in key_level) and vol_rel in ("平", "缩"):
+        verdict = "试探"
+    # 洗盘：回调支撑缩量
+    elif vol_rel == "缩" and chg <= -1 and ("回踩" in key_level or "下探" in key_level or "成本附近" in key_level):
+        verdict = "洗盘"
+    # 派发/松动：关键位放量不守（放量但跌，或放量滞涨）
+    elif vol_rel == "放" and chg <= -2:
+        verdict = "派发/松动"
+    elif vol_rel == "放" and abs(chg) < 1:
+        verdict = "派发/松动"
+    # 弱势反抽：反弹但量不行
+    elif vol_rel == "缩" and chg >= 0 and ("上冲" in key_level or "窄幅" in key_level):
+        verdict = "弱势反抽"
+    else:
+        # 默认
+        if chg > 2:
+            verdict = "推进"
+        elif chg < -2:
+            verdict = "派发/松动"
+        else:
+            verdict = "试探"
+    
+    return {"vol_rel": vol_rel, "key_level": key_level, "verdict": verdict}
+
+# ──────────────────────────────────────────────
+
 def compute_l2_holdings(stocks, holdings):
     """L2: 持仓监控"""
     alerts = []
@@ -247,12 +410,18 @@ def compute_l2_holdings(stocks, holdings):
         elif abs(chg) >= 3:
             warning = "⚡盘中异动"
         
+        # 量价证伪
+        vp = compute_vp_verdict(code, info['name'], price, s['prev_close'], s['high'], s['low'], s['volume'], holdings, {}, stocks)
+        
         alerts.append({
             "name": info['name'], "code": code,
             "price": price, "change": chg,
             "cost": cost, "shares": info['shares'],
             "pl_pct": round(pl_pct, 2), "pl": pl,
             "stop_price": stop_price, "warning": warning,
+            "vol_rel": vp["vol_rel"],
+            "key_level": vp["key_level"],
+            "vp_verdict": vp["verdict"],
         })
     return alerts
 
@@ -313,12 +482,18 @@ def compute_l3_focus(stocks, focus_codes, holdings, l6_data=None):
         is_holding = code in holdings
         triggered = price >= entry
         
+        # 量价证伪
+        vp = compute_vp_verdict(code, s['name'], price, s['prev_close'], s['high'], s['low'], s['volume'], holdings, focus_codes, stocks)
+        
         signals.append({
             "name": s['name'], "code": code,
             "price": price, "change": s['change_pct'],
             "entry": entry, "stop": stop, "target": rule['target'],
             "triggered": triggered, "gap_pct": round((price-entry)/entry*100, 2),
             "is_holding": is_holding, "note": rule['note'],
+            "vol_rel": vp["vol_rel"],
+            "key_level": vp["key_level"],
+            "vp_verdict": vp["verdict"],
         })
     
     # === L6热点回流 ===
@@ -496,7 +671,11 @@ def main():
         if l2:
             for h in l2:
                 warn_tag = f" {h['warning']}" if h['warning'] else ""
+                vol_rel = h.get('vol_rel', '-')
+                key_level = h.get('key_level', '-')
+                vp_v = h.get('vp_verdict', '-')
                 f.write(f"{h['name']}({h['code']}) {h['price']}元 {h['change']:+.2f}% | 持仓{h['shares']}股@{h['cost']:.2f} 浮盈{h['pl']:+d}({h['pl_pct']:+.2f}%) | 止损{h['stop_price']}{warn_tag}\n")
+                f.write(f"    量价证伪: {vol_rel}/{key_level}/{vp_v}\n")
         else:
             f.write("无持仓\n")
     
@@ -510,7 +689,11 @@ def main():
             else:
                 label = "【监控·等待】"
             status = "✅已介入" if foc['is_holding'] else ("🔵触发" if foc['triggered'] else "⏳等待")
+            vol_rel = foc.get('vol_rel', '-')
+            key_level = foc.get('key_level', '-')
+            vp_v = foc.get('vp_verdict', '-')
             f.write(f"{label}{foc['name']}({foc['code']}) {foc['price']}元 {foc['change']:+.2f}% | 介入{foc['entry']} 现距{status}({foc['gap_pct']:+.2f}%) | 止损{foc['stop']} 目标{foc['target']}\n")
+            f.write(f"    量价证伪: {vol_rel}/{key_level}/{vp_v}\n")
     
     # L4 可读文本
     with open(f"{ALERT_DIR}/L4_etf_concept.md", 'w') as f:
