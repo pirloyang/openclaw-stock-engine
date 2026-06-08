@@ -181,43 +181,78 @@ rule_shooting_star() {
 rule_morning_star() {
   local code="$1" price="$3" open="$5" high="$6" low="$7"
   
-  # 加载历史K线（最近3根：tail取后3行=旧→新）
-  eval "$(_read_kline_history "$code" 3)" 2>/dev/null || return
+  # 加载历史K线（最近6根：D-2/D-1各1根 + D0量比需近5日均量）
+  eval "$(_read_kline_history "$code" 6)" 2>/dev/null || return
   local n=${#PAST_CLOSE[@]}
   [ "$n" -lt 3 ] && return
   
-  # ── 第1天（最旧，index 0）：大阴线 ──
-  local d1_close="${PAST_CLOSE[0]}"
-  local d1_open="${PAST_OPEN[0]}"
-  [ -z "$d1_close" ] || [ -z "$d1_open" ] && return
-  local d1_body=$(echo "scale=4; $d1_close - $d1_open" | bc -l 2>/dev/null)
-  local d1_body_abs=$(echo "$d1_body" | sed 's/^-//')
-  # 必须阴线，且实体≥阴线收盘价的 2.5%
-  [ "$(echo "$d1_body >= 0" | bc -l 2>/dev/null)" = "1" ] && return
-  [ "$(echo "$d1_body_abs < $d1_close * 0.025" | bc -l 2>/dev/null)" = "1" ] && return
-  
-  # ── 第2天（中间，index 1）：星线（小实体≤2%） ──
-  local d2_close="${PAST_CLOSE[1]}"
-  local d2_open="${PAST_OPEN[1]}"
+  # ── D-2（index n-3）：大阴线，体现恐慌供给 ──
+  local d2_close="${PAST_CLOSE[$((n-3))]}"
+  local d2_open="${PAST_OPEN[$((n-3))]}"
+  local d2_high="${PAST_HIGH[$((n-3))]}"
+  local d2_low="${PAST_LOW[$((n-3))]}"
   [ -z "$d2_close" ] || [ -z "$d2_open" ] && return
+  
   local d2_body=$(echo "scale=4; $d2_close - $d2_open" | bc -l 2>/dev/null)
   local d2_body_abs=$(echo "$d2_body" | sed 's/^-//')
-  # 星线实体≤2%（无论阴阳）
-  [ "$(echo "$d2_body_abs > $d2_close * 0.02" | bc -l 2>/dev/null)" = "1" ] && return
+  # 必须阴线，跌幅≥1.5%
+  [ "$(echo "$d2_body >= 0" | bc -l 2>/dev/null)" = "1" ] && return
+  [ "$(echo "$d2_body_abs < $d2_open * 0.015" | bc -l 2>/dev/null)" = "1" ] && return
   
-  # ── 第3天（今天，实时数据）：大阳线 ──
-  local d3_body=$(echo "scale=4; $price - $open" | bc -l 2>/dev/null)
-  local d3_body_abs=$(echo "$d3_body" | sed 's/^-//')
-  [ "$(echo "$d3_body <= 0" | bc -l 2>/dev/null)" = "1" ] && return
-  [ "$(echo "$d3_body_abs < $price * 0.02" | bc -l 2>/dev/null)" = "1" ] && return
+  local d2_range=$(echo "scale=2; $d2_high - $d2_low" | bc -l 2>/dev/null)
   
-  # 第3天阳线至少吃掉第1天阴线实体的一半（从d1中点算起）
-  local d1_mid=$(echo "scale=2; ($d1_open + $d1_close) / 2" | bc -l 2>/dev/null)
-  local recover_half=$(echo "$price > $d1_mid" | bc -l 2>/dev/null)
-  [ "$recover_half" != "1" ] && return
+  # ── D-1（index n-2）：小实体星线，抛压枯竭 ──
+  local d1_close="${PAST_CLOSE[$((n-2))]}"
+  local d1_open="${PAST_OPEN[$((n-2))]}"
+  local d1_high="${PAST_HIGH[$((n-2))]}"
+  local d1_low="${PAST_LOW[$((n-2))]}"
+  [ -z "$d1_close" ] || [ -z "$d1_open" ] && return
   
-  local recovery=$(echo "scale=2; ($price - $d1_close) / $d1_close * 100" | bc -l 2>/dev/null)
-  echo "{\"rule\":\"morning_star\",\"direction\":\"bullish\",\"strength\":\"very_high\",\"note\":\"早晨之星-底部反转,回收${recovery}%\"}"
+  local d1_body=$(echo "scale=4; $d1_close - $d1_open" | bc -l 2>/dev/null)
+  local d1_body_abs=$(echo "$d1_body" | sed 's/^-//')
+  local d1_range=$(echo "scale=2; $d1_high - $d1_low" | bc -l 2>/dev/null)
+  
+  # 条件A: 实体相对D-2显著缩小（<0.4倍）
+  local cond_rel=$(echo "$d1_body_abs < $d2_body_abs * 0.4" | bc -l 2>/dev/null)
+  # 条件B: 实体绝对幅度很小（<3%），防小阳反弹混入
+  local cond_abs=$(echo "$d1_body_abs < $d1_open * 0.03" | bc -l 2>/dev/null)
+  # 条件C: 振幅收敛（D-1振幅 < D-2振幅 × 0.8）
+  local cond_range=$(echo "$d1_range < $d2_range * 0.8" | bc -l 2>/dev/null)
+  
+  [ "$cond_rel" != "1" ] && return
+  [ "$cond_abs" != "1" ] && return
+  [ "$cond_range" != "1" ] && return
+  
+  # ── D0（今天，实时数据）：强势反包阳线 ──
+  local d0_body=$(echo "scale=4; $price - $open" | bc -l 2>/dev/null)
+  local d0_body_abs=$(echo "$d0_body" | sed 's/^-//')
+  # 必须阳线，实体≥1.5%
+  [ "$(echo "$d0_body <= 0" | bc -l 2>/dev/null)" = "1" ] && return
+  [ "$(echo "$d0_body_abs < $price * 0.015" | bc -l 2>/dev/null)" = "1" ] && return
+  
+  # 收盘价必须高于D-2开盘价（强势反包）或至少高于D-2实体中点
+  local d2_mid=$(echo "scale=2; ($d2_open + $d2_close) / 2" | bc -l 2>/dev/null)
+  local cond_recover=$(echo "$price > $d2_open || $price > $d2_mid" | bc -l 2>/dev/null)
+  [ "$cond_recover" != "1" ] && return
+  
+  # 量比确认：D0成交量 > 近5日均量 × 1.2
+  local vol_sum=0 vol_cnt=0
+  for ((i=n-5; i<n-1; i++)); do
+    [ "$i" -lt 0 ] && continue
+    local v="${PAST_VOL[$i]}"
+    [ -z "$v" ] && continue
+    vol_sum=$(echo "scale=0; $vol_sum + $v" | bc -l 2>/dev/null)
+    vol_cnt=$((vol_cnt+1))
+  done
+  if [ "$vol_cnt" -gt 0 ]; then
+    local avg_vol=$(echo "scale=0; $vol_sum / $vol_cnt" | bc -l 2>/dev/null)
+    local t_vol="${PAST_VOL[$((n-1))]}"
+    [ -z "$t_vol" ] && t_vol=0
+    [ "$(echo "$t_vol < $avg_vol * 1.2" | bc -l 2>/dev/null)" = "1" ] && return
+  fi
+  
+  local recovery=$(echo "scale=2; ($price - $d2_close) / $d2_close * 100" | bc -l 2>/dev/null)
+  echo "{\"rule\":\"morning_star\",\"direction\":\"bullish\",\"strength\":\"very_high\",\"note\":\"早晨之星-底部反转|D-2阴${d2_body_abs}|D-1星${d1_body_abs}|D0阳${d0_body_abs}|回收${recovery}%\"}"
 }
 
 rule_volume_pullback_support() {
@@ -351,7 +386,6 @@ _fairy_guide_check_setup() {
   [ "$n" -lt 3 ] && return 1
   
   # 昨日数据 = 最新一条缓存（索引 n-1）
-  # 函数调用时传入的今日OHLC是实时值，昨日才是缓存的最后一天
   y_close="${PAST_CLOSE[$((n-1))]}"
   y_open="${PAST_OPEN[$((n-1))]}"
   y_high="${PAST_HIGH[$((n-1))]}"
@@ -359,29 +393,37 @@ _fairy_guide_check_setup() {
   y_vol="${PAST_VOL[$((n-1))]}"
   [ -z "$y_close" ] || [ -z "$y_open" ] || [ -z "$y_high" ] || [ -z "$y_low" ] && return 1
   
-  # 上影线 = high - max(close, open)
-  local ue=$(echo "if($y_close > $y_open) $y_close else $y_open" | bc -l 2>/dev/null)
-  y_upper_shadow=$(echo "scale=2; $y_high - $ue" | bc -l 2>/dev/null)
-  [ "$(echo "$y_upper_shadow <= 0" | bc -l 2>/dev/null)" = "1" ] && return 1
-  
-  # 下影线 = min(close, open) - low
-  local le=$(echo "if($y_close < $y_open) $y_close else $y_open" | bc -l 2>/dev/null)
-  y_lower_shadow=$(echo "scale=2; $le - $y_low" | bc -l 2>/dev/null)
-  
   # 实体
   local yb=$(echo "scale=2; $y_close - $y_open" | bc -l 2>/dev/null)
   y_body_abs=$(echo "$yb" | sed 's/^-//')
   [ "$(echo "$y_body_abs == 0" | bc -l 2>/dev/null)" = "1" ] && return 1
   
-  # 条件A：上影线 ≥ 实体 × 2
-  up_ratio=$(echo "scale=1; $y_upper_shadow / $y_body_abs" | bc -l 2>/dev/null)
-  [ "$(echo "$up_ratio < 2" | bc -l 2>/dev/null)" = "1" ] && return 1
+  # 总振幅
+  local total_range=$(echo "scale=2; $y_high - $y_low" | bc -l 2>/dev/null)
+  [ "$(echo "$total_range == 0" | bc -l 2>/dev/null)" = "1" ] && return 1
   
-  # 条件B：下影线 < 实体 × 0.5（排除十字星/螺旋桨）
+  # ── 条件1：收盘在K线顶部1/4（位置法，对跳空不敏感）──
+  # close_position = (close - low) / (high - low)，>0.75 表示收盘在顶部25%以内
+  close_position=$(echo "scale=4; ($y_close - $y_low) / $total_range" | bc -l 2>/dev/null)
+  [ "$(echo "$close_position <= 0.75" | bc -l 2>/dev/null)" = "1" ] && return 1
+  
+  # 辅助：上影线 ≥ 实体 × 1.5（保留传统条件，从2降到1.5因为位置法已做主判）
+  local ue=$(echo "if($y_close > $y_open) $y_close else $y_open" | bc -l 2>/dev/null)
+  y_upper_shadow=$(echo "scale=2; $y_high - $ue" | bc -l 2>/dev/null)
+  up_ratio=$(echo "scale=1; $y_upper_shadow / $y_body_abs" | bc -l 2>/dev/null)
+  [ "$(echo "$up_ratio < 1.5" | bc -l 2>/dev/null)" = "1" ] && return 1
+  
+  # ── 条件2：小实体（实体/振幅 < 0.3）──
+  local body_range_ratio=$(echo "scale=4; $y_body_abs / $total_range" | bc -l 2>/dev/null)
+  [ "$(echo "$body_range_ratio >= 0.3" | bc -l 2>/dev/null)" = "1" ] && return 1
+  
+  # ── 条件3：下影线很短（< 实体 × 0.5）──
+  local le=$(echo "if($y_close < $y_open) $y_close else $y_open" | bc -l 2>/dev/null)
+  y_lower_shadow=$(echo "scale=2; $le - $y_low" | bc -l 2>/dev/null)
   low_ratio=$(echo "scale=1; $y_lower_shadow / $y_body_abs" | bc -l 2>/dev/null)
   [ "$(echo "$low_ratio > 0.5" | bc -l 2>/dev/null)" = "1" ] && return 1
   
-  # 趋势位置：利用缓存中的最后N条算MA20
+  # ── 条件4：股价在MA20之上（上升趋势）──
   local sum=0 cnt=0
   for ((i=0; i<n && cnt<20; i++)); do
     sum=$(echo "scale=2; $sum + ${PAST_CLOSE[$i]}" | bc -l 2>/dev/null)
@@ -389,8 +431,9 @@ _fairy_guide_check_setup() {
   done
   [ "$cnt" -lt 5 ] && return 1
   ma20=$(echo "scale=2; $sum / $cnt" | bc -l 2>/dev/null)
+  [ "$(echo "$y_close <= $ma20" | bc -l 2>/dev/null)" = "1" ] && return 1
   
-  # 量能：昨日不能是近5日最大量
+  # ── 条件5：昨日量非近5日最大量（非天量出货）──
   local max5v=0
   for ((i=n-5; i<n; i++)); do
     [ "$i" -lt 0 ] && continue
@@ -400,7 +443,7 @@ _fairy_guide_check_setup() {
   done
   [ "$(echo "$y_vol >= $max5v * 0.95" | bc -l 2>/dev/null)" = "1" ] && return 1
   
-  # 今日量（也是缓存的最后一条的一部分）
+  # 今日量（缓存的最后一条）
   t_vol="${PAST_VOL[$((n-1))]}"
   [ -z "$t_vol" ] && t_vol=0
   
@@ -429,7 +472,7 @@ rule_fairy_guide_confirmed() {
   local broke_high="否"
   [ "$(echo "$price > $y_high" | bc -l 2>/dev/null)" = "1" ] && broke_high="是"
   
-  echo "{\"rule\":\"fairy_guide_confirmed\",\"direction\":\"bullish\",\"strength\":\"high\",\"note\":\"仙人指路-已触发｜昨上影/实体=${up_ratio}x·下影/实体=${low_ratio}·价在MA20上·昨量非天量→今涨${change}%·突破昨高=${broke_high}\"}"
+  echo "{\"rule\":\"fairy_guide_confirmed\",\"direction\":\"bullish\",\"strength\":\"high\",\"note\":\"仙人指路-已触发｜昨收盘位${close_position}·实体/振幅=${body_range_ratio}·价在MA20上·昨量非天量→今涨${change}%·突破昨高=${broke_high}\"}"
 }
 
 # 仙人指路-即将触发（昨日形态成立，等待今日确认）
@@ -448,7 +491,7 @@ rule_fairy_guide_forming() {
   local y_body_type="阳线"
   [ "$(echo "$y_close < $y_open" | bc -l 2>/dev/null)" = "1" ] && y_body_type="阴线"
   
-  echo "{\"rule\":\"fairy_guide_forming\",\"direction\":\"bullish_watch\",\"strength\":\"medium\",\"note\":\"仙人指路-即将触发｜昨${y_body_type}·上影/实体=${up_ratio}x·下影/实体=${low_ratio}·昨量非天量→关注今日能否高开上涨确认\"}"
+  echo "{\"rule\":\"fairy_guide_forming\",\"direction\":\"bullish_watch\",\"strength\":\"medium\",\"note\":\"仙人指路-即将触发｜昨${y_body_type}·收盘位${close_position}·实体/振幅=${body_range_ratio}·昨量非天量→关注今日能否高开上涨确认\"}"
 }
 
 rule_gap_detection() {
