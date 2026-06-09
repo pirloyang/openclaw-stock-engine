@@ -7,7 +7,7 @@
 输入：
   1. data/investment_goals.json  — 用户可编辑的目标配置
   2. /tmp/stock_alerts/engine_signals.json — 信号引擎输出
-  3. TOOLS.md — 持仓/成本（由 parse_tools.py 解析）
+  3. TOOLS.md — 持仓/成本/买卖记录（由 parse_tools.py 解析）
 
 输出：
   data/portfolio_snapshot.json   — 每日净值快照
@@ -18,6 +18,7 @@
 架构原则：
   - 所有阈值、目标值从 goals 配置读取，不硬编码
   - 持仓从 TOOLS.md 解析，真实持仓和模拟交易隔离
+  - 可用现金 = 截图基准 + 今日清仓回笼 - 今日建仓支出（动态计算）
   - 可用作 cron standalone 脚本或 import 模块
 """
 
@@ -48,11 +49,10 @@ def now_iso():
     return datetime.now().isoformat()
 
 
-# ======================== 行情模拟 (生产环境替换) ========================
+# ======================== 行情读取 ========================
 
 def _read_live_prices():
-    """从 engine_signals.json 读实时价格。
-    文件不存在时返回空，由调用方处理。"""
+    """从 engine_signals.json 读实时价格。"""
     if not SIGNALS_FILE.exists():
         return {}
     try:
@@ -72,6 +72,8 @@ def _read_live_prices():
     return prices
 
 
+# ======================== TOOLS.md 解析 ========================
+
 def _parse_real_positions():
     """从 TOOLS.md 解析辉哥真实持仓。
     返回: list[{code, name?, shares, cost, avg_cost?}]
@@ -84,18 +86,14 @@ def _parse_real_positions():
         return []
 
     positions = []
-    # 精确匹配 "持仓" 章节 → 下一个 "###" 之前的内容
-    # 格式: - 名称 代码（X股，成本XX.XX）
     in_section = False
     for line in text.splitlines():
         line = line.strip()
 
-        # 进入持仓章节
         if re.match(r'^###\s+持仓', line):
             in_section = True
             continue
 
-        # 离开持仓章节
         if in_section and line.startswith('###') and '持仓' not in line:
             break
         if in_section and line.startswith('##') and '持仓' not in line:
@@ -104,7 +102,6 @@ def _parse_real_positions():
         if not in_section:
             continue
 
-        # 解析: - 名称 代码（股数，成本XX）
         m = re.match(r'-\s*(.+?)\s+(\d{6})\D+(\d+)\s*股.*?成本\s*([\d.]+)', line)
         if not m:
             continue
@@ -113,13 +110,11 @@ def _parse_real_positions():
         shares = int(m.group(3))
         cost = float(m.group(4))
 
-        # 跳过明确已清仓的（如"清仓@"成本价，但保留"误报清仓纠正"/"截图纠正"等非清仓描述）
         if '清仓' in line and ('【' in line or '】' in line):
-            # 保留"误报清仓"/"截图纠正"/"实际未清仓"的行
             if re.search(r'(误报清仓|截图纠正|实际未清仓)', line):
-                pass  # 保留
+                pass
             elif re.search(r'加仓', line) and not re.search(r'清仓@', line):
-                pass  # 保留
+                pass
             else:
                 continue
 
@@ -134,21 +129,139 @@ def _parse_real_positions():
     return positions
 
 
-def _parse_cash_from_tools():
-    """从 TOOLS.md 截图可用资金行解析现金余额"""
+def _parse_cash_base():
+    """从 TOOLS.md 截图可用资金行解析现金基准（昨天的截图值）"""
     if not TOOLS_FILE.exists():
         return None
     try:
         text = TOOLS_FILE.read_text(encoding='utf-8')
         for line in text.splitlines():
             if '截图可用资金' in line or '可用资金' in line:
-                # 匹配如 "32,123.35" 或 "84000.00" 的金额
                 m = re.search(r'(\d{1,3}(?:,\d{3})*(?:\.\d+)?)', line)
                 if m:
                     return float(m.group(1).replace(',', ''))
     except Exception:
         pass
     return None
+
+
+def _parse_today_trades():
+    """从 TOOLS.md 解析今日买卖记录，计算现金净变动。
+    返回: (清仓回笼总额, 建仓支出总额)
+    """
+    if not TOOLS_FILE.exists():
+        return 0.0, 0.0
+    try:
+        text = TOOLS_FILE.read_text(encoding='utf-8')
+    except Exception:
+        return 0.0, 0.0
+
+    today_str = today()
+    sell_total = 0.0
+    buy_total = 0.0
+
+    # ===== 解析今日清仓记录 =====
+    in_sell_section = False
+    for line in text.splitlines():
+        stripped = line.strip()
+
+        m_section = re.match(r'^###\s+今日清仓记录.*（(.+?)）', stripped)
+        if m_section:
+            in_sell_section = (m_section.group(1) == today_str)
+            continue
+
+        if in_sell_section and (stripped.startswith('###') or stripped.startswith('##')):
+            break
+        if not in_sell_section:
+            continue
+
+        # 格式: - 名称 代码：清仓@XX.XX，亏约¥-XXX(-XX.X%)【...】
+        # 分批格式: - 名称 代码：清仓，其中200@XX.XX+200@XX.XX+400@XX.XX...
+        # 分批格式2: - 名称 代码：分批清仓XX.XX/XX.XX...
+
+        # 先尝试匹配分批格式: "其中200@22.40+200@22.90+400@22.98"
+        batch_total = 0.0
+        batch_parts = re.findall(r'(\d+)\s*@\s*([\d.]+)', stripped)
+        for shares_str, price_str in batch_parts:
+            batch_total += int(shares_str) * float(price_str)
+
+        if batch_total > 0:
+            sell_total += batch_total
+        else:
+            # 单次清仓: 清仓@XX.XX，亏约¥-XXX(-XX.X%)【...成本XX.XX】
+            # 从亏损和成本反推股数
+            m_single = re.match(r'-\s*.+?\s+(\d{6})\s*[:：]?\s*清仓@([\d.]+)', stripped)
+            if m_single:
+                code = m_single.group(1)
+                price = float(m_single.group(2))
+                # 从行内提取亏损额和成本价
+                m_loss = re.search(r'亏约.*?(-?[\d,]+)', stripped)
+                m_cost = re.search(r'成本([\d.]+)', stripped)
+                loss_amount = None
+                if m_loss:
+                    loss_amount = abs(float(m_loss.group(1).replace(',', '')))
+                if loss_amount and m_cost:
+                    cost_price = float(m_cost.group(1))
+                    if cost_price > price:
+                        shares = round(loss_amount / (cost_price - price))
+                        if shares > 0:
+                            sell_total += shares * price
+                # 兜底：从持仓节查股数
+                if sell_total == 0:
+                    shares = _find_position_shares(code)
+                    if shares > 0:
+                        sell_total += shares * price
+
+    # ===== 解析今日建仓（从持仓节新增标的）=====
+    # 方法：对比持仓节中标注了今日日期的标的
+    in_pos_section = False
+    for line in text.splitlines():
+        stripped = line.strip()
+
+        if re.match(r'^###\s+持仓', stripped):
+            in_pos_section = True
+            continue
+        if in_pos_section and (stripped.startswith('###') or stripped.startswith('##')):
+            break
+        if not in_pos_section:
+            continue
+
+        # 匹配今日建仓记录: 【2026-06-09建仓...】
+        m = re.match(r'-\s*(.+?)\s+(\d{6})\D+(\d+)\s*股.*?成本\s*([\d.]+).*?(\d{4}-\d{2}-\d{2})建仓', stripped)
+        if m:
+            shares = int(m.group(3))
+            cost = float(m.group(4))
+            buy_date = m.group(5)
+            if buy_date == today_str:
+                buy_total += shares * cost
+
+    return sell_total, buy_total
+
+
+def _find_position_shares(code):
+    """从 TOOLS.md 持仓节查找某代码的股数"""
+    if not TOOLS_FILE.exists():
+        return 0
+    try:
+        text = TOOLS_FILE.read_text(encoding='utf-8')
+    except Exception:
+        return 0
+
+    in_section = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if re.match(r'^###\s+持仓', stripped):
+            in_section = True
+            continue
+        if in_section and (stripped.startswith('###') or stripped.startswith('##')):
+            break
+        if not in_section:
+            continue
+
+        m = re.match(r'-\s*.+?\s+' + re.escape(code) + r'\D+(\d+)\s*股', stripped)
+        if m:
+            return int(m.group(1))
+    return 0
 
 
 # ======================== 核心计算 ========================
@@ -162,7 +275,7 @@ def load_goals():
 
 
 def compute_net_worth(positions, live_prices):
-    """计算当前账户净值：持仓市值 + 可用现金（估算）
+    """计算当前账户净值：持仓市值 + 可用现金（动态计算）
     live_prices: {code: {price, name}}
     """
     total_market_value = 0.0
@@ -174,7 +287,6 @@ def compute_net_worth(positions, live_prices):
         current_price = price_info.get("price") if price_info else None
 
         if current_price is None:
-            # 无实时价格，用成本价占位
             current_price = pos["cost"]
 
         market_val = pos["shares"] * current_price
@@ -194,26 +306,34 @@ def compute_net_worth(positions, live_prices):
             "pnl_pct": round(pnl_pct, 2),
         })
 
-    # 现金估算：优先从 TOOLS.md 截图可用资金读取，否则从投资配置读
-    cash_from_screenshot = _parse_cash_from_tools()
-    initial_capital = cash_from_screenshot
-    if not cash_from_screenshot:
-        goals = load_goals()
-        if goals:
-            initial_capital = float(goals["target"]["initial_capital"])
-        if not initial_capital:
-            initial_capital = 84000.0  # 最后兜底
+    # ===== 现金动态计算 =====
+    # 1. 截图基准（昨天的截图可用资金）
+    cash_base = _parse_cash_base()
 
-    # 从截图读取可用现金（最高优先级），没有截图才回退到历史/配置
-    prev_cash = cash_from_screenshot if cash_from_screenshot else _get_last_cash(initial_capital)
-    estimated_net = total_market_value + prev_cash
+    # 2. 无截图基准时回退到历史快照
+    if not cash_base:
+        goals = load_goals()
+        initial = float(goals["target"]["initial_capital"]) if goals else 84000.0
+        cash_base = _get_last_cash(initial)
+
+    # 3. 计算今日买卖现金变动
+    sell_total, buy_total = _parse_today_trades()
+    cash_flow = sell_total - buy_total
+
+    # 4. 最终现金 = 截图基准 + 今日净流入
+    estimated_cash = cash_base + cash_flow
+
+    estimated_net = total_market_value + estimated_cash
 
     details.sort(key=lambda x: x["market_value"], reverse=True)
     return {
         "net_worth": round(estimated_net, 2),
         "market_value": round(total_market_value, 2),
-        "estimated_cash": round(prev_cash, 2),
-        "initial_capital": initial_capital,
+        "estimated_cash": round(estimated_cash, 2),
+        "cash_base": round(cash_base, 2),
+        "cash_flow": round(cash_flow, 2),
+        "sell_total": round(sell_total, 2),
+        "buy_total": round(buy_total, 2),
         "positions": details,
         "position_count": len(positions),
     }
@@ -242,7 +362,6 @@ def compute_progress(net_worth, goals):
     current_gain = net_worth - initial
     progress_pct = (current_gain / total_gain_needed) * 100 if total_gain_needed > 0 else 0
 
-    # 时间进度
     try:
         start_dt = datetime.strptime(target["start_date"], "%Y-%m-%d")
         end_dt = datetime.strptime(target["deadline"], "%Y-%m-%d")
@@ -271,7 +390,6 @@ def compute_progress(net_worth, goals):
 
 
 def _monthly_return_needed(current, target, remaining_days):
-    """计算达成目标所需的月化收益率(%)"""
     if current <= 0 or remaining_days <= 0:
         return 0
     months = remaining_days / 30.0
@@ -282,7 +400,6 @@ def _monthly_return_needed(current, target, remaining_days):
 
 
 def compute_milestones(net_worth, goals):
-    """计算里程碑进度"""
     milestones = goals.get("milestones", [])
     status_list = []
     for ms in milestones:
@@ -305,7 +422,6 @@ def compute_milestones(net_worth, goals):
 
 
 def compute_risk_stage(net_worth, goals):
-    """根据当前净值匹配渐进风控阶段，返回该阶段的风控参数"""
     stages = goals.get("progressive_risk", {}).get("stages", [])
     default_rules = goals.get("risk_rules", {})
 
@@ -319,7 +435,6 @@ def compute_risk_stage(net_worth, goals):
                 "max_positions": stage["max_positions"],
             }
 
-    # fallback
     return {
         "stage": "默认",
         "max_single_position_pct": default_rules.get("max_single_position_pct", 0.25),
@@ -329,13 +444,11 @@ def compute_risk_stage(net_worth, goals):
 
 
 def compute_alerts(net_worth, progress, risk_stage, goals):
-    """计算告警列表"""
     alerts = []
     thresholds = goals.get("alert_thresholds", {})
     total_drawdown_pct = ((net_worth - progress["initial_capital"]) /
                           progress["initial_capital"]) * 100
 
-    # 整体回撤告警
     critical = thresholds.get("drawdown_critical_pct", -12)
     warning = thresholds.get("drawdown_warning_pct", -8)
     if total_drawdown_pct <= critical:
@@ -349,7 +462,6 @@ def compute_alerts(net_worth, progress, risk_stage, goals):
             "message": f"整体回撤 {total_drawdown_pct:.1f}% 触及预警线{warning}%",
         })
 
-    # 目标进度与时间进度背离
     if progress["progress_pct"] < progress["time_progress_pct"] - thresholds.get("milestone_progress_deviation_pct", 20):
         alerts.append({
             "level": "WARNING",
@@ -362,14 +474,12 @@ def compute_alerts(net_worth, progress, risk_stage, goals):
 # ======================== 输出 ========================
 
 def save_snapshot(snapshot):
-    """保存当日快照"""
     SNAPSHOT_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(SNAPSHOT_FILE, "w", encoding="utf-8") as f:
         json.dump(snapshot, f, ensure_ascii=False, indent=2)
 
 
 def append_history(snapshot):
-    """追加到净值历史"""
     HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
     history = []
     if HISTORY_FILE.exists():
@@ -379,7 +489,6 @@ def append_history(snapshot):
         except Exception:
             history = []
 
-    # 检查今天是否已有记录，有则更新
     record_date = snapshot["date"]
     updated = False
     for item in history:
@@ -404,7 +513,6 @@ def append_history(snapshot):
             "timestamp": snapshot["timestamp"],
         })
 
-    # 只保留最近 365 条
     history = history[-365:]
 
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
@@ -412,7 +520,6 @@ def append_history(snapshot):
 
 
 def save_milestones(milestones):
-    """保存里程碑状态"""
     MILESTONE_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(MILESTONE_FILE, "w", encoding="utf-8") as f:
         json.dump({
@@ -422,7 +529,6 @@ def save_milestones(milestones):
 
 
 def print_summary(snapshot):
-    """可读摘要 — 供 cron 直接推送给辉哥"""
     p = snapshot["progress"]
     rs = snapshot["risk_stage"]
     al = snapshot["alerts"]
@@ -432,6 +538,7 @@ def print_summary(snapshot):
     print(f"📊 组合绩效快照 {snapshot['date']}")
     print(f"   净值: ¥{p['net_worth']:,.2f}  |  目标 {p['target_value']:,.0f}万  |  进度 {p['progress_pct']}%")
     print(f"   持仓 {snapshot['position_count']}只  |  市值 ¥{snapshot['market_value']:,.2f}")
+    print(f"   现金 ¥{snapshot['estimated_cash']:,.2f} (基准¥{snapshot.get('cash_base',0):,.2f} + 今日净流¥{snapshot.get('cash_flow',0):+,.2f})")
     print(f"   剩余 {p['remaining_days']}天  |  月化需求 +{p['monthly_return_needed_pct']}%")
     print()
 
@@ -456,7 +563,6 @@ def print_summary(snapshot):
 # ======================== main ========================
 
 def run(goals_override=None):
-    """主入口。goals_override 用于测试或外部注入配置。"""
     goals = goals_override or load_goals()
     if not goals:
         return {"error": "investment_goals.json 不存在或格式错误"}
@@ -481,6 +587,10 @@ def run(goals_override=None):
         "net_worth": net_worth_data["net_worth"],
         "market_value": net_worth_data["market_value"],
         "estimated_cash": net_worth_data["estimated_cash"],
+        "cash_base": net_worth_data.get("cash_base", 0),
+        "cash_flow": net_worth_data.get("cash_flow", 0),
+        "sell_total": net_worth_data.get("sell_total", 0),
+        "buy_total": net_worth_data.get("buy_total", 0),
         "position_count": net_worth_data["position_count"],
         "positions": net_worth_data["positions"],
         "progress": progress,

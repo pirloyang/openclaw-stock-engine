@@ -1,0 +1,29 @@
+[
+  {
+    "date": "2026-06-09",
+    "market": {
+      "total_inflow": 301.77,
+      "cyb_inflow": 145.35,
+      "hs300_inflow": 64.41,
+      "tail_inflow": 101.79
+    },
+    "sectors": {
+      "inflow_top": [
+        {
+          "name": "电子",
+          "amount": 133.92
+        }
+      ],
+      "outflow_top": [
+        {
+          "name": "医药生物",
+          "amount": -8.44
+        },
+        {
+          "name": "煤炭",
+          "amount": -5.45
+        }
+      ]
+    }
+  }
+]

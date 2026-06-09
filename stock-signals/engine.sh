@@ -70,7 +70,7 @@ calc_ema() {
   python3 -c "
 f=open('$f'); lines=f.readlines(); f.close()
 n=$n
-prices=[float(l.split()[0]) for l in lines[-n:]]
+prices=[float(l.split()[0]) for l in lines[-n:] if len(l.split()) in (2,3)]
 ema=prices[0]
 k=2/(n+1)
 for p in prices[1:]:
@@ -198,6 +198,10 @@ compute_signal_quality() {
         fi
         # 高位约束：偏离MA20超过10%时趋势分折半（仅上穿，远离均线=追高风险）
         if [ -n "$dist_pct" ] && [ "$(echo "$dist_pct > 10" | bc -l 2>/dev/null)" = "1" ]; then
+          trend_score=$(echo "$trend_score * 0.5" | bc -l 2>/dev/null)
+        fi
+        # 短期转弱：股价跌破MA5时趋势分折半
+        if [ -n "$ma5" ] && [ "$(echo "$ma5 > 0" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$price < $ma5" | bc -l 2>/dev/null)" = "1" ]; then
           trend_score=$(echo "$trend_score * 0.5" | bc -l 2>/dev/null)
         fi
       fi
@@ -379,7 +383,8 @@ scan_morphology_signals() {
 
       # MACD形态
       macd_bottom_div)       bs=0.40; desc="MACD底背离" ;;
-      macd_golden_cross)     bs=0.35; desc="MACD零轴金叉" ;;
+      macd_golden_cross)     bs=0.35; desc="MACD零轴上金叉" ;;
+      macd_golden_cross_weak) bs=0.15; desc="MACD零轴下金叉(弱势)" ;;
       macd_above_zero)       bs=0.15; desc="MACD零轴上方" ;;
       macd_death_cross)      bs=-0.35; desc="MACD死叉" ;;
       macd_death_ongoing)     bs=-0.20; desc="MACD持续死叉" ;;
@@ -557,7 +562,7 @@ evaluate() {
   
   # P0：计算四因子信号质量评分
   local vol_ratio=$(echo "scale=2; if($avg10v > 0) $vol / $avg10v else 0" | bc -l 2>/dev/null)
-  local score_result=$(compute_signal_quality "$change" "$vol_ratio" "$price" "$ma20" "$high20" "$low20" "$cache")
+  local score_result=$(compute_signal_quality "$change" "$vol_ratio" "$price" "$ma20" "$high20" "$low20" "$cache" "$name" "$code")
   local quality_score=$(echo "$score_result" | cut -d'|' -f1)
   local score_details=$(echo "$score_result" | cut -d'|' -f2-)
   [ -z "$quality_score" ] && quality_score=3.0
@@ -631,6 +636,12 @@ MARKET_SH=$(echo "$MARKET" | cut -d'|' -f1)
 MARKET_CY=$(echo "$MARKET" | cut -d'|' -f2)
 
 # 预取全池行情
+# 守卫：source时跳过主逻辑（只加载函数定义）
+# 直接执行时（bash engine.sh）才跑主逻辑
+if [ "$(basename "$0" 2>/dev/null)" != "engine.sh" ]; then
+  return  # source进来，跳过主逻辑
+fi
+
 RAW=$(fetch_bulk)
 
 # --------------- 板块相对强度预解析 ---------------

@@ -1,21 +1,25 @@
 {
-  "date": "2026-06-05",
-  "timestamp": "2026-06-05T15:49:54.369426",
-  "net_worth": 95695.0,
-  "market_value": 69595.0,
-  "estimated_cash": 26100.0,
-  "position_count": 7,
+  "date": "2026-06-09",
+  "timestamp": "2026-06-09T22:50:08.679469",
+  "net_worth": 81325.93,
+  "market_value": 73722.0,
+  "estimated_cash": 7603.93,
+  "cash_base": 23339.93,
+  "cash_flow": -15736.0,
+  "sell_total": 6360.0,
+  "buy_total": 22096.0,
+  "position_count": 6,
   "positions": [
     {
       "code": "300223",
       "name": "北京君正",
       "shares": 100,
-      "cost": 147.89,
-      "avg_cost": 147.89,
-      "current_price": 139.36,
-      "market_value": 13936.0,
-      "pnl": -853.0,
-      "pnl_pct": -5.77
+      "cost": 148.0,
+      "avg_cost": 148.0,
+      "current_price": 159.89,
+      "market_value": 15989.0,
+      "pnl": 1189.0,
+      "pnl_pct": 8.03
     },
     {
       "code": "600549",
@@ -23,10 +27,21 @@
       "shares": 200,
       "cost": 59.611,
       "avg_cost": 59.611,
-      "current_price": 61.73,
-      "market_value": 12346.0,
-      "pnl": 423.8,
-      "pnl_pct": 3.55
+      "current_price": 63.93,
+      "market_value": 12786.0,
+      "pnl": 863.8,
+      "pnl_pct": 7.25
+    },
+    {
+      "code": "603618",
+      "name": "杭电股份",
+      "shares": 300,
+      "cost": 40.41,
+      "avg_cost": 40.41,
+      "current_price": 41.25,
+      "market_value": 12375.0,
+      "pnl": 252.0,
+      "pnl_pct": 2.08
     },
     {
       "code": "600345",
@@ -34,66 +49,44 @@
       "shares": 200,
       "cost": 56.83,
       "avg_cost": 56.83,
-      "current_price": 55.99,
-      "market_value": 11198.0,
-      "pnl": -168.0,
-      "pnl_pct": -1.48
+      "current_price": 58.85,
+      "market_value": 11770.0,
+      "pnl": 404.0,
+      "pnl_pct": 3.55
+    },
+    {
+      "code": "600487",
+      "name": "亨通光电",
+      "shares": 100,
+      "cost": 99.73,
+      "avg_cost": 99.73,
+      "current_price": 105.02,
+      "market_value": 10502.0,
+      "pnl": 529.0,
+      "pnl_pct": 5.3
     },
     {
       "code": "300136",
       "name": "信维通信",
       "shares": 100,
-      "cost": 105.3,
-      "avg_cost": 105.3,
-      "current_price": 106.33,
-      "market_value": 10633.0,
-      "pnl": 103.0,
-      "pnl_pct": 0.98
-    },
-    {
-      "code": "603618",
-      "name": "杭电股份",
-      "shares": 200,
-      "cost": 42.354,
-      "avg_cost": 42.354,
-      "current_price": 41.71,
-      "market_value": 8342.0,
-      "pnl": -128.8,
-      "pnl_pct": -1.52
-    },
-    {
-      "code": "300115",
-      "name": "长盈精密",
-      "shares": 200,
-      "cost": 37.569,
-      "avg_cost": 37.569,
-      "current_price": 33.66,
-      "market_value": 6732.0,
-      "pnl": -781.8,
-      "pnl_pct": -10.4
-    },
-    {
-      "code": "601600",
-      "name": "中国铝业",
-      "shares": 600,
-      "cost": 11.309,
-      "avg_cost": 11.309,
-      "current_price": 10.68,
-      "market_value": 6408.0,
-      "pnl": -377.4,
-      "pnl_pct": -5.56
+      "cost": 105.33,
+      "avg_cost": 105.33,
+      "current_price": 103.0,
+      "market_value": 10300.0,
+      "pnl": -233.0,
+      "pnl_pct": -2.21
     }
   ],
   "progress": {
-    "net_worth": 95695.0,
+    "net_worth": 81325.93,
     "target_value": 250000.0,
     "initial_capital": 84000.0,
-    "current_gain": 11695.0,
-    "remaining_gain": 154305.0,
-    "progress_pct": 7.0,
-    "time_progress_pct": 11.5,
-    "remaining_days": 245,
-    "monthly_return_needed_pct": 12.5
+    "current_gain": -2674.07,
+    "remaining_gain": 168674.07,
+    "progress_pct": 0,
+    "time_progress_pct": 12.9,
+    "remaining_days": 241,
+    "monthly_return_needed_pct": 15.0
   },
   "risk_stage": {
     "stage": "积累期：可承担较高单票风险",
@@ -106,8 +99,8 @@
       "id": "cleanup",
       "name": "清淤收官",
       "target_value": 100000.0,
-      "current_progress_pct": 95.7,
-      "gap": 4305.0,
+      "current_progress_pct": 81.3,
+      "gap": 18674.07,
       "achieved": false,
       "deadline": "2026-07-31"
     },
@@ -115,8 +108,8 @@
       "id": "wave1",
       "name": "主线1完成",
       "target_value": 180000.0,
-      "current_progress_pct": 53.2,
-      "gap": 84305.0,
+      "current_progress_pct": 45.2,
+      "gap": 98674.07,
       "achieved": false,
       "deadline": "2026-10-31"
     },
@@ -124,8 +117,8 @@
       "id": "sprint",
       "name": "冲刺线",
       "target_value": 250000.0,
-      "current_progress_pct": 38.3,
-      "gap": 154305.0,
+      "current_progress_pct": 32.5,
+      "gap": 168674.07,
       "achieved": false,
       "deadline": "2027-01-31"
     }

@@ -84,8 +84,10 @@ rule_macd_cross() {
 prices=[]
 with open('$cache') as f:
   for line in f:
-    try: prices.append(float(line.split()[0]))
-    except: pass
+    parts=line.split()
+    if len(parts) in (2,3):  # 只取3列(收盘价 成交量 日期)或2列(收盘价 成交量)的行，跳过OHLC格式
+      try: prices.append(float(parts[0]))
+      except: pass
 n=len(prices)
 if n<26: exit(0)
 k12,k26,k9=2/13,2/27,2/10
@@ -114,7 +116,13 @@ print(f'{dif_v[-2]:.4f} {dea_v[-2]:.4f} {dif_v[-1]:.4f} {dea_v[-1]:.4f} {prev_st
 
   # 金叉: prev死叉→cur金叉（刚发生穿越）
   if [ "$prev_state" = "-1" ] && [ "$cur_state" = "1" ]; then
-    echo "{\"rule\":\"macd_golden_cross\",\"direction\":\"buy_signal\",\"dif\":$cur_dif_full,\"dea\":$cur_dea_full,\"strength\":\"high\",\"note\":\"MACD金叉-DIF上穿DEA\"}"
+    # 零轴下金叉=弱势，零轴上金叉=强势
+    local above_zero=$(echo "$cur_dif_full > 0" | bc -l 2>/dev/null)
+    if [ "$above_zero" = "1" ]; then
+      echo "{\"rule\":\"macd_golden_cross\",\"direction\":\"buy_signal\",\"dif\":$cur_dif_full,\"dea\":$cur_dea_full,\"strength\":\"high\",\"note\":\"MACD零轴上金叉-DIF上穿DEA\"}"
+    else
+      echo "{\"rule\":\"macd_golden_cross_weak\",\"direction\":\"buy_signal\",\"dif\":$cur_dif_full,\"dea\":$cur_dea_full,\"strength\":\"medium\",\"note\":\"MACD零轴下金叉-DIF上穿DEA(弱势)\"}"
+    fi
   # 死叉: prev金叉→cur死叉（刚发生穿越）
   elif [ "$prev_state" = "1" ] && [ "$cur_state" = "-1" ]; then
     echo "{\"rule\":\"macd_death_cross\",\"direction\":\"sell_signal\",\"dif\":$cur_dif_full,\"dea\":$cur_dea_full,\"strength\":\"high\",\"note\":\"MACD死叉-DIF下穿DEA\"}"

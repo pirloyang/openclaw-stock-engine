@@ -170,7 +170,7 @@ try:
     kline = d[keys[0]].get('qfqday') or d[keys[0]].get('day') or []
     for row in kline:
         if len(row) >= 6:
-            close = row[2]
+            close = row[1]  # 腾讯API: [date, close, open, high, low, vol]
             vol = float(row[5]) * 100
             day = row[0]
             print(f'{close} {int(vol)} {day}')

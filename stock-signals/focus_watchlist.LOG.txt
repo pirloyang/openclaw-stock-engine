@@ -1,0 +1,4 @@
+Added: 长江通信 (600345)
+Added: 信维通信 (300136)
+Added: 长盈精密 (300115)
+Fixed: 卧龙电驱 hold=false

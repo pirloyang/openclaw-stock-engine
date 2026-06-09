@@ -3,30 +3,30 @@
   "month_stats": {
     "month": "2026-06",
     "start_value": 147285.1,
-    "end_value": 147285.1,
-    "change": 0.0,
-    "change_pct": 0.0,
+    "end_value": 95695.0,
+    "change": -51590.1,
+    "change_pct": -35.03,
     "peak_value": 147285.1,
-    "trough_value": 147285.1,
-    "max_drawdown_pct": 0.0,
-    "trading_days": 1
+    "trough_value": 81340.15,
+    "max_drawdown_pct": -44.77,
+    "trading_days": 5
   },
   "progress": {
-    "net_worth": 147285.1,
+    "net_worth": 95695.0,
     "target_value": 250000.0,
     "initial_capital": 84000.0,
-    "current_gain": 63285.1,
-    "remaining_gain": 102714.9,
-    "progress_pct": 38.1,
-    "time_progress_pct": 10.1,
-    "remaining_days": 249,
-    "monthly_return_needed_pct": 6.6
+    "current_gain": 11695.0,
+    "remaining_gain": 154305.0,
+    "progress_pct": 7.0,
+    "time_progress_pct": 12.2,
+    "remaining_days": 243,
+    "monthly_return_needed_pct": 12.6
   },
   "trade_summary": {
-    "closed_count": 0,
-    "total_pnl": 0,
-    "win_rate": null
+    "closed_count": 1,
+    "total_pnl": 2145.0,
+    "win_rate": 100.0
   },
-  "positions_count": 5,
-  "generated_at": "2026-06-01T01:41:28.255358"
+  "positions_count": 7,
+  "generated_at": "2026-06-07T10:57:22.188830"
 }

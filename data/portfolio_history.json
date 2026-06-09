@@ -30,5 +30,29 @@
     "estimated_cash": 26100.0,
     "progress_pct": 7.0,
     "timestamp": "2026-06-05T15:49:54.369426"
+  },
+  {
+    "date": "2026-06-07",
+    "net_worth": 79059.21,
+    "market_value": 69595.0,
+    "estimated_cash": 9464.21,
+    "progress_pct": 0,
+    "timestamp": "2026-06-07T22:15:39.946863"
+  },
+  {
+    "date": "2026-06-08",
+    "net_worth": 77646.93,
+    "market_value": 54307.0,
+    "estimated_cash": 23339.93,
+    "progress_pct": 0,
+    "timestamp": "2026-06-08T15:58:48.407480"
+  },
+  {
+    "date": "2026-06-09",
+    "net_worth": 81325.93,
+    "market_value": 73722.0,
+    "estimated_cash": 7603.93,
+    "progress_pct": 0,
+    "timestamp": "2026-06-09T22:50:08.679469"
   }
 ]
