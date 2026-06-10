@@ -10,7 +10,7 @@
 ```
 my_openclaw_stock_system/
 ├── .openclaw/                     # OpenClaw Gateway 配置（部署时由 OpenClaw 管理）
-│   └── cron/jobs.json             # ← 18个定时任务配置（核心）
+│   └── cron/jobs.json             # ← 38个定时任务配置（核心）
 │
 ├── stock-signals/                 # 📊 信号引擎（29规则 V3.0）
 │   ├── engine.sh                  #   主引擎：全池行情拉取+29规则评分
@@ -128,7 +128,7 @@ my_openclaw_stock_system/
               signals_summary.json
                          │
                          ▼
-              18个Cron任务读取数据源
+              38个Cron任务读取数据源
               ├── 08:30 盘前作战指令
               ├── 09:25 早盘竞价验证
               ├── 09:35-11:55 盘中监控(早盘×2)
@@ -319,7 +319,7 @@ bash restore.sh
 | stock-signals/test_300620.sh | 一次性测试脚本 |
 | stock-signals/cache/*.day.tmp | 临时文件 |
 | stocks/ | 整个目录可删除（仅含五洲新春已清仓数据） |
-| 监控/ | 早期手工配置，已被layer_monitor+18个cron替代 |
+| 监控/ | 早期手工配置，已被layer_monitor+38个cron替代 |
 | trade_log/ | 早期交易日志，已被sim_trading替代 |
 | reports/parse_ssq.py | 应移入 scripts/ |
 | reports/午间报告_20260514.md | 早期未按命名规则的报告 |

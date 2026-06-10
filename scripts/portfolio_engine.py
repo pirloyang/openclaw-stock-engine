@@ -130,23 +130,27 @@ def _parse_real_positions():
 
 
 def _parse_cash_base():
-    """从 TOOLS.md 截图可用资金行解析现金基准（昨天的截图值）"""
+    """从 TOOLS.md 截图可用资金行解析现金基准及截图日期。
+    返回: (金额, 截图日期字符串) 或 (None, None)"""
     if not TOOLS_FILE.exists():
-        return None
+        return None, None
     try:
         text = TOOLS_FILE.read_text(encoding='utf-8')
         for line in text.splitlines():
             if '截图可用资金' in line or '可用资金' in line:
                 m = re.search(r'(\d{1,3}(?:,\d{3})*(?:\.\d+)?)', line)
+                m_date = re.search(r'(\d{4}-\d{2}-\d{2})', line)
                 if m:
-                    return float(m.group(1).replace(',', ''))
+                    amount = float(m.group(1).replace(',', ''))
+                    snap_date = m_date.group(1) if m_date else None
+                    return amount, snap_date
     except Exception:
         pass
-    return None
+    return None, None
 
 
-def _parse_today_trades():
-    """从 TOOLS.md 解析今日买卖记录，计算现金净变动。
+def _parse_trades_since(since_date):
+    """从 TOOLS.md 解析 since_date（含）之后的所有买卖记录。
     返回: (清仓回笼总额, 建仓支出总额)
     """
     if not TOOLS_FILE.exists():
@@ -156,18 +160,19 @@ def _parse_today_trades():
     except Exception:
         return 0.0, 0.0
 
-    today_str = today()
     sell_total = 0.0
     buy_total = 0.0
 
-    # ===== 解析今日清仓记录 =====
+    # ===== 解析清仓记录（所有日期 >= since_date 的节）=====
     in_sell_section = False
+    current_section_date = None
     for line in text.splitlines():
         stripped = line.strip()
 
         m_section = re.match(r'^###\s+今日清仓记录.*（(.+?)）', stripped)
         if m_section:
-            in_sell_section = (m_section.group(1) == today_str)
+            current_section_date = m_section.group(1)
+            in_sell_section = (current_section_date >= since_date)
             continue
 
         if in_sell_section and (stripped.startswith('###') or stripped.startswith('##')):
@@ -175,11 +180,7 @@ def _parse_today_trades():
         if not in_sell_section:
             continue
 
-        # 格式: - 名称 代码：清仓@XX.XX，亏约¥-XXX(-XX.X%)【...】
-        # 分批格式: - 名称 代码：清仓，其中200@XX.XX+200@XX.XX+400@XX.XX...
-        # 分批格式2: - 名称 代码：分批清仓XX.XX/XX.XX...
-
-        # 先尝试匹配分批格式: "其中200@22.40+200@22.90+400@22.98"
+        # 分批格式: "其中200@22.40+200@22.90+400@22.98"
         batch_total = 0.0
         batch_parts = re.findall(r'(\d+)\s*@\s*([\d.]+)', stripped)
         for shares_str, price_str in batch_parts:
@@ -189,12 +190,10 @@ def _parse_today_trades():
             sell_total += batch_total
         else:
             # 单次清仓: 清仓@XX.XX，亏约¥-XXX(-XX.X%)【...成本XX.XX】
-            # 从亏损和成本反推股数
             m_single = re.match(r'-\s*.+?\s+(\d{6})\s*[:：]?\s*清仓@([\d.]+)', stripped)
             if m_single:
                 code = m_single.group(1)
                 price = float(m_single.group(2))
-                # 从行内提取亏损额和成本价
                 m_loss = re.search(r'亏约.*?(-?[\d,]+)', stripped)
                 m_cost = re.search(r'成本([\d.]+)', stripped)
                 loss_amount = None
@@ -206,14 +205,12 @@ def _parse_today_trades():
                         shares = round(loss_amount / (cost_price - price))
                         if shares > 0:
                             sell_total += shares * price
-                # 兜底：从持仓节查股数
                 if sell_total == 0:
                     shares = _find_position_shares(code)
                     if shares > 0:
                         sell_total += shares * price
 
-    # ===== 解析今日建仓（从持仓节新增标的）=====
-    # 方法：对比持仓节中标注了今日日期的标的
+    # ===== 解析建仓（持仓节中标注日期 >= since_date 的标的）=====
     in_pos_section = False
     for line in text.splitlines():
         stripped = line.strip()
@@ -226,13 +223,12 @@ def _parse_today_trades():
         if not in_pos_section:
             continue
 
-        # 匹配今日建仓记录: 【2026-06-09建仓...】
         m = re.match(r'-\s*(.+?)\s+(\d{6})\D+(\d+)\s*股.*?成本\s*([\d.]+).*?(\d{4}-\d{2}-\d{2})建仓', stripped)
         if m:
             shares = int(m.group(3))
             cost = float(m.group(4))
             buy_date = m.group(5)
-            if buy_date == today_str:
+            if buy_date >= since_date:
                 buy_total += shares * cost
 
     return sell_total, buy_total
@@ -307,20 +303,24 @@ def compute_net_worth(positions, live_prices):
         })
 
     # ===== 现金动态计算 =====
-    # 1. 截图基准（昨天的截图可用资金）
-    cash_base = _parse_cash_base()
+    # 1. 截图基准（截图时的可用资金）
+    cash_base, snap_date = _parse_cash_base()
 
     # 2. 无截图基准时回退到历史快照
     if not cash_base:
         goals = load_goals()
         initial = float(goals["target"]["initial_capital"]) if goals else 84000.0
         cash_base = _get_last_cash(initial)
+        snap_date = None
 
-    # 3. 计算今日买卖现金变动
-    sell_total, buy_total = _parse_today_trades()
+    # 3. 计算截图日期之后的所有买卖现金变动
+    if snap_date:
+        sell_total, buy_total = _parse_trades_since(snap_date)
+    else:
+        sell_total, buy_total = 0.0, 0.0
     cash_flow = sell_total - buy_total
 
-    # 4. 最终现金 = 截图基准 + 今日净流入
+    # 4. 最终现金 = 截图基准 + 截图后的净流入
     estimated_cash = cash_base + cash_flow
 
     estimated_net = total_market_value + estimated_cash
