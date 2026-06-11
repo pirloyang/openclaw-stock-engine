@@ -515,8 +515,7 @@ def compute_l3_focus(stocks, focus_codes, holdings, l6_data=None):
                 "note": f"L6热点升级|{alert.get('sector','')}|评分{alert['composite_score']}|{alert.get('reason','')[:30]}",
             })
     
-    # === 降级：3天无活跃则移除 ===
-    # (逻辑在hot_monitor.json中维护，此处仅写入输出)
+    # === 降级：已在l6_hot_alerts.py中处理（hot_monitor.json + focus_watchlist.json同步） ===
 
     # === 风口研报回流 ===
     fengkou_path = f"{WORKSPACE}/stock-signals/fengkou_candidates.json"

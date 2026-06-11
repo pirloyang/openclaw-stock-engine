@@ -24,16 +24,47 @@ SECTOR_MAP = {
 }
 
 def load_engine_signals():
-    """加载引擎信号"""
+    """加载引擎信号
+    优先从 engine_signals.json 读取
+    回退到从 all_signals.json 中提取
+    """
     path = f"{ALERT_DIR}/engine_signals.json"
-    if not os.path.exists(path):
-        return {}
-    try:
-        with open(path) as f:
-            data = json.load(f)
-        return {s['code']: s for s in data}
-    except:
-        return {}
+    if os.path.exists(path):
+        try:
+            with open(path) as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                return {s['code']: s for s in data}
+            elif isinstance(data, dict):
+                return data
+        except:
+            pass
+    
+    # 回退：从 all_signals.json 提取
+    fallback = f"{ALERT_DIR}/all_signals.json"
+    if os.path.exists(fallback):
+        try:
+            with open(fallback) as f:
+                all_data = json.load(f)
+            # 从L3信号中提取引擎评分
+            result = {}
+            for s in all_data.get('L3_focus', []):
+                code = s.get('code', '')
+                if code:
+                    result[code] = {
+                        'code': code,
+                        'total_score_ext': s.get('total_score', 0),
+                        'quality_score': s.get('quality_score', 0),
+                        'morph_score': s.get('morph_score', 0),
+                        'price_level': s.get('level', 'L0_NORMAL'),
+                        'resonance': {'verdict': s.get('verdict', '未知')},
+                        'signals': [],
+                    }
+            return result
+        except:
+            pass
+    
+    return {}
 
 def load_hot_monitor():
     """加载持久化热点监控池"""
@@ -92,7 +123,7 @@ def compute_l6_hot(l5_stocks, etf_signals):
         sig = engine_data.get(code, {})
         sector = get_sector(code, name)
         
-        # P0评分
+        # P0评分（从引擎信号或L3回退数据中读取）
         total_score = float(sig.get('total_score_ext', 0))
         quality_score = float(sig.get('quality_score', 0))
         morph_score = float(sig.get('morph_score', 0))
@@ -106,6 +137,9 @@ def compute_l6_hot(l5_stocks, etf_signals):
         sector_bonus = 1.0 if is_hot_sector else 0.0
         
         # 计算综合评分 (0-10)
+        # 没有引擎信号时，用异动幅度+板块热度估算
+        if total_score == 0 and not sig:
+            total_score = min(chg / 5, 3.0)  # 5%异动=1分, 15%+=3分
         chg_score = min(chg / 10, 1.0) * 3  # 异动幅度(0-3分)
         p0_score = min(total_score / 5, 1.0) * 4  # P0评分(0-4分)
         sector_score = sector_bonus * 3  # 板块热度(0-3分)
@@ -118,6 +152,9 @@ def compute_l6_hot(l5_stocks, etf_signals):
             note = sig_item.get('note', '')
             short_note = note[:60] if note else rule
             key_signals.append(short_note)
+        if not key_signals:
+            direction_emoji = s['direction']
+            key_signals.append(f"{direction_emoji}{abs(chg):.1f}%异动·{sector}")
         
         # 推荐逻辑
         direction = s['direction']
@@ -132,8 +169,13 @@ def compute_l6_hot(l5_stocks, etf_signals):
             is_buyable = True
             reason = f"放量强势+P0评分{total_score}，关注次日分歧低吸"
         elif direction == "🔴" and total_score < 2.0:
-            is_buyable = False
-            reason = f"涨幅大但P0评分仅{total_score}，追高风险大"
+            # 涨幅大但评分低 → 如果板块热且涨幅适中(5-7%)，仍可关注
+            if is_hot_sector and chg < 8:
+                is_buyable = True
+                reason = f"板块热点+涨幅{chg:.1f}%，关注分歧低吸"
+            else:
+                is_buyable = False
+                reason = f"涨幅大但P0评分仅{total_score}，追高风险大"
         elif direction == "🟢":
             is_buyable = total_score >= 1.5 and '卖出' not in verdict
             reason = f"大跌但P0评分{total_score}，看是否左侧机会" if is_buyable else "跌幅大无支撑信号，观望"
@@ -165,13 +207,33 @@ def compute_l6_hot(l5_stocks, etf_signals):
                 "total_score": total_score
             }
     
-    # 降级逻辑：在热点池但连续3天无±3%以上异动的，移除
-    # 简化版：只保留最近3天内出现过的
+    # ── 降级逻辑 ──
+    # 条件：在热点池但今日无±3%以上异动 → 标记非活跃天数
+    # 连续3天非活跃 → 自动移除
+    # 评分归零(0.0)且非今日异动 → 立即移除
+    today_active = {a['code'] for a in hot_alerts}
     stale = []
-    for code, info in hot_monitor["stocks"].items():
-        if code not in {a['code'] for a in hot_alerts}:
-            # 保留但标记为非活跃
-            pass
+    for code, info in list(hot_monitor["stocks"].items()):
+        if code not in today_active:
+            inactive_days = info.get('inactive_days', 0) + 1
+            info['inactive_days'] = inactive_days
+            # 评分0.0且连续3天非活跃 → 移除（给新标的留缓冲）
+            if info.get('total_score', 0) == 0.0 and inactive_days >= 3:
+                stale.append(code)
+            # 连续5天非活跃 → 移除
+            elif inactive_days >= 5:
+                stale.append(code)
+        else:
+            # 今日活跃 → 重置非活跃计数
+            info['inactive_days'] = 0
+            # 更新评分
+            for a in hot_alerts:
+                if a['code'] == code:
+                    info['total_score'] = a['p0_total']
+                    break
+    for code in stale:
+        name = hot_monitor["stocks"][code].get('name', code)
+        del hot_monitor["stocks"][code]
     
     # 按综合评分排序
     hot_alerts.sort(key=lambda x: x['composite_score'], reverse=True)
@@ -190,9 +252,13 @@ def compute_l6_hot(l5_stocks, etf_signals):
     }
     
     # 写入信号文件
+    # 先保存hot_monitor（降级逻辑已执行，即使无今日异动也要保存）
+    save_hot_monitor(hot_monitor)
+    
     with open(f"{ALERT_DIR}/L6_hot_alerts.md", 'w') as f:
         if not hot_alerts:
             f.write("今日无±5%以上异动\n")
+            sync_to_focus_watchlist(buyable)
             return result
         
         # 热门板块
@@ -217,9 +283,114 @@ def compute_l6_hot(l5_stocks, etf_signals):
             if a['key_signals']:
                 f.write(f"  {a['key_signals'][0]}\n")
     
-    save_hot_monitor(hot_monitor)
+    # ── 同步到 focus_watchlist.json（升级）──
+    sync_to_focus_watchlist(buyable)
     
     return result
+
+def sync_to_focus_watchlist(buyable_alerts):
+    """
+    将L6可参与热点标的同步到 focus_watchlist.json
+    - 综合评分≥3.5且不在池中的 → 自动添加（带L6热点升级标签）
+    - 已在池中的 → 更新评分和催化描述
+    - 已清仓且无活跃异动的 → 自动移除
+    """
+    ws = os.environ.get('WORKSPACE', '/root/.openclaw/workspace')
+    focus_path = f"{ws}/stock-signals/focus_watchlist.json"
+    if not os.path.exists(focus_path):
+        return
+    
+    try:
+        with open(focus_path) as f:
+            focus = json.load(f)
+    except:
+        return
+    
+    focus_list = focus.get('focus_list', [])
+    existing_codes = {s['code'] for s in focus_list}
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    # 读取当前持仓（从TOOLS.md）
+    # 从focus_list中读hold标记
+    holdings = {s['code'] for s in focus_list if s.get('hold')}
+    
+    # ── 升级：L6热点标的自动添加 ──
+    added = 0
+    for a in buyable_alerts:
+        code = a['code']
+        if code in existing_codes:
+            # 已在池中 → 更新评分和催化
+            for s in focus_list:
+                if s['code'] == code:
+                    if 'catalyst' in s and s['catalyst']:
+                        if 'L6热点' not in s['catalyst']:
+                            s['catalyst'] += f" | L6热点评分{a['composite_score']}"
+                    break
+            continue
+        if code in holdings:
+            continue  # 持仓中不重复添加
+        if a['composite_score'] < 3.5:
+            continue  # 评分太低不纳入
+        
+        # 新加入
+        focus_list.append({
+            "code": code,
+            "name": a['name'],
+            "stars": 3,
+            "hold": False,
+            "status": "L6热点升级",
+            "catalyst": f"L6热点异动|{a.get('sector','')}|综合评分{a['composite_score']}|{a.get('reason','')[:40]}",
+            "entry_low": None,
+            "entry_high": None,
+            "stop_loss": round(a['price'] * 0.95, 2),
+            "target": round(a['price'] * 1.15, 2),
+            "signals": a.get('key_signals', [])[:3],
+            "note": f"{today} L6热点自动升级，评分{a['composite_score']}"
+        })
+        existing_codes.add(code)
+        added += 1
+    
+    # ── 降级：已清仓且连续5天无异动的标的移除 ──
+    removed = 0
+    focus_list_new = []
+    for s in focus_list:
+        code = s['code']
+        status = s.get('status', '')
+        hold = s.get('hold', False)
+        stars = s.get('stars', 0)
+        
+        # 保留条件：持仓中 / 重点监控(≥3星) / 观察中但刚加入(<7天)
+        if hold:
+            focus_list_new.append(s)
+            continue
+        
+        if '已清仓' in status and stars < 3:
+            # 低星已清仓 → 移除
+            removed += 1
+            continue
+        
+        if '已清仓' in status and stars >= 3:
+            # 高星已清仓 → 保留但标记为历史
+            # 检查note中是否有退出日期
+            focus_list_new.append(s)
+            continue
+        
+        focus_list_new.append(s)
+    
+    focus['focus_list'] = focus_list_new
+    focus['last_update'] = today
+    
+    with open(focus_path, 'w') as f:
+        json.dump(focus, f, ensure_ascii=False, indent=2)
+    
+    if added or removed:
+        log_msg = f"[L6升降级] 升级+{added} | 降级-{removed} | 池内{len(focus_list_new)}只"
+        print(log_msg)
+        # 写入日志
+        log_path = f"{ALERT_DIR}/l6_upgrade_log.txt"
+        with open(log_path, 'a') as f:
+            f.write(f"{today} {log_msg}\n")
+
 
 # 独立运行测试
 if __name__ == "__main__":
