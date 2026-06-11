@@ -84,14 +84,155 @@ rule_hammer_hanging_man() {
   fi
 }
 
+# ──────────────────────────────────────────────
+# 十字星「变盘向上」识别（辉哥四把锁）
+# 锁1：位置——十字星必须在关键支撑位
+# 锁2：量能——缩量到抛压枯竭
+# 锁3：内部结构——下影承接 vs 上影抛压
+# 锁4：次日确认——后一根K线盖章（需调用方次日再跑）
+# 输出两个信号：
+#   doji_bullish_candidate — 锁1+2+3满足，变盘向上候选
+#   doji_bullish_confirmed — 锁1+2+3+4满足，向上确认
+# ──────────────────────────────────────────────
 rule_doji() {
-  local price="$3" open="$5"
-  [ -z "$open" ] || [ "$open" = "0.000" ] && return
+  local code="$1" price="$3" change="$4" open="$5" high="$6" low="$7" yclose="$8" vol="$9"
+  local ma5="${10}" ma10="${11}" ma20="${12}" avg5v="${14}"
+  [ -z "$open" ] || [ "$open" = "0.000" ] || [ -z "$low" ] || [ -z "$high" ] && return
+  [ "$(echo "$high == $low" | bc -l 2>/dev/null)" = "1" ] && return
   
-  local dev=$(echo "scale=4; ($price-$open)/$open*100" | bc -l 2>/dev/null | sed 's/^-//')
-  if [ "$(echo "$dev < 0.5" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "{\"rule\":\"doji\",\"direction\":\"reversal_warn\",\"strength\":\"low\",\"note\":\"十字星-多空均衡\"}"
+  # ── 定义十字星/小纺锤（实体/影线 < 0.15）──
+  local body=$(echo "scale=4; $price - $open" | bc -l 2>/dev/null)
+  local body_abs=$(echo "$body" | sed 's/^-//')
+  local total_range=$(echo "scale=4; $high - $low" | bc -l 2>/dev/null)
+  [ "$(echo "$total_range == 0" | bc -l 2>/dev/null)" = "1" ] && return
+  
+  local body_range_ratio=$(echo "scale=4; $body_abs / $total_range" | bc -l 2>/dev/null)
+  # 条件放宽到0.15，覆盖小纺锤/螺旋桨（比纯十字更实用）
+  [ "$(echo "$body_range_ratio >= 0.15" | bc -l 2>/dev/null)" = "1" ] && return
+  
+  # ── 绝对意义：实体/收盘价 < 0.015（防跳空扭曲，但比完美十字放宽）──
+  local body_close_ratio=$(echo "scale=4; $body_abs / $price" | bc -l 2>/dev/null)
+  [ "$(echo "$body_close_ratio >= 0.015" | bc -l 2>/dev/null)" = "1" ] && return
+  
+  # ── 🔑 锁3：内部结构（上下影力学）──
+  local upper=$(echo "if($price > $open) $high - $price else $high - $open" | bc -l 2>/dev/null)
+  local lower=$(echo "if($price < $open) $price - $low else $open - $low" | bc -l 2>/dev/null)
+  local upper_abs=$(echo "$upper" | sed 's/^-//')
+  local lower_abs=$(echo "$lower" | sed 's/^-//')
+  
+  # 下影明显（被买盘接住）vs 上影明显（抛压重）
+  local is_dragonfly=0  # 锤子十字（下影>>上影）
+  local is_gravestone=0 # 墓碑十字（上影>>下影）
+  if [ "$(echo "$lower_abs > $upper_abs * 2.5" | bc -l 2>/dev/null)" = "1" ]; then
+    is_dragonfly=1
   fi
+  if [ "$(echo "$upper_abs > $lower_abs * 2.5" | bc -l 2>/dev/null)" = "1" ]; then
+    is_gravestone=1
+  fi
+  
+  # ── 🔑 锁1：位置——必须在关键支撑位 ──
+  # 条件A：收盘在MA20附近（±1.5%）或MA10附近（±1%）
+  local at_support=0
+  local support_type=""
+  if [ -n "$ma20" ] && [ "$(echo "$ma20 > 0" | bc -l 2>/dev/null)" = "1" ]; then
+    local dev_ma20=$(echo "scale=4; ($price - $ma20) / $ma20 * 100" | bc -l 2>/dev/null | sed 's/^-//')
+    if [ "$(echo "$dev_ma20 <= 1.5" | bc -l 2>/dev/null)" = "1" ]; then
+      at_support=1
+      support_type="MA20"
+    fi
+  fi
+  if [ "$at_support" -eq 0 ] && [ -n "$ma10" ] && [ "$(echo "$ma10 > 0" | bc -l 2>/dev/null)" = "1" ]; then
+    local dev_ma10=$(echo "scale=4; ($price - $ma10) / $ma10 * 100" | bc -l 2>/dev/null | sed 's/^-//')
+    if [ "$(echo "$dev_ma10 <= 1.0" | bc -l 2>/dev/null)" = "1" ]; then
+      at_support=1
+      support_type="MA10"
+    fi
+  fi
+  
+  # ── 🔑 锁2：量能——缩量到抛压枯竭 ──
+  # 量比 < 0.95 或 量 < MAV5×0.85
+  local vol_shrink=0
+  if [ -n "$avg5v" ] && [ "$(echo "$avg5v > 0" | bc -l 2>/dev/null)" = "1" ]; then
+    local vol_ratio=$(echo "scale=4; $vol / $avg5v" | bc -l 2>/dev/null)
+    if [ "$(echo "$vol_ratio < 0.95" | bc -l 2>/dev/null)" = "1" ]; then
+      vol_shrink=1
+    fi
+  fi
+  
+  # ── 输出信号 ──
+  local note=""
+  local direction=""
+  local strength=""
+  
+  if [ "$at_support" -eq 1 ] && [ "$vol_shrink" -eq 1 ] && [ "$is_gravestone" -eq 0 ]; then
+    # ✅ 锁1+2+3：位置支撑 + 缩量 + 非墓碑 → 变盘向上候选
+    local shape=""
+    [ "$is_dragonfly" -eq 1 ] && shape="锤子十字" || shape="小纺锤"
+    note="${shape}·${support_type}支撑·缩量${vol_ratio:-?}·抛压枯竭"
+    direction="bullish_watch"
+    strength="medium"
+    echo "{\"rule\":\"doji_bullish_candidate\",\"direction\":\"$direction\",\"strength\":\"$strength\",\"note\":\"十字星-向上候选｜$note\"}"
+  elif [ "$is_gravestone" -eq 1 ] && [ "$vol_shrink" -eq 0 ]; then
+    # ❌ 墓碑十字+放量 → 变盘向下预警
+    note="墓碑十字·上影极长·放量分歧"
+    direction="sell_signal"
+    strength="medium"
+    echo "{\"rule\":\"doji_bearish_warn\",\"direction\":\"$direction\",\"strength\":\"$strength\",\"note\":\"十字星-向下预警｜$note\"}"
+  else
+    # 普通十字星，无明确方向
+    note="多空均衡·方向待次日确认"
+    direction="neutral"
+    strength="low"
+    echo "{\"rule\":\"doji\",\"direction\":\"$direction\",\"strength\":\"$strength\",\"note\":\"十字星-中性｜$note\"}"
+  fi
+}
+
+# ──────────────────────────────────────────────
+# 十字星向上确认（次日调用）
+# 锁4：次日阳线收盘 > 十字星高点 + 放量
+# 调用时机：次日运行engine.sh时，通过缓存读取前一日K线
+# ──────────────────────────────────────────────
+rule_doji_confirmed() {
+  local code="$1" price="$3" change="$4" open="$5" high="$6" vol="$9"
+  
+  # 读取前一日K线（缓存中倒数第2条）
+  local cache="$SIGNAL_DIR/cache/${code}.day"
+  [ ! -f "$cache" ] && return
+  local nlines=$(wc -l < "$cache" 2>/dev/null | tr -d ' ')
+  [ -z "$nlines" ] || [ "$nlines" -lt 2 ] && return
+  
+  local y_line=$(tail -2 "$cache" | head -1 2>/dev/null)
+  [ -z "$y_line" ] && return
+  
+  local y_close=$(echo "$y_line" | awk '{print $1}')
+  local y_open=$(echo "$y_line" | awk '{print $2}')
+  local y_high=$(echo "$y_line" | awk '{print $3}')
+  local y_low=$(echo "$y_line" | awk '{print $4}')
+  local y_vol=$(echo "$y_line" | awk '{print $5}')
+  [ -z "$y_close" ] || [ -z "$y_high" ] && return
+  
+  # 检查前一日是否为十字星候选
+  local y_body=$(echo "scale=4; $y_close - $y_open" | bc -l 2>/dev/null)
+  local y_body_abs=$(echo "$y_body" | sed 's/^-//')
+  local y_range=$(echo "scale=4; $y_high - $y_low" | bc -l 2>/dev/null)
+  [ "$(echo "$y_range == 0" | bc -l 2>/dev/null)" = "1" ] && return
+  
+  local y_body_ratio=$(echo "scale=4; $y_body_abs / $y_range" | bc -l 2>/dev/null)
+  [ "$(echo "$y_body_ratio >= 0.15" | bc -l 2>/dev/null)" = "1" ] && return
+  
+  # 前一日是十字星 → 检查今日确认
+  # 条件A：今日收盘 > 前日最高价（阳线反包十字星高点）
+  [ "$(echo "$price <= $y_high" | bc -l 2>/dev/null)" = "1" ] && return
+  
+  # 条件B：今日放量（量能 > 前日量能 × 1.15）
+  local y_vol_num=$(echo "$y_vol" | sed 's/\..*//' 2>/dev/null)
+  [ -z "$y_vol_num" ] && return
+  [ "$(echo "$vol > $y_vol_num * 1.15" | bc -l 2>/dev/null)" != "1" ] && return
+  
+  # 条件C：今日涨幅 > 0
+  [ "$(echo "$change > 0" | bc -l 2>/dev/null)" != "1" ] && return
+  
+  echo "{\"rule\":\"doji_bullish_confirmed\",\"direction\":\"buy_signal\",\"strength\":\"high\",\"note\":\"十字星-向上确认｜昨十字星+今阳线过昨高·放量${vol}·涨${change}%\"}"
 }
 
 rule_three_candles() {

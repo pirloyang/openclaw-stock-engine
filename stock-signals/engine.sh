@@ -376,6 +376,10 @@ scan_morphology_signals() {
       red_three)             bs=0.30; desc="红三兵" ;;
       hammer)                bs=0.20; desc="锤子线-底部" ;;
       gap_up)                bs=0.20; desc="向上跳空" ;;
+      doji_bullish_candidate) bs=0.25; desc="十字星-向上候选" ;;
+      doji_bullish_confirmed) bs=0.55; desc="十字星-向上确认" ;;
+      doji_bearish_warn)     bs=-0.35; desc="十字星-向下预警" ;;
+      doji)                  bs=0;     desc="十字星-中性" ;;
 
       # 均线趋势形态
       bullish_arrangement)   bs=0.50; desc="均线多头排列" ;;
