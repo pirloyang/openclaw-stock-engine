@@ -160,6 +160,7 @@ def compute_l6_hot(l5_stocks, etf_signals):
         direction = s['direction']
         is_buyable = False
         reason = ""
+        is_crash_watch = False  # 大跌观察（不自动升级，需人工确认）
         
         if direction == "🔴" and chg > 9:
             # 涨停不追
@@ -180,8 +181,17 @@ def compute_l6_hot(l5_stocks, etf_signals):
                 is_buyable = False
                 reason = f"涨幅大但P0评分仅{total_score}，追高风险大"
         elif direction == "🟢":
-            is_buyable = total_score >= 1.5 and '卖出' not in verdict
-            reason = f"大跌但P0评分{total_score}，看是否左侧机会" if is_buyable else "跌幅大无支撑信号，观望"
+            # 大跌标的：不自动升级，标记为观察候补
+            if chg > 8:
+                is_buyable = False
+                is_crash_watch = True
+                reason = f"大跌{chg:.1f}%→观察候补，等止跌K线确认后再评估"
+            elif total_score >= 1.5 and '卖出' not in verdict:
+                is_buyable = True
+                reason = f"跌幅适中+P0评分{total_score}，关注左侧机会"
+            else:
+                is_buyable = False
+                reason = "跌幅大无支撑信号，观望"
         
         alert = {
             "code": code, "name": name,
@@ -196,6 +206,7 @@ def compute_l6_hot(l5_stocks, etf_signals):
             "verdict": verdict,
             "composite_score": composite,
             "is_buyable": is_buyable,
+            "is_crash_watch": is_crash_watch,
             "reason": reason,
             "key_signals": key_signals,
         }
@@ -223,8 +234,8 @@ def compute_l6_hot(l5_stocks, etf_signals):
             # 评分0.0且连续3天非活跃 → 移除（给新标的留缓冲）
             if info.get('total_score', 0) == 0.0 and inactive_days >= 3:
                 stale.append(code)
-            # 连续5天非活跃 → 移除
-            elif inactive_days >= 5:
+            # 连续3天非活跃 → 移除
+            elif inactive_days >= 3:
                 stale.append(code)
         else:
             # 今日活跃 → 重置非活跃计数
@@ -287,20 +298,21 @@ def compute_l6_hot(l5_stocks, etf_signals):
                 f.write(f"  {a['key_signals'][0]}\n")
     
     # ── 同步到 focus_watchlist.json（升级+降级）──
-    sync_result = sync_to_focus_watchlist(buyable, hot_monitor)
+    sync_result = sync_to_focus_watchlist(buyable, hot_monitor, hot_alerts)
     
     # ── 生成每日升降级通报 ──
     generate_daily_report(result, sync_result, hot_monitor)
     
     return result
 
-def sync_to_focus_watchlist(buyable_alerts, hot_monitor=None):
+def sync_to_focus_watchlist(buyable_alerts, hot_monitor=None, hot_alerts=None):
     """
     将L6可参与热点标的同步到 focus_watchlist.json
-    - 综合评分≥3.5且不在池中的 → 自动添加（带L6热点升级标签）
+    - 综合评分≥4.0且不在池中的 → 自动添加（带L6热点升级标签）
     - 已在池中的 → 更新评分和催化描述
     - 已清仓且无活跃异动的 → 自动移除
-    - L6热点升级标的连续5天非活跃 → 自动移除
+    - L6热点升级标的连续3天非活跃 → 自动移除
+    - 大跌标的(>8%) → 标记为观察候补，不自动升级
     """
     import re
     from datetime import datetime
@@ -325,6 +337,14 @@ def sync_to_focus_watchlist(buyable_alerts, hot_monitor=None):
     
     # ── 升级：L6热点标的自动添加 ──
     added = 0
+    crash_watch = []  # 大跌观察（不自动升级）
+    
+    # 从全部异动中提取大跌观察（跌幅>8%的标的）
+    if hot_alerts:
+        for a in hot_alerts:
+            if a.get('is_crash_watch') and a['code'] not in existing_codes:
+                crash_watch.append(a)
+    
     for a in buyable_alerts:
         code = a['code']
         if code in existing_codes:
@@ -338,8 +358,12 @@ def sync_to_focus_watchlist(buyable_alerts, hot_monitor=None):
             continue
         if code in holdings:
             continue  # 持仓中不重复添加
-        if a['composite_score'] < 3.5:
-            continue  # 评分太低不纳入
+        if a['composite_score'] < 4.0:
+            continue  # 评分门槛4.0
+        # 大跌观察标的不自动升级
+        if a.get('is_crash_watch'):
+            crash_watch.append(a)
+            continue
         
         # 新加入
         focus_list.append({
@@ -359,14 +383,16 @@ def sync_to_focus_watchlist(buyable_alerts, hot_monitor=None):
         existing_codes.add(code)
         added += 1
     
-    # ── 降级：已清仓 / L6热点过期 / 低星已清仓 的标的移除 ──
+    # ── 降级：已清仓 / L6热点过期 / 低星已清仓 / 评分持续恶化 的标的移除 ──
     removed = 0
     
-    # 从hot_monitor获取非活跃信息
+    # 从hot_monitor获取非活跃信息和评分
     hot_inactive = {}
+    hot_scores = {}
     if hot_monitor:
         for code, info in hot_monitor.get('stocks', {}).items():
             hot_inactive[code] = info.get('inactive_days', 0)
+            hot_scores[code] = info.get('total_score', 0)
     
     focus_list_new = []
     for s in focus_list:
@@ -380,14 +406,22 @@ def sync_to_focus_watchlist(buyable_alerts, hot_monitor=None):
             focus_list_new.append(s)
             continue
         
-        # L6热点升级标的：连续5天非活跃 → 移除
+        # L6热点升级标的：连续3天非活跃 → 移除
         if 'L6热点' in status:
             inactive = hot_inactive.get(code, 0)
-            if inactive >= 5:
+            if inactive >= 3:
                 removed += 1
                 continue
             focus_list_new.append(s)
             continue
+        
+        # ⭐ 评分<2.5连续3天 → 主动降级（即使未清仓）
+        if not hold and '清仓' not in status:
+            score = hot_scores.get(code, 99)
+            inactive = hot_inactive.get(code, 0)
+            if score < 2.5 and inactive >= 3:
+                removed += 1
+                continue
         
         # 低星已清仓 → 移除
         if '已清仓' in status and stars < 3:
@@ -412,8 +446,8 @@ def sync_to_focus_watchlist(buyable_alerts, hot_monitor=None):
                 try:
                     exit_dt = datetime.strptime(exit_date, '%Y-%m-%d')
                     days_since_exit = (datetime.now() - exit_dt).days
-                    # 退出超过30天且不在热点监控池中 → 降级
-                    if days_since_exit > 30 and code not in hot_inactive:
+                    # 退出超过14天且不在热点监控池中 → 降级
+                    if days_since_exit > 14 and code not in hot_inactive:
                         removed += 1
                         continue
                 except:
@@ -438,67 +472,68 @@ def sync_to_focus_watchlist(buyable_alerts, hot_monitor=None):
         with open(log_path, 'a') as f:
             f.write(f"{today} {log_msg}\n")
     
-    return {"added": added, "removed": removed, "total": len(focus_list_new)}
+    return {"added": added, "removed": removed, "total": len(focus_list_new), "crash_watch": crash_watch}
 
 
 def generate_daily_report(l6_result, sync_result, hot_monitor):
-    """生成每日升降级通报文件"""
+    """生成每日升降级通报（仅推送差异）"""
     today = datetime.now().strftime("%Y-%m-%d")
     report_path = f"{ALERT_DIR}/L6_daily_report.md"
     
     lines = []
-    lines.append(f"# L6热点升降级日报 | {today}")
+    lines.append(f"# L6升降级日报 | {today}")
     lines.append("")
     
     # 热门板块
     if l6_result['hot_sectors']:
-        lines.append(f"🔥 今日热门板块: {' / '.join(l6_result['hot_sectors'])}")
+        lines.append(f"🔥 热门板块: {' / '.join(l6_result['hot_sectors'])}")
         lines.append("")
-    
-    # 异动概况
-    lines.append(f"## 异动概况")
-    lines.append(f"- L5自选池扫描: {l6_result['total_hot']}只±5%+异动")
-    lines.append(f"- 可参与标的: {l6_result['total_buyable']}只")
-    lines.append(f"- 热点监控池: {len(hot_monitor.get('stocks', {}))}只")
-    lines.append("")
     
     # 升级
     if sync_result['added'] > 0:
-        lines.append(f"## ⬆️ 升级（+{sync_result['added']}只进入重点关注池）")
+        lines.append(f"## ⬆️ 升级（+{sync_result['added']}）")
         for a in l6_result.get('buyable_alerts', []):
-            if a['composite_score'] >= 3.5:
-                lines.append(f"- **{a['name']}**({a['code']}) {a['price']}元 {a['change']:+.2f}% | 评分{a['composite_score']} | {a['sector']}")
+            if a['composite_score'] >= 4.0:
+                lines.append(f"- {a['name']} {a['code']} | {a['change']:+.2f}% | {a['sector']} | 评分{a['composite_score']}")
                 lines.append(f"  → {a['reason']}")
+        lines.append("")
+    
+    # 大跌观察
+    crash_watch = sync_result.get('crash_watch', [])
+    if crash_watch:
+        lines.append(f"## ⚠️ 大跌观察（+{len(crash_watch)}，需人工确认）")
+        for a in crash_watch:
+            lines.append(f"- {a['name']} {a['code']} | {a['change']:+.2f}% | {a['sector']} | 评分{a['composite_score']}")
+            lines.append(f"  → {a['reason']}")
+            lines.append(f"  → 条件：连续2日不创新低+止跌K线→允许升级")
         lines.append("")
     
     # 降级
     if sync_result['removed'] > 0:
-        lines.append(f"## ❌ 降级（-{sync_result['removed']}只移出重点关注池）")
-        lines.append(f"- 已清仓低星标的 / L6热点过期自动移除")
-        lines.append("")
-    
-    # 当前热点监控池
-    stocks = hot_monitor.get('stocks', {})
-    if stocks:
-        lines.append(f"## 📊 热点监控池（{len(stocks)}只）")
-        lines.append("")
-        lines.append("| 代码 | 名称 | 评分 | 非活跃天 | 板块 |")
-        lines.append("|:-----|:-----|:---:|:------:|:-----|")
-        for code, info in sorted(stocks.items()):
-            score = info.get('total_score', 0)
-            inactive = info.get('inactive_days', 0)
-            sector = info.get('sector', '')
-            name = info.get('name', code)
-            warn = '⚠️' if inactive >= 3 else ''
-            lines.append(f"| {code} | {name}{warn} | {score:.1f} | {inactive} | {sector} |")
+        lines.append(f"## ❌ 降级（-{sync_result['removed']}）")
+        lines.append(f"- 已清仓/评分恶化/L6热点过期自动移除")
         lines.append("")
     
     # 池内统计
-    lines.append(f"## 📋 重点关注池统计")
-    lines.append(f"- 当前池内: {sync_result['total']}只")
-    lines.append(f"- 今日升级: +{sync_result['added']}只")
-    lines.append(f"- 今日降级: -{sync_result['removed']}只")
+    net = sync_result['added'] - sync_result['removed']
+    lines.append(f"## 📋 重点池变动")
+    lines.append(f"- 池内: {sync_result['total']}只（净{'+' if net >= 0 else ''}{net}）")
+    lines.append(f"- 升级: +{sync_result['added']} | 降级: -{sync_result['removed']}")
+    if crash_watch:
+        lines.append(f"- ⚠️ 需人工确认: {len(crash_watch)}只")
     lines.append("")
+    
+    # 热点监控池（仅显示有预警的）
+    stocks = hot_monitor.get('stocks', {})
+    warning_stocks = {c: i for c, i in stocks.items() if i.get('inactive_days', 0) >= 2}
+    if warning_stocks:
+        lines.append(f"## ⚡ 即将降级预警")
+        for code, info in sorted(warning_stocks.items()):
+            name = info.get('name', code)
+            inactive = info.get('inactive_days', 0)
+            score = info.get('total_score', 0)
+            lines.append(f"- {name}({code}) 评分{score:.1f} 非活跃{inactive}天 → 再{3-inactive}天降级")
+        lines.append("")
     
     with open(report_path, 'w') as f:
         f.write('\n'.join(lines))
