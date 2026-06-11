@@ -302,6 +302,8 @@ def sync_to_focus_watchlist(buyable_alerts, hot_monitor=None):
     - 已清仓且无活跃异动的 → 自动移除
     - L6热点升级标的连续5天非活跃 → 自动移除
     """
+    import re
+    from datetime import datetime
     ws = os.environ.get('WORKSPACE', '/root/.openclaw/workspace')
     focus_path = f"{ws}/stock-signals/focus_watchlist.json"
     if not os.path.exists(focus_path):
@@ -392,8 +394,31 @@ def sync_to_focus_watchlist(buyable_alerts, hot_monitor=None):
             removed += 1
             continue
         
-        # 高星已清仓 → 保留但标记为历史
+        # 高星已清仓 → 按退出时间和异动判断
         if '已清仓' in status and stars >= 3:
+            # 条件：退出超过30天 + 不在hot_monitor活跃池中 → 降级移除
+            note = s.get('note', '')
+            exit_date = None
+            # 从note中提取退出日期（格式：2026-06-11清仓 或 06-11清仓）
+            m = re.search(r'(20\d{2}-\d{2}-\d{2})', note)
+            if m:
+                exit_date = m.group(1)
+            elif re.search(r'(\d{2}-\d{2})清仓', note):
+                m2 = re.search(r'(\d{2})-(\d{2})清仓', note)
+                if m2:
+                    exit_date = f'2026-{m2.group(1)}-{m2.group(2)}'
+            
+            if exit_date:
+                try:
+                    exit_dt = datetime.strptime(exit_date, '%Y-%m-%d')
+                    days_since_exit = (datetime.now() - exit_dt).days
+                    # 退出超过30天且不在热点监控池中 → 降级
+                    if days_since_exit > 30 and code not in hot_inactive:
+                        removed += 1
+                        continue
+                except:
+                    pass
+            
             focus_list_new.append(s)
             continue
         
