@@ -49,8 +49,8 @@ if [ -f "$ALERT_DIR/engine_signals.json" ]; then
     echo "  📊 运行分层采集..."
     python3 "$WORKSPACE/scripts/layer_monitor.py" 2>/dev/null && {
         for f in L1_market L2_holdings L3_focus L4_etf_concept L5_watchlist L6_hot_alerts urgent; do
-            if [ -f "$ALERT_DIR/${f}.txt" ]; then
-                echo "     ✅ $f: $(wc -l < "$ALERT_DIR/${f}.txt") lines"
+            if [ -f "$ALERT_DIR/${f}.md" ]; then
+                echo "     ✅ $f: $(wc -l < "$ALERT_DIR/${f}.md") lines"
             fi
         done
     } || echo "  ⚠️ layer_monitor 执行失败"
