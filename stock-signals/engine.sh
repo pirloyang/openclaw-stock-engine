@@ -420,6 +420,11 @@ scan_morphology_signals() {
 
       # === K线卖出形态（减分） ===
       shooting_star)         bs=-0.50; desc="射击之星-高位反转" ;;
+
+      # === 连板后高位天量派发卖出（sell_surge.sh） ===
+      surge_touch_plate_dump)     bs=-0.60; desc="天量触板回落-派发嫌疑" ;;
+      surge_shooting_star_confirm) bs=-0.80; desc="射击星确认卖出-执行" ;;
+      surge_extreme_gamble)       bs=-0.40; desc="极端博弈区-不追" ;;
       upper_wick)            bs=-0.20; desc="倒锤线-长上影" ;;
       three_crows)           bs=-0.30; desc="三只乌鸦" ;;
       hanging_man)           bs=-0.25; desc="上吊线-高位" ;;
