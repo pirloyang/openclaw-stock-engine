@@ -1,32 +1,20 @@
 #!/usr/bin/env python3
 """
-Top5 精选 — 辉哥交易体系加权 v5.0 (2026-06-04)
+Top5 精选 — 信号引擎评价体系 v5.1 (2026-06-12)
 ================================================
-拆解 engine_signals 多维度评分，按辉哥权重重新排序
-权重: 形态35% > 共振25% > 方向20% > 质量15% > 板块5%
+直接用引擎 total_score_ext 排名，不再自算权重
 """
-import json, re, os, sys, math
+import json, re, os, sys
 from datetime import datetime
 
 ENGINE_PATH = "/tmp/stock_alerts/engine_signals.json"
 SIGNALS_SUMMARY = "/tmp/stock_alerts/signals_summary.json"
-SECTOR_HISTORY = "/root/.openclaw/workspace/stock-signals/sector_history.json"
 TOOLS_MD = "/root/.openclaw/workspace/TOOLS.md"
 
 # 排除: 指数/ETF
 EXCLUDE = {'000001', '399001', '399006', '516640', '159667', '159858', '159928', '512400'}
 
-# 方向→分值
-DIR_MAP = {
-    'bullish': 1.0, 'bullish_urgent': 1.5, 'breakout': 1.2, 'up': 0.8,
-    'strong_hold': 0.6, 'buy_signal': 1.0, 'active': 0.5, 'bullish_context': 0.3,
-    'bearish': -1.0, 'bearish_warn': -0.5, 'sell_signal': -1.5, 'breakdown': -1.2,
-    'reversal_warn': -0.8, 'no_add': -0.2, 'risk_mgmt': -0.2, 'exclude_buy': -0.5,
-    'heavy_vol': 0, 'washout': 0, 'light_vol': 0, 'neutral': 0, 'overshoot': 0,
-}
-ST_W = {'very_high': 2.0, 'high': 1.5, 'medium': 1.0, 'low': 0.5, 'info': 0.3}
-
-# 板块映射
+# 板块映射（仅展示用）
 SECTOR_MAP = {
     '300308': 'CPO', '300394': 'CPO', '300502': 'CPO', '002281': 'CPO', '000988': 'CPO', '300620': 'CPO',
     '688008': '存储', '603986': '存储', '688525': '存储', '301308': '存储', '300223': '存储', '001309': '存储',
@@ -59,7 +47,6 @@ def cleared_codes():
         return s
     with open(TOOLS_MD) as f:
         content = f.read()
-    # 今日清仓记录
     in_c = False
     for line in content.split('\n'):
         if '今日清仓记录' in line:
@@ -70,7 +57,6 @@ def cleared_codes():
             m = re.search(r'[-–]\s*\S+\s+(\d{6})', line)
             if m:
                 s.add(m.group(1))
-    # 持仓中标注'清仓'且不含'误报'
     in_h = False
     for line in content.split('\n'):
         if line.strip().startswith('### 持仓') or line.strip() == '### 持仓':
@@ -82,103 +68,6 @@ def cleared_codes():
             if m:
                 s.add(m.group(1))
     return s
-
-
-def load_sector_str():
-    m = {}
-    if not os.path.exists(SECTOR_HISTORY):
-        return m
-    try:
-        with open(SECTOR_HISTORY) as f:
-            data = json.load(f)
-        for s, recs in data.items():
-            if recs:
-                lv = recs[-1].get('level', 'C')
-                m[s] = {'A': 0.5, 'B': 0.3, 'C': 0.15}.get(lv, 0)
-    except:
-        pass
-    return m
-
-
-def load_engine(cleared):
-    if not os.path.exists(ENGINE_PATH):
-        return {}
-    with open(ENGINE_PATH) as f:
-        raw = json.load(f)
-
-    out = {}
-    for item in raw:
-        code = item.get('code', '')
-        if not code or code in EXCLUDE or code in cleared:
-            continue
-
-        # 维度1: 质量分
-        quality = item.get('quality_score', 0) or 0
-        # 维度2: 形态分（22种）
-        morph = item.get('morph_score', 0) or 0
-        # 维度3: 信号方向
-        sig_dir = 0.0
-        sig_list = []
-        for s in item.get('signals', []):
-            dv = DIR_MAP.get(s.get('direction', ''), 0)
-            if dv != 0:
-                sw = ST_W.get(s.get('strength', 'medium'), 1.0)
-                sig_dir += dv * sw
-                if abs(dv) >= 0.8:
-                    sig_list.append(dict(
-                        d=s.get('direction'), r=s.get('rule'), st=s.get('strength'),
-                        v=dv*sw, n=s.get('note','')[:40]
-                    ))
-        # 维度4: 共振
-        res = item.get('resonance', {})
-        bn = res.get('buy_signals', 0)
-        sn = res.get('sell_signals', 0)
-        if bn >= 3 and sn == 0:
-            rgrade = 1.0
-        elif bn >= 2 and sn == 0:
-            rgrade = 0.7
-        elif bn >= 1 and sn == 0:
-            rgrade = 0.4
-        elif bn >= 1 and sn >= 1:
-            rgrade = 0.2
-        elif sn >= 1 and bn == 0:
-            rgrade = -0.5
-        else:
-            rgrade = 0
-
-        # 标记
-        flags = []
-        for s in item.get('signals', []):
-            if s.get('rule') in ('macd_golden_cross', 'ma_golden_cross'):
-                if '金叉' not in flags: flags.append('金叉')
-            if s.get('rule') == 'macd_death_cross':
-                if '死叉确认' not in flags: flags.append('死叉确认')
-            if s.get('rule') == 'macd_death_ongoing' and '金叉' not in flags and '死叉确认' not in flags:
-                flags.append('死叉持续')
-            if s.get('rule') == 'historical_breakthrough':
-                flags.append('前高突破')
-
-        sector = SECTOR_MAP.get(code, '')
-        verdict = res.get('verdict', '')
-
-        out[code] = dict(
-            n=item.get('name', ''), p=item.get('price', 0), ch=item.get('change_pct', 0),
-            q=quality, mh=morph, sd=sig_dir, sl=sig_list,
-            rg=rgrade, bn=bn, sn=sn, vd=verdict, sc=sector, fl=flags
-        )
-    return out
-
-
-def score_weighted(ed, ss):
-    mn = min(ed['mh'], 1.0)
-    rn = (ed['rg'] + 0.5) / 1.5
-    rn = max(min(rn, 1.0), 0)
-    sn = 1.0 / (1.0 + math.exp(-ed['sd']))
-    qn = min(ed['q'] / 3.0, 1.0)
-    sec = ss.get(ed['sc'], 0) / 0.5
-
-    total = mn * 0.35 + rn * 0.25 + sn * 0.20 + qn * 0.15 + sec * 0.05
-    return total * 5.0, dict(m=mn, r=rn, s=sn, q=qn, sc=sec)
 
 
 def load_morph_names():
@@ -199,74 +88,106 @@ def load_morph_names():
     return mm
 
 
-# ===== main =====
 def main():
     sys.stderr.write("\n  loading engine...")
     cleared = cleared_codes()
-    scores = load_engine(cleared)
-    sys.stderr.write(" %d stocks\n" % len(scores))
+    if not os.path.exists(ENGINE_PATH):
+        sys.stderr.write(" ERROR: engine_signals.json not found\n")
+        return
 
-    sys.stderr.write("  loading sector+morph...")
-    ss = load_sector_str()
+    with open(ENGINE_PATH) as f:
+        raw = json.load(f)
+    sys.stderr.write(" %d stocks\n" % len(raw))
+
+    sys.stderr.write("  loading morph...")
     mmap = load_morph_names()
-    sys.stderr.write(" sectors=%d morph=%d\n" % (len(ss), len(mmap)))
+    sys.stderr.write(" morph=%d\n" % len(mmap))
 
     sys.stderr.write("  ranking...")
+    # 直接用引擎 total_score_ext 排名
     results = []
-    for code, ed in scores.items():
-        ts, bd = score_weighted(ed, ss)
-        results.append((ts, code, ed, bd))
+    for item in raw:
+        code = item.get('code', '')
+        if not code or code in EXCLUDE or code in cleared:
+            continue
+        ts = item.get('total_score_ext', 0)
+        results.append((ts, code, item))
     results.sort(key=lambda x: x[0], reverse=True)
     sys.stderr.write(" done\n\n")
 
     print('=' * 50)
-    print('  TOP5 精选 -- 信号引擎评价体系 v5.0')
-    print('  权重: 形态35% > 共振25% > 方向20% > 质量15% > 板块5%')
+    print('  TOP5 精选 -- 信号引擎评价体系 v5.1')
+    print('  排名依据: 引擎 total_score_ext（引擎内部加权）')
     print('=' * 50)
     print()
 
-    for i, (ts, code, ed, bd) in enumerate(results[:5], 1):
-        chg = float(ed['ch'] or 0)
+    for i, (ts, code, item) in enumerate(results[:5], 1):
+        name = item.get('name', '?')
+        chg = float(item.get('change_pct', 0) or 0)
         arrow = '🟢' if chg >= 0 else '🔴'
         chg_s = ('+' + str(chg) + '%') if chg >= 0 else (str(chg) + '%')
+        morph = item.get('morph_score', 0)
+        quality = item.get('quality_score', 0)
+        price = item.get('price', 0)
+        verdict = item.get('resonance', {}).get('verdict', '')
+        bn = item.get('resonance', {}).get('buy_signals', 0)
+        sn = item.get('resonance', {}).get('sell_signals', 0)
 
-        print('  #%d  %s (%s)  %s %s' % (i, ed['n'], code, arrow, chg_s))
-        print('      Y%s  综合分%.2f(0~5)' % (str(ed['p']), ts))
-        print('      分解: 形态%.2f | 共振%.2f | 方向%.2f | 质量%.2f | 板块%.2f'
-              % (bd['m'], bd['r'], bd['s'], bd['q'], bd['sc']))
+        print('  #%d  %s (%s)  %s %s' % (i, name, code, arrow, chg_s))
+        print('      Y%s  引擎分%.2f(0~5)' % (str(price), ts))
+        print('      形态%.2f | 质量%.2f | 共振: buy=%d sell=%d' % (morph, quality, bn, sn))
+        print('      引擎判决: %s' % verdict)
 
-        tops = sorted(ed['sl'], key=lambda x: abs(x['v']), reverse=True)[:3]
-        sig = ' · '.join(["%s(%s)" % (s['d'], s['r']) for s in tops])
-        if sig:
-            print('      核心信号: ' + sig)
+        # 核心信号（取top3方向信号）
+        sigs = item.get('signals', [])
+        top_sigs = sorted(sigs, key=lambda s: abs(s.get('strength', 'medium') != 'info'), reverse=True)[:3]
+        sig_strs = []
+        for s in top_sigs:
+            r = s.get('rule', '')
+            d = s.get('direction', '')
+            n = s.get('note', '')[:30]
+            sig_strs.append('%s(%s)' % (d, r))
+        if sig_strs:
+            print('      核心信号: ' + ' · '.join(sig_strs))
 
         mnames = mmap.get(code, [])
         if mnames:
             print('      引擎形态: ' + ' · '.join(mnames[:4]))
 
-        if ed['fl']:
-            print('      特殊标记: ' + ' · '.join(ed['fl']))
+        # 标记
+        flags = []
+        for s in sigs:
+            if s.get('rule') in ('macd_golden_cross', 'ma_golden_cross'):
+                if '金叉' not in flags: flags.append('金叉')
+            if s.get('rule') == 'macd_death_cross':
+                if '死叉确认' not in flags: flags.append('死叉确认')
+            if s.get('rule') == 'macd_death_ongoing' and '金叉' not in flags and '死叉确认' not in flags:
+                flags.append('死叉持续')
+            if s.get('rule') == 'historical_breakthrough':
+                flags.append('前高突破')
+        if flags:
+            print('      标记: ' + ' · '.join(flags))
 
-        if ed['sc']:
-            print('      板块: ' + ed['sc'])
-
-        vds = {1.0: '三重共振↑', 0.7: '双重确认↑', 0.4: '单一信号↑',
-               0.2: '多空冲突', -0.5: '卖出确认↓'}
-        print('      共振: ' + vds.get(ed['rg'], '中性') + ' (buy=%d sell=%d)' % (ed['bn'], ed['sn']))
+        sector = SECTOR_MAP.get(code, '')
+        if sector:
+            print('      板块: ' + sector)
         print()
 
     print('  Full Top 15:')
     print()
-    for i, (ts, code, ed, bd) in enumerate(results[:15], 1):
-        chg = float(ed['ch'] or 0)
+    for i, (ts, code, item) in enumerate(results[:15], 1):
+        name = item.get('name', '?')
+        chg = float(item.get('change_pct', 0) or 0)
         chg_s = ('+' + str(chg) + '%') if chg >= 0 else (str(chg) + '%')
         arrow = '🟢' if chg >= 0 else '🔴'
+        morph = item.get('morph_score', 0)
         morphs = '·'.join([x[:2] for x in mmap.get(code, [])[:3]])
-        flags = '·'.join(ed['fl'][:2])
+        verdict = item.get('resonance', {}).get('verdict', '')[:8]
         print('  %2d. %-10s(%-6s) %s%8s  %5.2f  形态%4.2f  %-12s %s'
-              % (i, ed['n'], code, arrow, chg_s, ts, ed['mh'], morphs, flags))
+              % (i, name, code, arrow, chg_s, ts, morph, morphs, verdict))
 
-    mt = [(ed['mh'], code, ed['n'], ed['p']) for _, code, ed, _ in results if ed['mh'] >= 0.5]
+    mt = [(item.get('morph_score', 0), code, item.get('name', '?'), item.get('price', 0))
+          for _, code, item in results if item.get('morph_score', 0) >= 0.5]
     if mt:
         print('\n  Engine morphs >=0.5 (%d):' % len(mt))
         for ms, c, n, pr in sorted(mt, key=lambda x: x[0], reverse=True)[:12]:

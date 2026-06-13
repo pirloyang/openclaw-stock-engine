@@ -1,96 +1,7 @@
 {
   "version": 2,
-  "last_update": "2026-06-11",
+  "last_update": "2026-06-12",
   "focus_list": [
-    {
-      "code": "601600",
-      "name": "中国铝业",
-      "stars": 3,
-      "hold": false,
-      "status": "已清仓",
-      "catalyst": "几内亚铝土矿出口管控驱动，有色板块独立走强",
-      "entry_low": 11.3,
-      "entry_high": 11.3,
-      "stop_loss": 10.73,
-      "target": 12.0,
-      "signals": [
-        "持有不动",
-        "前高11.84-11.88突破确认"
-      ],
-      "note": "2026-06-08清仓@10.02，亏-15.8%(-¥1,128)。恒指纳入+上证50调入双利好未兑现，纳指暴跌+铝价下行双重压制",
-      "exit_price": 10.02,
-      "exit_note": "恒指纳入+上证50调入双利好未兑现，-15.8%止损"
-    },
-    {
-      "code": "000988",
-      "name": "华工科技",
-      "stars": 5,
-      "hold": false,
-      "status": "已清仓",
-      "catalyst": "光模块/激光/AI算力互联龙头，光通信板块补涨逻辑",
-      "entry_low": 149.3,
-      "entry_high": 149.3,
-      "stop_loss": 140.0,
-      "target": 170.0,
-      "signals": [
-        "补涨条件：跑赢CPO板块竞价均值",
-        "补仓条件：跑赢天孚+价<152"
-      ],
-      "note": "2026-06-03清仓@154.47，盈+¥517(+3.46%)。CPO板块持续走强，新买入信号未形成前不动"
-    },
-    {
-      "code": "603618",
-      "name": "杭电股份",
-      "stars": 3,
-      "hold": false,
-      "status": "已清仓",
-      "catalyst": "电缆龙头+5月29日涨停+6月2日深V反包，突破前高形态",
-      "entry_low": 40.41,
-      "entry_high": 40.41,
-      "stop_loss": 38.39,
-      "target": 44.5,
-      "signals": [
-        "持有不动",
-        "缩量上涨-洗盘特征偏利多"
-      ],
-      "note": "2026-06-09重新建仓300股@40.41，电磁线/电力线缆方向 | 2026-06-08清仓@39.41",
-      "exit_price": 39.41
-    },
-    {
-      "code": "601985",
-      "name": "中国核电",
-      "stars": 3,
-      "hold": false,
-      "status": "重点监控",
-      "catalyst": "4连阳放量突破前高，防御性红利标的",
-      "entry_low": 9.15,
-      "entry_high": 9.2,
-      "stop_loss": 8.9,
-      "target": 10.0,
-      "signals": [
-        "放量突破9.33(60日高点)开盘介入",
-        "回踩9.15-9.20缩量企稳低吸"
-      ],
-      "note": "2026-06-02凌晨加入重点关注。波动小适合中线"
-    },
-    {
-      "code": "600089",
-      "name": "特变电工",
-      "stars": 2,
-      "hold": false,
-      "status": "观察·待确认",
-      "catalyst": "位置10%极度低位，筹码密集在成本附近",
-      "entry_low": 0,
-      "entry_high": 0,
-      "stop_loss": 0,
-      "target": 0,
-      "signals": [
-        "等MA5金叉MA10",
-        "等站稳MA20",
-        "当前均线空头排列时机未到"
-      ],
-      "note": "2026-06-02凌晨分析。均线空头格局未修复，等2-3周"
-    },
     {
       "code": "600549",
       "name": "厦门钨业",
@@ -106,325 +17,10 @@
         "回踩53.5-54缩量企稳介入",
         "放量突破58.00右侧确认"
       ],
-      "note": "2026-06-03建仓200股@59.611，止损55.0，目标62.0"
-    },
-    {
-      "code": "300750",
-      "name": "宁德时代",
-      "stars": 5,
-      "hold": false,
-      "status": "重点监控",
-      "catalyst": "全球动力电池+储能双龙头",
-      "entry_low": 420,
-      "entry_high": 425,
-      "stop_loss": 405,
-      "target": 460,
-      "signals": [
-        "缩量回踩420-425介入"
-      ],
-      "note": "2026-05-31加入重点关注"
-    },
-    {
-      "code": "002230",
-      "name": "科大讯飞",
-      "stars": 5,
-      "hold": false,
-      "status": "观察·待确认",
-      "catalyst": "AI+大模型/AI应用龙头",
-      "entry_low": 48.0,
-      "entry_high": 48.5,
-      "stop_loss": 46.0,
-      "target": 55.0,
-      "signals": [
-        "缩量企稳+48附近止跌信号介入"
-      ],
-      "note": "2026-05-28凌晨加入重点关注"
-    },
-    {
-      "code": "300124",
-      "name": "汇川技术",
-      "stars": 5,
-      "hold": false,
-      "status": "重点监控",
-      "catalyst": "工控/电机/机器人龙头，汇川联合动力分拆上市催化",
-      "entry_low": 77.0,
-      "entry_high": 78.0,
-      "stop_loss": 72.0,
-      "target": 90.0,
-      "signals": [
-        "回踩77-78区间介入"
-      ],
-      "note": "2026-05-27加入重点关注"
-    },
-    {
-      "code": "000960",
-      "name": "锡业股份",
-      "stars": 5,
-      "hold": false,
-      "status": "重点监控",
-      "catalyst": "全球锡业龙头，Q1利润+73.71%，全球锡矿供给偏紧+AI焊料需求",
-      "entry_low": 38.0,
-      "entry_high": 39.0,
-      "stop_loss": 36.5,
-      "target": 45.0,
-      "signals": [
-        "回踩38-39区间介入"
-      ],
-      "note": "2026-05-26加入重点关注"
-    },
-    {
-      "code": "300390",
-      "name": "天华新能",
-      "stars": 4,
-      "hold": false,
-      "status": "重点监控",
-      "catalyst": "锂电材料/固态电池/宁德时代链，Q1净利+230%",
-      "entry_low": 90.0,
-      "entry_high": 91.0,
-      "stop_loss": 85.0,
-      "target": 100.0,
-      "signals": [
-        "回踩90-91介入",
-        "放量重回90以上再评估"
-      ],
-      "note": "2026-05-27加入重点关注。当前跌破MA20暂移除主动关注"
-    },
-    {
-      "code": "300660",
-      "name": "江苏雷利",
-      "stars": 4,
-      "hold": false,
-      "status": "重点监控",
-      "catalyst": "微电机/机器人龙头，宇树科技6/1科创板IPO情绪受益",
-      "entry_low": 47.5,
-      "entry_high": 48.0,
-      "stop_loss": 44.6,
-      "target": 54.0,
-      "signals": [
-        "回踩47.5-48缩量企稳介入",
-        "6月3日除权后观察跳空缺口的回补"
-      ],
-      "note": "2026-05-26更新，6月3日除权"
-    },
-    {
-      "code": "603893",
-      "name": "瑞芯微",
-      "stars": 4,
-      "hold": false,
-      "status": "重点监控",
-      "catalyst": "AI芯片/SoC龙头，P0评分3.76全池最高",
-      "entry_low": 188.0,
-      "entry_high": 190.0,
-      "stop_loss": 180.0,
-      "target": 210.0,
-      "signals": [
-        "回踩188-190区间介入"
-      ],
-      "note": "2026-05-25加入，P0=3.76全池最高，8买1卖"
-    },
-    {
-      "code": "300124",
-      "name": "比亚迪",
-      "stars": 5,
-      "hold": false,
-      "status": "观察",
-      "catalyst": "新能源龙头",
-      "entry_low": 0,
-      "entry_high": 0,
-      "stop_loss": 0,
-      "target": 0,
-      "signals": [
-        "新能源板块走强时必盯"
-      ],
-      "note": "历史五★标的后补介入条件"
-    },
-    {
-      "code": "600580",
-      "name": "卧龙电驱",
-      "stars": 4,
-      "hold": false,
-      "status": "已清仓",
-      "catalyst": "电机龙头/人形机器人电驱",
-      "entry_low": 44.455,
-      "entry_high": 44.455,
-      "stop_loss": 38.5,
-      "target": 0,
-      "signals": [
-        "止损38.50"
-      ],
-      "note": "2026-06-04清仓@38.15，止损执行。remove from holding"
-    },
-    {
-      "code": "300223",
-      "name": "北京君正",
-      "stars": 3,
-      "hold": true,
-      "status": "持仓",
-      "catalyst": "存储芯片/MCU龙头，存储次主线确认+缩量回踩144-145区间介入",
-      "entry_low": 147.89,
-      "entry_high": 147.89,
-      "stop_loss": 135.0,
-      "target": 165.0,
-      "signals": [
-        "持有不动",
-        "止损135.0"
-      ],
-      "note": "2026-06-04盘中介入100股@147.89"
-    },
-    {
-      "code": "600345",
-      "name": "长江通信",
-      "stars": 3,
-      "hold": true,
-      "status": "持仓",
-      "catalyst": "通信设备/光纤方向，红三兵+共振观察",
-      "entry_low": 56.83,
-      "entry_high": 56.83,
-      "stop_loss": 53.0,
-      "target": 62.0,
-      "signals": [
-        "持有不动",
-        "红三兵形态"
-      ],
-      "note": "2026-06-05建仓200股@56.83"
-    },
-    {
-      "code": "300136",
-      "name": "信维通信",
-      "stars": 3,
-      "hold": false,
-      "status": "已清仓",
-      "catalyst": "通信天线/消费电子方向，红三兵+8.5%涨幅",
-      "entry_low": 105.3,
-      "entry_high": 105.3,
-      "stop_loss": 98.0,
-      "target": 118.0,
-      "signals": [
-        "持有不动",
-        "红三兵形态"
-      ],
-      "note": "2026-06-05建仓100股@105.3 | 2026-06-11清仓@93.28亏-11.44%"
-    },
-    {
-      "code": "300115",
-      "name": "长盈精密",
-      "stars": 3,
-      "hold": false,
-      "status": "已清仓",
-      "catalyst": "消费电子精密结构件，红三兵形态",
-      "entry_low": 37.569,
-      "entry_high": 37.569,
-      "stop_loss": 33.0,
-      "target": 42.0,
-      "signals": [
-        "持有不动",
-        "红三兵形态",
-        "浮亏-12.56%"
-      ],
-      "note": "06-09清仓@31.8亏-15.3%(-¥1,154)，两次交易累计亏损",
-      "exit_price": 31.8,
-      "exit_note": "2026-06-09 L1熔断止损执行，-15.3%(-¥1,154)"
-    },
-    {
-      "code": "002421",
-      "name": "达实智能",
-      "stars": 2,
-      "reason": "AIoT/智慧建筑",
-      "hold": false,
-      "status": "观察",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": null,
-      "target": null,
-      "signals": [],
-      "note": "辉哥自选截图导入"
-    },
-    {
-      "code": "002579",
-      "name": "中京电子",
-      "stars": 2,
-      "reason": "PCB/HDI",
-      "hold": false,
-      "status": "观察",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": null,
-      "target": null,
-      "signals": [],
-      "note": "辉哥自选截图导入"
-    },
-    {
-      "code": "000601",
-      "name": "粤电力A",
-      "stars": 2,
-      "reason": "电力/广东国资",
-      "hold": false,
-      "status": "观察",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": null,
-      "target": null,
-      "signals": [],
-      "note": "辉哥自选截图导入"
-    },
-    {
-      "code": "600726",
-      "name": "华电辽能",
-      "stars": 2,
-      "reason": "电力/辽宁",
-      "hold": false,
-      "status": "观察",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": null,
-      "target": null,
-      "signals": [],
-      "note": "辉哥自选截图导入"
-    },
-    {
-      "code": "600589",
-      "name": "圣泉集团",
-      "stars": 2,
-      "reason": "化工/酚醛树脂",
-      "hold": false,
-      "status": "观察",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": null,
-      "target": null,
-      "signals": [],
-      "note": "辉哥自选截图导入"
-    },
-    {
-      "code": "600158",
-      "name": "中体产业",
-      "stars": 2,
-      "reason": "体育/彩票",
-      "hold": false,
-      "status": "观察",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": null,
-      "target": null,
-      "signals": [],
-      "note": "辉哥自选截图导入"
-    },
-    {
-      "code": "600487",
-      "name": "亨通光电",
-      "stars": 3,
-      "hold": true,
-      "status": "持仓",
-      "catalyst": "光纤光缆/海缆龙头，今日涨停+光纤涨价150%逻辑兑现",
-      "entry_low": 99.73,
-      "entry_high": 99.73,
-      "stop_loss": 94.74,
-      "target": 115.0,
-      "signals": [
-        "持有不动",
-        "多头排列-超强持有"
-      ],
-      "note": "2026-06-09建仓100股@99.73，光纤光缆/海缆方向"
+      "note": "2026-06-03建仓200股@59.611，止损55.0，目标62.0 | 06-12减仓100@64.98",
+      "clear_price": 64.98,
+      "clear_date": "2026-06-12",
+      "shares": 100
     },
     {
       "code": "000657",
@@ -441,7 +37,56 @@
         "多头排列-超强持有",
         "有色金属板块联动"
       ],
-      "note": "2026-06-11建仓200股，首批100@73.70+加仓100@76.40"
+      "note": "2026-06-11建仓200股，首批100@73.70+加仓100@76.40 | 06-12减仓100@81",
+      "shares": 100
+    },
+    {
+      "code": "002119",
+      "name": "康强电子",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|其他|综合评分4.3|放量强势+P0评分3.4，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 31.16,
+      "target": 37.72,
+      "signals": [
+        "突破31.20.00高点+10.00%",
+        "大幅偏离成本41%—获利盘丰厚,追高风险大",
+        "十字星-中性｜多空均衡·方向待次日确认"
+      ],
+      "note": "2026-06-12 L6热点自动升级，评分4.3",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-12",
+      "upgrade_type": "normal",
+      "composite_score": 4.3,
+      "low_score_days": 0
+    },
+    {
+      "code": "300455",
+      "name": "航天智装",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|航天/军工|综合评分4.1|放量强势+P0评分2.5，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 22.5,
+      "target": 27.23,
+      "signals": [
+        "20日线附近-筹码密集",
+        "入场止损:跌破23.03(阳线实体50%位)出清",
+        "MACD零轴下金叉-DIF上穿DEA(弱势)"
+      ],
+      "note": "2026-06-12 L6热点自动升级，评分4.1",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-12",
+      "upgrade_type": "normal",
+      "composite_score": 4.1,
+      "low_score_days": 0
     }
   ]
 }
