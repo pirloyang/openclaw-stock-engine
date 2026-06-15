@@ -34,14 +34,23 @@ fetch_market() {
 }
 
 fetch_bulk() {
-  # 一次性拉取全池实时行情（单次curl，~60KB，10秒内完成）
-  local all="${1:-}" batch=""
+  # 分批拉取全池实时行情（gtimg 大请求易超时，每批30只）
+  local batch="" count=0 result=""
   while read code; do
     [ -z "$code" ] && continue
     [[ $code == 6* || $code == "000001" ]] && batch="${batch}sh${code}," || batch="${batch}sz${code},"
+    ((count++))
+    if [ $count -ge 30 ]; then
+      local chunk=$(curl -s --max-time 15 "https://qt.gtimg.cn/q=${batch%,}" 2>/dev/null)
+      result="${result}${chunk}"
+      batch="" count=0
+    fi
   done < <(get_all_codes)
-  batch="${batch%,}"
-  curl -s --max-time 20 "https://qt.gtimg.cn/q=$batch" 2>/dev/null | iconv -f GBK -t UTF-8 2>/dev/null | sed 's/";v_/";\nv_/g'
+  if [ -n "$batch" ]; then
+    local chunk=$(curl -s --max-time 15 "https://qt.gtimg.cn/q=${batch%,}" 2>/dev/null)
+    result="${result}${chunk}"
+  fi
+  echo "$result" | iconv -f GBK -t UTF-8 2>/dev/null | sed 's/";v_/";\nv_/g'
 }
 
 # 均线计算

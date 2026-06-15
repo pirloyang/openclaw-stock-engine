@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "last_update": "2026-06-13",
+  "last_update": "2026-06-15",
   "focus_list": [
     {
       "code": "600549",
@@ -8,7 +8,7 @@
       "stars": 3,
       "hold": true,
       "status": "持仓",
-      "catalyst": "低价单峰密集+主力吸筹+有色独立溢价",
+      "catalyst": "低价单峰密集+主力吸筹+有色独立溢价 | L6热点评分8.1",
       "entry_low": 59.611,
       "entry_high": 59.611,
       "stop_loss": 50.0,
@@ -20,7 +20,8 @@
       "note": "2026-06-03建仓200股@59.611，止损55.0，目标62.0 | 06-12减仓100@64.98",
       "clear_price": 64.98,
       "clear_date": "2026-06-12",
-      "shares": 100
+      "shares": 100,
+      "cost": 53.515
     },
     {
       "code": "000657",
@@ -38,7 +39,8 @@
         "有色金属板块联动"
       ],
       "note": "2026-06-11建仓200股，首批100@73.70+加仓100@76.40 | 06-12减仓100@81",
-      "shares": 100
+      "shares": 200,
+      "cost": 74.828
     },
     {
       "code": "002119",
@@ -89,40 +91,340 @@
       "low_score_days": 0
     },
     {
-      "code": "601985",
-      "name": "中国核电",
-      "stars": 5,
+      "code": "000032",
+      "name": "深桑达Ａ",
+      "stars": 3,
       "hold": false,
-      "status": "重点监控",
-      "catalyst": "核电龙头/防御性红利标的，筹码低位单峰密集+主力锁仓，6/12放量上攻逼近前高9.37",
-      "entry_low": 8.97,
-      "entry_high": 9.05,
-      "stop_loss": 8.8,
-      "target": 9.8,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|其他|综合评分4.3|放量强势+P0评分2.75，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 19.25,
+      "target": 23.3,
       "signals": [
-        "回踩8.97-9.05缩量企稳介入",
-        "放量突破9.37(60日高点)+量>250万手右侧追入",
-        "跌破8.82止损"
+        "突破19.98.00高点+1.00%",
+        "入场止损:跌破19.70(阳线实体50%位)出清",
+        "前高突破-2026-05-20高点19.975,已超越1.1%"
       ],
-      "note": "2026-06-13辉哥指定加入重点监控。筹码峰8.84-9.19，平均成本8.97，获利盘88.9%，主力成本8.98与散户几乎一致，锁仓拉升形态。前高9.37是关键突破位"
+      "note": "2026-06-15 L6热点自动升级，评分4.3",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-15",
+      "upgrade_type": "normal",
+      "composite_score": 4.3,
+      "low_score_days": 0
+    },
+    {
+      "code": "300223",
+      "name": "北京君正",
+      "stars": 3,
+      "hold": true,
+      "status": "持仓",
+      "catalyst": "L6热点异动|其他|综合评分4.6|放量强势+P0评分3.22，关注次日分歧低吸",
+      "entry_low": 158.89,
+      "entry_high": 158.89,
+      "stop_loss": 150.0,
+      "target": 170.0,
+      "signals": [
+        "十字星-中性｜多空均衡·方向待次日确认",
+        "向上跳空+2.00%—突破或消息驱动",
+        "均线多头排列5>10>20>60"
+      ],
+      "note": "2026-06-15 L6热点自动升级，评分4.6",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-15",
+      "upgrade_type": "normal",
+      "composite_score": 4.6,
+      "low_score_days": 0,
+      "shares": 100,
+      "cost": 158.89
+    },
+    {
+      "code": "002384",
+      "name": "东山精密",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|PCB/覆铜板|综合评分4.1|放量强势+P0评分2.71，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 219.79,
+      "target": 266.06,
+      "signals": [
+        "入场止损:跌破223.52(阳线实体50%位)出清",
+        "向上跳空+2.00%—突破或消息驱动",
+        "前高突破-2026-06-09高点224.4,已超越0.1%"
+      ],
+      "note": "2026-06-15 L6热点自动升级，评分4.1",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-15",
+      "upgrade_type": "normal",
+      "composite_score": 4.1,
+      "low_score_days": 0
+    },
+    {
+      "code": "300394",
+      "name": "天孚通信",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|CPO/光通信|综合评分4.0|放量强势+P0评分2.76，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 283.29,
+      "target": 342.93,
+      "signals": [
+        "20日线附近-筹码密集",
+        "入场止损:跌破288.28(阳线实体50%位)出清",
+        "锤子线-底部阳线确认长下影"
+      ],
+      "note": "2026-06-15 L6热点自动升级，评分4.0",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-15",
+      "upgrade_type": "normal",
+      "composite_score": 4.0,
+      "low_score_days": 0
     },
     {
       "code": "000969",
       "name": "安泰科技",
       "stars": 5,
-      "hold": false,
-      "status": "重点监控",
-      "catalyst": "新材料/稀土永磁龙头，6/12涨停+筹码空中加油形态，主力暴力洗盘后重新控盘，筹码主峰下移至22-23元，获利盘84.88%惜售",
-      "entry_low": 23.5,
-      "entry_high": 24.0,
+      "hold": true,
+      "status": "持仓",
+      "catalyst": "新材料/稀土永磁，6/12涨停+筹码空中加油形态",
+      "entry_low": 24.2,
+      "entry_high": 24.2,
       "stop_loss": 22.0,
       "target": 26.5,
       "signals": [
-        "回踩23.50-24.00缩量企稳介入",
-        "放量突破25.52(前高)右侧追入",
-        "跌破22.00(筹码峰下沿)止损"
+        "涨停反包确认洗盘结束",
+        "筹码从22.63套牢峰转移至22-23低位密集峰"
       ],
-      "note": "2026-06-13辉哥指定加入重点监控。6/10暴力洗盘至20.00后6/12涨停反包，筹码从22.63套牢峰转移至22.00-23.00低位密集峰，主力成本22.91与散户22.65高度一致，锁仓拉升形态。前高25.52/26.17是关键突破位"
+      "note": "2026-06-15建仓400@24.20，盘中买入，止损22.00，目标26.50",
+      "shares": 400,
+      "cost": 24.2
+    },
+    {
+      "code": "301182",
+      "name": "凯旺科技",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|其他|综合评分4.1|放量强势+P0评分2.3833333333333333，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 83.68,
+      "target": 101.29,
+      "signals": [
+        "🔴7.2%异动·其他"
+      ],
+      "note": "2026-06-15 L6热点自动升级，评分4.1",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-15",
+      "upgrade_type": "normal",
+      "composite_score": 4.1,
+      "low_score_days": 0
+    },
+    {
+      "code": "300502",
+      "name": "新易盛",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|CPO/光通信|综合评分4.5|放量强势+P0评分3.6，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 507.39,
+      "target": 614.22,
+      "signals": [
+        "前高压制-2026-06-12高点506.46,距仅0.8%",
+        "MACD死叉-DIF下穿DEA",
+        "MACD底背离-股价新低DIF未新低"
+      ],
+      "note": "2026-06-15 L6热点自动升级，评分4.5",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-15",
+      "upgrade_type": "normal",
+      "composite_score": 4.5,
+      "low_score_days": 0
+    },
+    {
+      "code": "601985",
+      "name": "中国核电",
+      "stars": 5,
+      "hold": true,
+      "status": "持仓",
+      "catalyst": "核电龙头/防御性红利标的，筹码低位单峰密集+主力锁仓",
+      "entry_low": 9.12,
+      "entry_high": 9.12,
+      "stop_loss": 8.8,
+      "target": 9.8,
+      "signals": [
+        "筹码低位单峰密集+获利盘88.9%无兑现意愿",
+        "6/12放量上攻逼近前高9.37"
+      ],
+      "note": "2026-06-15建仓1000@9.12，盘中买入，止损8.80，目标9.80",
+      "shares": 1000,
+      "cost": 9.12
+    },
+    {
+      "code": "002463",
+      "name": "沪电股份",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|PCB/覆铜板|综合评分4.7|放量强势+P0评分3.9，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 125.11,
+      "target": 151.45,
+      "signals": [
+        "20日线附近-筹码密集",
+        "向上跳空+2.00%—突破或消息驱动",
+        "MACD持续死叉-DIF仍低于DEA"
+      ],
+      "note": "2026-06-15 L6热点自动升级，评分4.7",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-15",
+      "upgrade_type": "normal",
+      "composite_score": 4.7,
+      "low_score_days": 0
+    },
+    {
+      "code": "300475",
+      "name": "香农芯创",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|存储芯片|综合评分4.1|放量强势+P0评分3.22，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 187.04,
+      "target": 226.41,
+      "signals": [
+        "向上跳空+2.00%—突破或消息驱动",
+        "前高突破-2026-06-04高点184.96,已超越1.6%",
+        "MACD持续死叉-DIF仍低于DEA"
+      ],
+      "note": "2026-06-15 L6热点自动升级，评分4.1",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-15",
+      "upgrade_type": "normal",
+      "composite_score": 4.1,
+      "low_score_days": 0
+    },
+    {
+      "code": "600522",
+      "name": "中天科技",
+      "stars": 4,
+      "hold": true,
+      "status": "持仓",
+      "catalyst": "光纤光缆/海缆龙头，光替铜产业链核心标的",
+      "entry_low": 50.35,
+      "entry_high": 50.35,
+      "stop_loss": 47.5,
+      "target": 55.0,
+      "signals": [
+        "光纤光缆全球需求增长",
+        "海缆业务受益海上风电"
+      ],
+      "note": "2026-06-15建仓200@50.35，盘中买入，止损47.50，目标55.00",
+      "shares": 200,
+      "cost": 50.35
+    },
+    {
+      "code": "003009",
+      "name": "中天火箭",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|其他|综合评分4.8|放量强势+P0评分3.75，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 60.99,
+      "target": 73.83,
+      "signals": [
+        "前高压制-2026-06-08高点60.94,距仅1.0%",
+        "MACD底背离-股价新低DIF未新低",
+        "MACD零轴上方-强势"
+      ],
+      "note": "2026-06-15 L6热点自动升级，评分4.8",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-15",
+      "upgrade_type": "normal",
+      "composite_score": 4.8,
+      "low_score_days": 0
+    },
+    {
+      "code": "603283",
+      "name": "赛腾股份",
+      "stars": 4,
+      "hold": true,
+      "status": "持仓",
+      "catalyst": "消费电子自动化设备龙头，苹果链检测设备核心供应商",
+      "entry_low": 55.3,
+      "entry_high": 55.3,
+      "stop_loss": 52.5,
+      "target": 60.0,
+      "signals": [
+        "消费电子自动化需求增长",
+        "苹果链设备升级周期"
+      ],
+      "note": "2026-06-15建仓200@55.30，盘中买入，止损52.50，目标60.00",
+      "shares": 200,
+      "cost": 55.3
+    },
+    {
+      "code": "300964",
+      "name": "本川智能",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|其他|综合评分4.1|放量强势+P0评分2.4，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 88.92,
+      "target": 107.64,
+      "signals": [
+        "🔴7.2%异动·其他"
+      ],
+      "note": "2026-06-15 L6热点自动升级，评分4.1",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-15",
+      "upgrade_type": "normal",
+      "composite_score": 4.1,
+      "low_score_days": 0
+    },
+    {
+      "code": "600584",
+      "name": "长电科技",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|封测|综合评分4.5|放量强势+P0评分2.6633333333333336，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 70.71,
+      "target": 85.59,
+      "signals": [
+        "🔴8.0%异动·封测"
+      ],
+      "note": "2026-06-15 L6热点自动升级，评分4.5",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-15",
+      "upgrade_type": "normal",
+      "composite_score": 4.5,
+      "low_score_days": 0
     }
   ]
 }

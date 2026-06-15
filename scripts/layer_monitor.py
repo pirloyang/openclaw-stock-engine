@@ -41,10 +41,29 @@ ETF = {
 # L5: 自选池（从tools.sh holdings/history读）
 
 def get_current_holdings():
-    """从TOOLS.md解析当前持仓"""
+    """从TOOLS.md解析当前持仓，自动过滤已清仓标的（减仓/卖出不视为清仓）"""
     path = f"{WORKSPACE}/TOOLS.md"
     if not os.path.exists(path):
         return {}
+    
+    # 第一步：扫描所有 ### 今日清仓记录 节，收集已清仓代码（仅匹配"清仓"，不匹配"减仓"）
+    cleared_codes = set()
+    with open(path) as f:
+        in_clear_section = False
+        for line in f:
+            if line.strip().startswith("### 今日清仓记录"):
+                in_clear_section = True
+                continue
+            if in_clear_section:
+                if line.strip().startswith("###"):
+                    in_clear_section = False
+                    continue
+                # 仅匹配"清仓"，不匹配"减仓"
+                m = re.search(r'-\s*.+?\s+(\d{6})\s*[：:]\s*清仓', line)
+                if m:
+                    cleared_codes.add(m.group(1))
+    
+    # 第二步：扫描 ### 持仓 节，过滤已清仓标的
     holdings = {}
     in_section = False
     with open(path) as f:
@@ -57,11 +76,13 @@ def get_current_holdings():
                     break
                 m = re.search(r'-\s*(.+?)\s+(\d{6})\s*[（(](\d+)股.*?成本([\d.]+)', line)
                 if m:
-                    # 跳过已清仓的（含'清仓'标识的行，但排除"误报清仓"等否定表述）
+                    code = m.group(2)
+                    # 跳过已清仓标的
+                    if code in cleared_codes:
+                        continue
                     if '清仓' in line and '误报' not in line:
                         continue
                     name = m.group(1).strip()
-                    code = m.group(2)
                     shares = int(m.group(3))
                     cost = float(m.group(4))
                     holdings[code] = {"name": name, "shares": shares, "cost": cost}
