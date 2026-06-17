@@ -434,10 +434,32 @@ def compute_l6_hot(l5_stocks, etf_signals):
 
     hot_monitor["last_update"] = today
 
+    # ── 板块聚合预警：识别有多个涨停/大涨标的的板块 ──
+    sector_cluster = {}
+    for a in hot_alerts:
+        sec = a['sector']
+        if sec not in sector_cluster:
+            sector_cluster[sec] = {'count': 0, 'stocks': [], 'max_chg': 0}
+        sector_cluster[sec]['count'] += 1
+        sector_cluster[sec]['stocks'].append(f"{a['name']}({a['change']:+.1f}%)")
+        if abs(a['change']) > sector_cluster[sec]['max_chg']:
+            sector_cluster[sec]['max_chg'] = abs(a['change'])
+
+    hot_sector_clusters = []
+    for sec, info in sorted(sector_cluster.items(), key=lambda x: x[1]['count'], reverse=True):
+        if info['count'] >= 2 or info['max_chg'] > 9:
+            hot_sector_clusters.append({
+                'sector': sec,
+                'count': info['count'],
+                'max_chg': info['max_chg'],
+                'stocks': info['stocks'],
+            })
+
     result = {
         "hot_alerts": hot_alerts,
         "buyable_alerts": buyable,
         "hot_sectors": list(hot_sectors),
+        "sector_clusters": hot_sector_clusters,
         "total_hot": len(hot_alerts),
         "total_buyable": len(buyable),
     }
@@ -449,6 +471,13 @@ def compute_l6_hot(l5_stocks, etf_signals):
         if not hot_alerts:
             f.write("今日无±5%以上异动\n")
         else:
+            # 板块聚合预警（置顶）
+            if hot_sector_clusters:
+                f.write("🔥🔥 板块异动聚合预警\n")
+                for sc in hot_sector_clusters:
+                    f.write(f"【{sc['sector']}】{sc['count']}只异动，最大{sc['max_chg']:+.1f}%: {'、'.join(sc['stocks'])}\n")
+                f.write("\n")
+
             if hot_sectors:
                 f.write(f"🔥 今日热门板块: {'/'.join(hot_sectors)}\n\n")
             if buyable:
