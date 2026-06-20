@@ -64,22 +64,22 @@ high_n() { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] &&
 low_n()  { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] && tail -"$n" "$f" | awk 'min==""||$4<min{min=$4} END{printf "%.2f", min}'; }
 
 # EMA (指数移动平均) — 用于 MACD
+# v5.3: 全序列递推EMA，修复v5.2只取最后N行导致的DIF计算错误
 calc_ema() {
   local f="$1" n="$2"
   [ ! -f "$f" ] && return
   local total=$(wc -l < "$f")
   [ "$total" -lt "$n" ] && return
-  local k=$(echo "scale=6; 2/($n+1)" | bc -l)
-  local ema=$(head -1 "$f" | awk '{print $1}')
-  head -"$n" "$f" | tail -$(($n - 1)) | while read p v; do
-    # 递归 EMA
-    echo ""
-  done
-  # 用 python 一次性算 EMA（bash 递归太慢）
   python3 -c "
 f=open('$f'); lines=f.readlines(); f.close()
 n=$n
-prices=[float(l.split()[0]) for l in lines[-n:] if len(l.split()) >= 5]
+prices=[]
+for l in lines:
+  parts=l.split()
+  if len(parts) >= 1:
+    try: prices.append(float(parts[0]))
+    except: pass
+if len(prices) < n: exit(0)
 ema=prices[0]
 k=2/(n+1)
 for p in prices[1:]:
@@ -88,7 +88,7 @@ print(f'{ema:.2f}')
 " 2>/dev/null
 }
 
-# MACD DIF (EMA12 - EMA26)
+# MACD DIF (EMA12 - EMA26) — 全序列递推
 calc_dif() {
   local f="$1"
   [ ! -f "$f" ] || [ "$(wc -l < "$f")" -lt 26 ] && return
@@ -98,10 +98,10 @@ calc_dif() {
   echo "scale=2; $ema12 - $ema26" | bc -l 2>/dev/null | sed 's/^\./0./;s/^-\./-0./'
 }
 
+# v5.3: 前一天DIF — 去掉最后一行后用全序列递推
 calc_prev_dif() {
   local f="$1"
   [ ! -f "$f" ] || [ "$(wc -l < "$f")" -lt 27 ] && return
-  # 用前一天的缓存（去掉最后一行）
   local tmp=$(mktemp)
   head -n -1 "$f" > "$tmp"
   local result=$(calc_dif "$tmp")
