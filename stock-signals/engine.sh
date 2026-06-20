@@ -53,15 +53,15 @@ fetch_bulk() {
   echo "$result" | iconv -f GBK -t UTF-8 2>/dev/null | sed 's/";v_/";\nv_/g'
 }
 
-# 均线计算
+# 均线计算（6字段格式: close open high low vol date）
 ma_n() { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] && tail -"$n" "$f" | awk '{s+=$1} END{printf "%.2f", s/'$n'}'; }
 
-# 均成交量
-avgvol_n() { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] && tail -"$n" "$f" | awk '{s+=$2} END{printf "%.0f", s/'$n'}'; }
+# 均成交量（6字段格式: $5=vol）
+avgvol_n() { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] && tail -"$n" "$f" | awk '{s+=$5} END{printf "%.0f", s/'$n'}'; }
 
-# 近N日最高/最低价
-high_n() { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] && tail -"$n" "$f" | awk 'max==""||$1>max{max=$1} END{printf "%.2f", max}'; }
-low_n()  { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] && tail -"$n" "$f" | awk 'min==""||$1<min{min=$1} END{printf "%.2f", min}'; }
+# 近N日最高/最低价（6字段格式: $3=high, $4=low）
+high_n() { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] && tail -"$n" "$f" | awk 'max==""||$3>max{max=$3} END{printf "%.2f", max}'; }
+low_n()  { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] && tail -"$n" "$f" | awk 'min==""||$4<min{min=$4} END{printf "%.2f", min}'; }
 
 # EMA (指数移动平均) — 用于 MACD
 calc_ema() {
@@ -79,7 +79,7 @@ calc_ema() {
   python3 -c "
 f=open('$f'); lines=f.readlines(); f.close()
 n=$n
-prices=[float(l.split()[0]) for l in lines[-n:] if len(l.split()) in (2,3)]
+prices=[float(l.split()[0]) for l in lines[-n:] if len(l.split()) >= 5]
 ema=prices[0]
 k=2/(n+1)
 for p in prices[1:]:
@@ -271,14 +271,17 @@ calc_resonance() {
     case "$sig_dir" in
       buy_signal|bullish*|strong_hold|breakout|up|breakout_up|bullish_urgent)
         is_buy=1 ;;
-      sell_signal|bearish*|breakdown|bearish_warn|bearish_urgent)
+      sell_signal|bearish|breakdown|bearish_urgent)
         is_sell=1 ;;
+      bearish_warn)
+        # v5.2: bearish_warn 不计入共振sell（风险提示≠卖出信号）
+        ;;
       exclude_buy|no_add|suspend_all_buy|risk_mgmt)
         # 中性/管理型信号不计入 ;;
     esac
     # 规则名也参与判定（兼容旧输出信号）
     [[ $sig == *"golden_cross"* || $sig == *"washout"* || $sig == *"2b_fake_breakdown"* ]] && is_buy=1
-    [[ $sig == *"death_cross"* || $sig == *"should_rise_fail"* || $sig == *"2b_fake_breakout"* ]] && is_sell=1
+    [[ $sig == *"death_cross"* || $sig == *"should_rise_fail"* && $sig != *"should_rise_fail_mild"* || $sig == *"2b_fake_breakout"* ]] && is_sell=1
     # v3.0: MACD死叉/持续死叉=卖出信号
     [[ $sig == *"macd_death_cross"* || $sig == *"macd_death_ongoing"* ]] && is_sell=1
     [ "$is_buy" -eq 1 ] && ((buy++))
@@ -336,12 +339,31 @@ calc_resonance() {
   [ "$sell" -ge 2 ] && { verdict="卖出确认-减仓"; strength=-2; }
   [ "$sell" -eq 1 ] && [ "$buy" -lt 2 ] && { verdict="卖出预警-关注"; strength=-1; }
 
-  # 🔴 v3.0 多空冲突降级: buy≥2且sell≥1 → 强制降一级
+  # 🔴 v5.2 多空冲突降级: 先做关键位裁决，再决定是否降级
+  # 关键位裁决：价格站上MA5且趋势结构完好 → 冲突不降级
   if [ "$buy" -ge 2 ] && [ "$sell" -ge 1 ] && [ "$strength" -ge 2 ]; then
-    if [ "$strength" -ge 3 ]; then
-      verdict="双重确认-可参与(冲突降级)"; strength=2
-    elif [ "$strength" -eq 2 ]; then
-      verdict="单一信号-观察(冲突降级)"; strength=1
+    local key_level_hold=0
+    # 条件1: 价格在MA5之上（短线未破位）
+    if [ -n "$ma5" ] && [ -n "$price" ] && [ "$(echo "$price > $ma5" | bc -l 2>/dev/null)" = "1" ]; then
+      # 条件2: 均线多头 OR 前高突破 OR MACD零轴上（趋势结构完好）
+      if [ "$has_morphology" -eq 1 ]; then
+        key_level_hold=1
+      fi
+    fi
+    if [ "$key_level_hold" -eq 1 ]; then
+      # 关键位裁决通过：维持原级，仅标记冲突
+      if [ "$strength" -ge 3 ]; then
+        verdict="三重共振-出手(冲突)"; strength=3
+      elif [ "$strength" -eq 2 ]; then
+        verdict="双重确认-可参与(冲突)"; strength=2
+      fi
+    else
+      # 关键位未守住 → 降级
+      if [ "$strength" -ge 3 ]; then
+        verdict="双重确认-可参与(冲突降级)"; strength=2
+      elif [ "$strength" -eq 2 ]; then
+        verdict="单一信号-观察(冲突降级)"; strength=1
+      fi
     fi
   fi
   
@@ -444,10 +466,15 @@ scan_morphology_signals() {
       approach_resistance)   bs=-0.20; desc="接近前高" ;;
       historical_breakthrough) bs=0.30; desc="前高突破" ;;
 
-      # 筹码分布信号
+      # 筹码分布信号（V2：真实分布曲线+单峰识别）
+      chip_peak_low_single)  bs=0.50; desc="低位单峰密集-高权重买入" ;;
+      chip_peak_upper_single) bs=-0.45; desc="高位单峰密集-警惕出货" ;;
+      chip_dual_peak)        bs=0.00; desc="双峰分布-筹码分散" ;;
+      chip_profit_high)      bs=0;     desc="获利盘过高-场景标记(不加仓)" ;;
+      chip_profit_low)       bs=0.15; desc="获利盘过低-超跌" ;;
       chip_resistance)       bs=-0.40; desc="筹码套牢区-压制" ;;
       chip_density_low)      bs=0.30; desc="低位筹码密集" ;;
-      chip_deviation_high)   bs=-0.30; desc="大幅偏离成本-获利盘" ;;
+      chip_deviation_high)   bs=-0.15; desc="大幅偏离成本-获利盘" ;;
       chip_below_cost)       bs=0.20; desc="低于主力成本-超跌" ;;
 
       bearish_arrangement)   bs=-0.50; desc="均线空头排列" ;;
@@ -486,6 +513,21 @@ scan_morphology_signals() {
 
   # 综合分数 = 看多总分 - 看空总分绝对值
   local combined=$(echo "$bull_score + $bear_score" | bc -l 2>/dev/null)
+
+  # v5.2 形态去重：高度相关的负分信号不叠加（取max绝对值）
+  # 1) bearish_arrangement 与 macd_top_div 互斥（空头排列时MACD大概率零轴下）
+  if echo "$rules_fired" | grep -q "bearish_arrangement" && echo "$rules_fired" | grep -q "macd_top_div"; then
+    # 两者都触发时，只取 bearish_arrangement(-0.50)，回退 macd_top_div(-0.40)
+    combined=$(echo "$combined + 0.40" | bc -l 2>/dev/null)
+  fi
+  # 2) shooting_star 与 upper_wick 互斥（shooting_star优先级更高，回退upper_wick）
+  if echo "$rules_fired" | grep -q "shooting_star" && echo "$rules_fired" | grep -q "upper_wick"; then
+    combined=$(echo "$combined + 0.20" | bc -l 2>/dev/null)
+  fi
+  # 3) hanging_man 与 shooting_star 互斥（同一天不太可能同时是上吊线和射击之星）
+  if echo "$rules_fired" | grep -q "hanging_man" && echo "$rules_fired" | grep -q "shooting_star"; then
+    combined=$(echo "$combined + 0.25" | bc -l 2>/dev/null)
+  fi
 
   # 多形态共振加分：≥2个不同看多形态同时触发 → 共振加分
   if [ "$bull_count" -ge 2 ]; then
