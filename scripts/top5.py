@@ -149,8 +149,36 @@ def main():
         print('      形态%.2f | 买权%.2f/卖权%.2f | 共振: buy=%d sell=%d' % (morph, buy_vote, sell_vote, bn, sn))
         print('      引擎判决: %s' % verdict)
 
-        # 核心信号（取top3方向信号）
+        # 形态规则（从signals数组提取，优先展示具体形态名）
         sigs = item.get('signals', [])
+        morph_only = []
+        for s in sigs:
+            r = s.get('rule', '')
+            if r and not any(x in r for x in ['chip_', 'entry_', 'price_action', 'vol_', 'turnover_']):
+                if r not in morph_only:
+                    morph_only.append(r)
+        if morph_only:
+            morph_cn = {
+                'bullish_arrangement': '多头排列', 'bearish_arrangement': '空头排列',
+                'macd_golden_cross': 'MACD金叉', 'macd_death_cross': 'MACD死叉',
+                'macd_death_converging': '死叉收敛', 'macd_death_ongoing': '死叉持续',
+                'macd_above_zero': '零轴上方', 'macd_below_zero': '零轴下方',
+                'red_three': '红三兵', 'hammer': '锤子线', 'shooting_star': '射击之星',
+                'doji': '十字星', 'hanging_man': '吊颈线',
+                'breakout_up': '放量突破', 'breakout_down': '放量跌破',
+                'gap_up': '跳空高开', 'gap_down': '跳空低开',
+                'shrink_then_breakout': '缩量后突破', 'shrink_reversal': '缩量反转',
+                'historical_breakthrough': '前高突破', '2b_fake_breakdown': '2B假跌破',
+                '2b_fake_breakout': '2B假突破', 'morning_star': '早晨之星',
+                'fairy_guide': '仙人指路', 'should_rise_fail': '该涨不涨',
+                'should_fall_strong': '该跌不跌', 'ma_golden_cross': '均线金叉',
+                'ma_death_cross': '均线死叉', 'price_level_support': '支撑位',
+                'price_level_resistance': '压力位',
+            }
+            display = [morph_cn.get(r, r) for r in morph_only[:5]]
+            print('      形态信号: ' + ' · '.join(display))
+
+        # 核心信号（取top3方向信号）
         top_sigs = sorted(sigs, key=lambda s: abs(s.get('strength', 'medium') != 'info'), reverse=True)[:3]
         sig_strs = []
         for s in top_sigs:
