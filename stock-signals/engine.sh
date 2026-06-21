@@ -396,6 +396,17 @@ calc_resonance_v6() {
     fi
   fi
   
+  # ── 多风险信号叠加否决：≥3个卖出信号 → 强制降级 ──
+  if [ "$strength" -ge 1 ] && [ "$sell_count" -ge 3 ]; then
+    if [ "$strength" -eq 3 ]; then
+      verdict="双重确认-可参与(多风险信号)"; strength=2
+    elif [ "$strength" -eq 2 ]; then
+      verdict="单一信号-观察(多风险信号)"; strength=1
+    elif [ "$strength" -eq 1 ]; then
+      verdict="观望(多风险信号叠加)"; strength=0
+    fi
+  fi
+  
   # ── 量能辅助确认：放量突破加分，缩量反弹降级 ──
   if [ "$strength" -ge 2 ] && [ "$(echo "$volume_factor >= 0.8" | bc -l 2>/dev/null)" = "1" ]; then
     :  # 放量确认，维持原级
@@ -509,10 +520,20 @@ _get_signal_tier() {
     underperform_sector)   echo "C|-0.15|ALL" ;;
     volume_surge)          echo "C|-0.10|ALL" ;;
     
+    # ── Tier-C: 偏离度/换手率风险信号 ──
+    ma5_gap)               echo "C|-0.20|STRONG_UP,WEAK_UP,CHOP_UP" ;;
+    turnover_abnormal)     echo "C|-0.25|STRONG_UP,WEAK_UP,CHOP_UP" ;;
+    
+    # ── Tier-C: 估值预警 ──
+    pe_overvalued)         echo "C|-0.25|STRONG_UP,WEAK_UP,CHOP_UP" ;;
+    pe_extreme)            echo "B|-0.40|STRONG_UP,WEAK_UP,CHOP_UP" ;;
+    
+    # ── Tier-C: 获利盘高位风险（从Z升级为C）──
+    chip_profit_high)      echo "C|-0.15|STRONG_UP,WEAK_UP,CHOP_UP" ;;
+    
     # ── 中性（0分，不参与投票）──
     doji)                  echo "Z|0|ALL" ;;
     chip_dual_peak)        echo "Z|0|ALL" ;;
-    chip_profit_high)      echo "Z|0|ALL" ;;
     limit_up)              echo "Z|0|ALL" ;;
     ma_convergence_down)   echo "Z|0|ALL" ;;
     *)                     echo "Z|0|ALL" ;;
@@ -595,7 +616,7 @@ scan_morphology_signals_v6() {
 # --------------- 主评估流程 ---------------
 
 evaluate() {
-  local code="$1" name="$2" price="$3" change="$4" open="$5" high="$6" low="$7" yclose="$8" vol="$9"
+  local code="$1" name="$2" price="$3" change="$4" open="$5" high="$6" low="$7" yclose="$8" vol="$9" pe_ttm="${10}"
   local cache="$CACHE_DIR/${code}.day"
   
   # 从缓存预计算所有衍生指标
@@ -625,6 +646,17 @@ evaluate() {
       "$MARKET_SH" "$MARKET_CY" 2>/dev/null)
     [ -n "$result" ] && signals+=("$result")
   done
+  
+  # ── PE 估值判定（内联，避免子 shell 中 $RAW 不可见）──
+  [ -n "$pe_ttm" ] && [ "$pe_ttm" != "0" ] && {
+    if [ "$(echo "$pe_ttm > 200" | bc 2>/dev/null)" = "1" ]; then
+      signals+=('{"rule":"pe_extreme","direction":"sell","note":"PE_TTM='$pe_ttm'极高估值,风险极大","strength":"high"}')
+    elif [ "$(echo "$pe_ttm > 100" | bc 2>/dev/null)" = "1" ]; then
+      signals+=('{"rule":"pe_overvalued","direction":"sell","note":"PE_TTM='$pe_ttm'偏高估值","strength":"medium"}')
+    elif [ "$(echo "$pe_ttm > 80" | bc 2>/dev/null)" = "1" ]; then
+      signals+=('{"rule":"pe_overvalued","direction":"sell","note":"PE_TTM='$pe_ttm'估值偏高","strength":"low"}')
+    fi
+  }
   
   # 指数代码始终输出（供smart_monitor市场过滤器使用）
   if [ ${#signals[@]} -eq 0 ]; then
@@ -755,9 +787,13 @@ while read code; do
   [ -z "$OUTER_DISK" ] && OUTER_DISK=0
   [ -z "$INNER_DISK" ] && INNER_DISK=0
   
+  # PE_TTM 提取（gtimg 字段40）
+  PE_TTM=$(echo "$d" | awk -F'~' '{print $40}' | sed 's/[^0-9.]//g')
+  [ -z "$PE_TTM" ] && PE_TTM=0
+  
   [ -z "$price" ] || [ "$price" = "0.000" ] && continue
   
-  result=$(evaluate "$code" "$name" "$price" "$change" "$open" "$high" "$low" "$yclose" "$vol")
+  result=$(evaluate "$code" "$name" "$price" "$change" "$open" "$high" "$low" "$yclose" "$vol" "$PE_TTM")
   [ -n "$result" ] && {
     $first || echo "," >> "$REPORT_FILE"
     echo "$result" >> "$REPORT_FILE"
