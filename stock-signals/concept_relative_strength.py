@@ -58,10 +58,17 @@ def main():
     concepts = cmap.get("concepts", {})
     stock_to_concepts = cmap.get("stock_to_concepts", {})
     
+    # 从 concepts 反向构建 stock_to_concepts（concept_map.json 使用 codes 字段）
+    if not stock_to_concepts:
+        stock_to_concepts = {}
+        for cname, cdef in concepts.items():
+            for s in cdef.get("codes", []):
+                stock_to_concepts.setdefault(s, []).append(cname)
+    
     # 收集所有概念成分股
     all_concept_codes = set()
     for cname, cdef in concepts.items():
-        for s in cdef.get("sampled_stocks", []):
+        for s in cdef.get("codes", cdef.get("sampled_stocks", [])):
             all_concept_codes.add(s)
     
     # 排除不在监控池中的代码
@@ -78,7 +85,7 @@ def main():
     # 计算概念基准（等权平均）
     benchmarks = {}
     for cname, cdef in concepts.items():
-        sample = cdef.get("sampled_stocks", [])
+        sample = cdef.get("codes", cdef.get("sampled_stocks", []))
         changes = [stocks[s]["change"] for s in sample if s in stocks]
         if changes:
             avg = round(sum(changes) / len(changes), 2)

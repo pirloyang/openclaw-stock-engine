@@ -526,7 +526,7 @@ _get_signal_tier() {
     
     # ── Tier-C: 估值预警 ──
     pe_overvalued)         echo "C|-0.25|STRONG_UP,WEAK_UP,CHOP_UP" ;;
-    pe_extreme)            echo "B|-0.40|STRONG_UP,WEAK_UP,CHOP_UP" ;;
+    pe_extreme)            echo "C|-0.30|STRONG_UP,WEAK_UP,CHOP_UP" ;;
     
     # ── Tier-C: 获利盘高位风险（从Z升级为C）──
     chip_profit_high)      echo "C|-0.15|STRONG_UP,WEAK_UP,CHOP_UP" ;;
@@ -649,9 +649,9 @@ evaluate() {
   
   # ── PE 估值判定（内联，避免子 shell 中 $RAW 不可见）──
   [ -n "$pe_ttm" ] && [ "$pe_ttm" != "0" ] && {
-    if [ "$(echo "$pe_ttm > 200" | bc 2>/dev/null)" = "1" ]; then
+    if [ "$(echo "$pe_ttm > 300" | bc 2>/dev/null)" = "1" ]; then
       signals+=('{"rule":"pe_extreme","direction":"sell","note":"PE_TTM='$pe_ttm'极高估值,风险极大","strength":"high"}')
-    elif [ "$(echo "$pe_ttm > 100" | bc 2>/dev/null)" = "1" ]; then
+    elif [ "$(echo "$pe_ttm > 120" | bc 2>/dev/null)" = "1" ]; then
       signals+=('{"rule":"pe_overvalued","direction":"sell","note":"PE_TTM='$pe_ttm'偏高估值","strength":"medium"}')
     elif [ "$(echo "$pe_ttm > 80" | bc 2>/dev/null)" = "1" ]; then
       signals+=('{"rule":"pe_overvalued","direction":"sell","note":"PE_TTM='$pe_ttm'估值偏高","strength":"low"}')

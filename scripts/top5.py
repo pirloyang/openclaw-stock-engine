@@ -10,6 +10,10 @@ from datetime import datetime
 ENGINE_PATH = None  # 自动发现最新 stock_signals_*.json
 
 def _find_latest_signals():
+    # 优先读 merge_concept_signals.py 的输出（含概念信号）
+    latest = '/tmp/latest_signals.json'
+    if os.path.exists(latest):
+        return latest
     import glob
     files = glob.glob('/tmp/stock_signals_*.json')
     if not files:
@@ -188,6 +192,12 @@ def main():
             sig_strs.append('%s(%s)' % (d, r))
         if sig_strs:
             print('      核心信号: ' + ' · '.join(sig_strs))
+        
+        # 概念信号
+        concept_sigs = [s for s in sigs if 'relative' in s.get('rule','') or 'concept' in s.get('rule','')]
+        for s in concept_sigs:
+            n = s.get('note', '')[:60]
+            print('      ' + n)
 
         mnames = mmap.get(code, [])
         if mnames:
