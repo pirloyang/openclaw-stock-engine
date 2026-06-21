@@ -124,12 +124,12 @@ def main():
     sys.stderr.write(" done\n\n")
 
     print('=' * 50)
-    print('  TOP5 精选 -- 信号引擎评价体系 v5.1')
-    print('  排名依据: 引擎 total_score_ext（引擎内部加权）')
+    print('  TOP10 精选 -- 信号引擎评价体系 v6.0')
+    print('  排名依据: 引擎 total_score_ext（State×Tier加权）')
     print('=' * 50)
     print()
 
-    for i, (ts, code, item) in enumerate(results[:5], 1):
+    for i, (ts, code, item) in enumerate(results[:10], 1):
         name = item.get('name', '?')
         chg = float(item.get('change_pct', 0) or 0)
         arrow = '🟢' if chg >= 0 else '🔴'
@@ -184,9 +184,9 @@ def main():
             print('      板块: ' + sector)
         print()
 
-    print('  Full Top 15:')
+    print('  Full Top 20:')
     print()
-    for i, (ts, code, item) in enumerate(results[:15], 1):
+    for i, (ts, code, item) in enumerate(results[:20], 1):
         name = item.get('name', '?')
         chg = float(item.get('change_pct', 0) or 0)
         chg_s = ('+' + str(chg) + '%') if chg >= 0 else (str(chg) + '%')
