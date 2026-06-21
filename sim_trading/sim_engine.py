@@ -462,8 +462,8 @@ def save_signals_for_push(signals, executed, blocked, mkt_note):
         # === 统一选股条件 (V2.1) ===
         # 买入: 三重共振直接通过 | 双重确认+P0≥3.5 | 双重确认+P0≥2.5需板块验证
         # 卖出: 卖出信号≥2
-        from_buy = verdict == '三重共振-出手' or (verdict == '双重确认-可参与' and p0_total >= 3.5)
-        from_buy_weak = verdict == '双重确认-可参与' and p0_total >= 2.5 and p0_total < 3.5
+        from_buy = verdict.startswith('三重共振-出手') or (verdict.startswith('双重确认-可参与') and p0_total >= 3.5)
+        from_buy_weak = verdict.startswith('双重确认-可参与') and p0_total >= 2.5 and p0_total < 3.5
         is_sell = sell_cnt >= 2
         
         if from_buy or is_sell or from_buy_weak:
@@ -479,7 +479,7 @@ def save_signals_for_push(signals, executed, blocked, mkt_note):
     if actionable:
         lines.append(f"\n### 买入信号\n")
         for a in actionable:
-            if a['verdict'] in ['三重共振-出手', '双重确认-可参与']:
+            if a['verdict'].startswith('三重共振-出手') or a['verdict'].startswith('双重确认-可参与'):
                 focus_tag = '🎯焦点' if a['in_focus'] else ''
                 lines.append(f"- **{a['name']}({a['code']})**: {a['verdict']} | P0={a['p0_total']} | 价{a['price']} | 涨幅{a['change']} | MA5={a['ma5']} | buy_signals={a['buy_cnt']} {focus_tag}")
         lines.append(f"\n### 卖出信号\n")
@@ -650,11 +650,11 @@ def run_trading_session():
                 
                 # === V2.1 买入门槛 ===
                 # 三重共振直接通过（代表最高级别信号）
-                if verdict == '三重共振-出手':
+                if verdict.startswith('三重共振-出手'):
                     pass  # 通过
-                elif verdict == '双重确认-可参与' and p0_total >= 3.5:
+                elif verdict.startswith('双重确认-可参与') and p0_total >= 3.5:
                     pass  # 双重确认+P0≥3.5 通过
-                elif verdict == '双重确认-可参与' and p0_total >= 2.5:
+                elif verdict.startswith('双重确认-可参与') and p0_total >= 2.5:
                     # P0在2.5-3.5之间: 需要板块强度验证
                     sector_ok = check_sector_strength(signals, code)
                     if not sector_ok:
@@ -676,7 +676,7 @@ def run_trading_session():
 
                 # 买入量 (100股整数倍)
                 # 信号强度决定仓位: 三重共振=满单票上限, 双重确认=半仓
-                max_pos_ratio = 0.2 if verdict == '三重共振-出手' else 0.1
+                max_pos_ratio = 0.2 if verdict.startswith('三重共振-出手') else 0.1
                 max_amount = min(acc["cash"] * 0.4, acc["initial_capital"] * max_pos_ratio)
                 qty = int(max_amount / price / 100) * 100
                 if qty < 100: continue

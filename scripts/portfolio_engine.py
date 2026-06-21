@@ -228,7 +228,8 @@ def _parse_trades_since(since_date):
             shares = int(m.group(3))
             cost = float(m.group(4))
             buy_date = m.group(5)
-            if buy_date >= since_date:
+            # 截图日期当天的建仓已在截图余额中体现，不重复扣除
+            if buy_date >= since_date and buy_date != since_date:
                 buy_total += shares * cost
 
     return sell_total, buy_total
