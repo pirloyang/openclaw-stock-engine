@@ -7,7 +7,14 @@ Top5 精选 — 信号引擎评价体系 v5.1 (2026-06-12)
 import json, re, os, sys
 from datetime import datetime
 
-ENGINE_PATH = "/tmp/stock_alerts/engine_signals.json"
+ENGINE_PATH = None  # 自动发现最新 stock_signals_*.json
+
+def _find_latest_signals():
+    import glob
+    files = glob.glob('/tmp/stock_signals_*.json')
+    if not files:
+        return '/tmp/stock_alerts/engine_signals.json'
+    return max(files, key=os.path.getmtime)
 SIGNALS_SUMMARY = "/tmp/stock_alerts/signals_summary.json"
 TOOLS_MD = "/root/.openclaw/workspace/TOOLS.md"
 
@@ -91,11 +98,12 @@ def load_morph_names():
 def main():
     sys.stderr.write("\n  loading engine...")
     cleared = cleared_codes()
-    if not os.path.exists(ENGINE_PATH):
+    signal_path = _find_latest_signals()
+    if not os.path.exists(signal_path):
         sys.stderr.write(" ERROR: engine_signals.json not found\n")
         return
 
-    with open(ENGINE_PATH) as f:
+    with open(signal_path) as f:
         raw = json.load(f)
     sys.stderr.write(" %d stocks\n" % len(raw))
 
@@ -127,15 +135,18 @@ def main():
         arrow = '🟢' if chg >= 0 else '🔴'
         chg_s = ('+' + str(chg) + '%') if chg >= 0 else (str(chg) + '%')
         morph = item.get('morph_score', 0)
-        quality = item.get('quality_score', 0)
+        buy_vote = item.get('buy_vote', 0)
+        sell_vote = item.get('sell_vote', 0)
+        market_state = item.get('market_state', '?')
         price = item.get('price', 0)
         verdict = item.get('resonance', {}).get('verdict', '')
-        bn = item.get('resonance', {}).get('buy_signals', 0)
-        sn = item.get('resonance', {}).get('sell_signals', 0)
+        bn = item.get('resonance', {}).get('buy_count', 0)
+        sn = item.get('resonance', {}).get('sell_count', 0)
+        tier_info = item.get('resonance', {}).get('tier_summary', '')
 
         print('  #%d  %s (%s)  %s %s' % (i, name, code, arrow, chg_s))
-        print('      Y%s  引擎分%.2f(0~5)' % (str(price), ts))
-        print('      形态%.2f | 质量%.2f | 共振: buy=%d sell=%d' % (morph, quality, bn, sn))
+        print('      Y%s  引擎分%.2f | State=%s' % (str(price), ts, market_state))
+        print('      形态%.2f | 买权%.2f/卖权%.2f | 共振: buy=%d sell=%d' % (morph, buy_vote, sell_vote, bn, sn))
         print('      引擎判决: %s' % verdict)
 
         # 核心信号（取top3方向信号）

@@ -77,6 +77,13 @@ rule_chip_analysis() {
   local cache="$signal_dir/cache/${code}.day"
   [ ! -f "$cache" ] || [ "$(wc -l < "$cache")" -lt 15 ] && return
   
+  # V2 优先：真实筹码分布曲线 + 单峰识别
+  local py_script_v2="$rule_dir/chip_distribution_v2.py"
+  if [ -f "$py_script_v2" ]; then
+    local result=$(python3 "$py_script_v2" "$cache" "$price" 2>/dev/null)
+    [ -n "$result" ] && echo "$result" && return
+  fi
+  # V1 兜底
   local py_script="$rule_dir/chip_distribution.py"
   [ ! -f "$py_script" ] && return
   
@@ -90,11 +97,11 @@ rule_shrink_then_break() {
   local cache="$SIGNAL_DIR/cache/${code}.day"
   [ ! -f "$cache" ] || [ "$(wc -l < "$cache")" -lt 7 ] && return
   local lines=$(wc -l < "$cache")
-  local avg5vol=$(tail -5 "$cache" | head -4 | awk '{s+=$2} END{printf "%.0f", s/4}')
+  local avg5vol=$(tail -5 "$cache" | head -4 | awk '{s+=$5} END{printf "%.0f", s/4}')
   [ -z "$avg5vol" ] || [ "$avg5vol" = "0" ] && return
   local had_shrink=0
   for i in 3 4 5; do [ "$lines" -lt "$i" ] && continue
-    local v=$(tail -"$i" "$cache" | head -1 | awk '{print $2}')
+    local v=$(tail -"$i" "$cache" | head -1 | awk '{print $5}')
     [ -n "$v" ] && [ "$(echo "$v < $avg5vol * 0.7" | bc -l 2>/dev/null)" = "1" ] && had_shrink=1 && break
   done
   if [ "$had_shrink" -eq 1 ]; then

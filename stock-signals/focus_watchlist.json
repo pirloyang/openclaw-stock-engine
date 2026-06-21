@@ -1,47 +1,7 @@
 {
   "version": 2,
-  "last_update": "2026-06-15",
+  "last_update": "2026-06-22T01:00",
   "focus_list": [
-    {
-      "code": "600549",
-      "name": "厦门钨业",
-      "stars": 3,
-      "hold": true,
-      "status": "持仓",
-      "catalyst": "低价单峰密集+主力吸筹+有色独立溢价 | L6热点评分8.1",
-      "entry_low": 59.611,
-      "entry_high": 59.611,
-      "stop_loss": 50.0,
-      "target": 62.0,
-      "signals": [
-        "回踩53.5-54缩量企稳介入",
-        "放量突破58.00右侧确认"
-      ],
-      "note": "2026-06-03建仓200股@59.611，止损55.0，目标62.0 | 06-12减仓100@64.98",
-      "clear_price": 64.98,
-      "clear_date": "2026-06-12",
-      "shares": 100,
-      "cost": 53.515
-    },
-    {
-      "code": "000657",
-      "name": "中钨高新",
-      "stars": 4,
-      "hold": true,
-      "status": "持仓",
-      "catalyst": "钨矿/有色金属方向，翔鹭钨业长单报价大幅上调25%催化",
-      "entry_low": 73.7,
-      "entry_high": 76.4,
-      "stop_loss": 70.0,
-      "target": 90.0,
-      "signals": [
-        "多头排列-超强持有",
-        "有色金属板块联动"
-      ],
-      "note": "2026-06-11建仓200股，首批100@73.70+加仓100@76.40 | 06-12减仓100@81",
-      "shares": 200,
-      "cost": 74.828
-    },
     {
       "code": "002119",
       "name": "康强电子",
@@ -91,30 +51,6 @@
       "low_score_days": 0
     },
     {
-      "code": "000032",
-      "name": "深桑达Ａ",
-      "stars": 3,
-      "hold": false,
-      "status": "L6热点升级",
-      "catalyst": "L6热点异动|其他|综合评分4.3|放量强势+P0评分2.75，关注次日分歧低吸",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": 19.25,
-      "target": 23.3,
-      "signals": [
-        "突破19.98.00高点+1.00%",
-        "入场止损:跌破19.70(阳线实体50%位)出清",
-        "前高突破-2026-05-20高点19.975,已超越1.1%"
-      ],
-      "note": "2026-06-15 L6热点自动升级，评分4.3",
-      "trial_period": true,
-      "trial_days": 3,
-      "upgrade_date": "2026-06-15",
-      "upgrade_type": "normal",
-      "composite_score": 4.3,
-      "low_score_days": 0
-    },
-    {
       "code": "300223",
       "name": "北京君正",
       "stars": 3,
@@ -139,95 +75,6 @@
       "low_score_days": 0,
       "shares": 100,
       "cost": 158.89
-    },
-    {
-      "code": "002384",
-      "name": "东山精密",
-      "stars": 3,
-      "hold": false,
-      "status": "L6热点升级",
-      "catalyst": "L6热点异动|PCB/覆铜板|综合评分4.1|放量强势+P0评分2.71，关注次日分歧低吸",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": 219.79,
-      "target": 266.06,
-      "signals": [
-        "入场止损:跌破223.52(阳线实体50%位)出清",
-        "向上跳空+2.00%—突破或消息驱动",
-        "前高突破-2026-06-09高点224.4,已超越0.1%"
-      ],
-      "note": "2026-06-15 L6热点自动升级，评分4.1",
-      "trial_period": true,
-      "trial_days": 3,
-      "upgrade_date": "2026-06-15",
-      "upgrade_type": "normal",
-      "composite_score": 4.1,
-      "low_score_days": 0
-    },
-    {
-      "code": "300394",
-      "name": "天孚通信",
-      "stars": 3,
-      "hold": false,
-      "status": "L6热点升级",
-      "catalyst": "L6热点异动|CPO/光通信|综合评分4.0|放量强势+P0评分2.76，关注次日分歧低吸",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": 283.29,
-      "target": 342.93,
-      "signals": [
-        "20日线附近-筹码密集",
-        "入场止损:跌破288.28(阳线实体50%位)出清",
-        "锤子线-底部阳线确认长下影"
-      ],
-      "note": "2026-06-15 L6热点自动升级，评分4.0",
-      "trial_period": true,
-      "trial_days": 3,
-      "upgrade_date": "2026-06-15",
-      "upgrade_type": "normal",
-      "composite_score": 4.0,
-      "low_score_days": 0
-    },
-    {
-      "code": "000969",
-      "name": "安泰科技",
-      "stars": 5,
-      "hold": true,
-      "status": "持仓",
-      "catalyst": "新材料/稀土永磁，6/12涨停+筹码空中加油形态",
-      "entry_low": 24.2,
-      "entry_high": 24.2,
-      "stop_loss": 22.0,
-      "target": 26.5,
-      "signals": [
-        "涨停反包确认洗盘结束",
-        "筹码从22.63套牢峰转移至22-23低位密集峰"
-      ],
-      "note": "2026-06-15建仓400@24.20，盘中买入，止损22.00，目标26.50",
-      "shares": 400,
-      "cost": 24.2
-    },
-    {
-      "code": "301182",
-      "name": "凯旺科技",
-      "stars": 3,
-      "hold": false,
-      "status": "L6热点升级",
-      "catalyst": "L6热点异动|其他|综合评分4.1|放量强势+P0评分2.3833333333333333，关注次日分歧低吸",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": 83.68,
-      "target": 101.29,
-      "signals": [
-        "🔴7.2%异动·其他"
-      ],
-      "note": "2026-06-15 L6热点自动升级，评分4.1",
-      "trial_period": true,
-      "trial_days": 3,
-      "upgrade_date": "2026-06-15",
-      "upgrade_type": "normal",
-      "composite_score": 4.1,
-      "low_score_days": 0
     },
     {
       "code": "300502",
@@ -268,57 +115,9 @@
         "筹码低位单峰密集+获利盘88.9%无兑现意愿",
         "6/12放量上攻逼近前高9.37"
       ],
-      "note": "2026-06-15建仓1000@9.12，盘中买入，止损8.80，目标9.80",
-      "shares": 1000,
+      "note": "2026-06-15建仓1000@9.12，盘中买入，止损8.80，目标9.80 | 2026-06-18减仓500@9.11",
+      "shares": 500,
       "cost": 9.12
-    },
-    {
-      "code": "002463",
-      "name": "沪电股份",
-      "stars": 3,
-      "hold": false,
-      "status": "L6热点升级",
-      "catalyst": "L6热点异动|PCB/覆铜板|综合评分4.7|放量强势+P0评分3.9，关注次日分歧低吸",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": 125.11,
-      "target": 151.45,
-      "signals": [
-        "20日线附近-筹码密集",
-        "向上跳空+2.00%—突破或消息驱动",
-        "MACD持续死叉-DIF仍低于DEA"
-      ],
-      "note": "2026-06-15 L6热点自动升级，评分4.7",
-      "trial_period": true,
-      "trial_days": 3,
-      "upgrade_date": "2026-06-15",
-      "upgrade_type": "normal",
-      "composite_score": 4.7,
-      "low_score_days": 0
-    },
-    {
-      "code": "300475",
-      "name": "香农芯创",
-      "stars": 3,
-      "hold": false,
-      "status": "L6热点升级",
-      "catalyst": "L6热点异动|存储芯片|综合评分4.1|放量强势+P0评分3.22，关注次日分歧低吸",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": 187.04,
-      "target": 226.41,
-      "signals": [
-        "向上跳空+2.00%—突破或消息驱动",
-        "前高突破-2026-06-04高点184.96,已超越1.6%",
-        "MACD持续死叉-DIF仍低于DEA"
-      ],
-      "note": "2026-06-15 L6热点自动升级，评分4.1",
-      "trial_period": true,
-      "trial_days": 3,
-      "upgrade_date": "2026-06-15",
-      "upgrade_type": "normal",
-      "composite_score": 4.1,
-      "low_score_days": 0
     },
     {
       "code": "600522",
@@ -335,8 +134,8 @@
         "光纤光缆全球需求增长",
         "海缆业务受益海上风电"
       ],
-      "note": "2026-06-15建仓200@50.35，盘中买入，止损47.50，目标55.00",
-      "shares": 200,
+      "note": "2026-06-15建仓200@50.35，盘中买入，止损47.50，目标55.00 | 2026-06-17减仓100@53.90",
+      "shares": 100,
       "cost": 50.35
     },
     {
@@ -383,23 +182,399 @@
       "cost": 55.3
     },
     {
-      "code": "300964",
-      "name": "本川智能",
+      "code": "603256",
+      "name": "宏和科技",
       "stars": 3,
       "hold": false,
       "status": "L6热点升级",
-      "catalyst": "L6热点异动|其他|综合评分4.1|放量强势+P0评分2.4，关注次日分歧低吸",
+      "catalyst": "L6热点异动|PCB/覆铜板|综合评分4.5|放量强势+P0评分3.65，关注次日分歧低吸",
       "entry_low": null,
       "entry_high": null,
-      "stop_loss": 88.92,
-      "target": 107.64,
+      "stop_loss": 228.84,
+      "target": 277.01,
       "signals": [
-        "🔴7.2%异动·其他"
+        "突破228.68.00高点+5.00%",
+        "大幅偏离成本37%—获利盘丰厚,追高风险大",
+        "入场止损:跌破238.89(阳线实体50%位)出清"
       ],
-      "note": "2026-06-15 L6热点自动升级，评分4.1",
+      "note": "2026-06-16 L6热点自动升级，评分4.5",
       "trial_period": true,
       "trial_days": 3,
-      "upgrade_date": "2026-06-15",
+      "upgrade_date": "2026-06-16",
+      "upgrade_type": "normal",
+      "composite_score": 4.5,
+      "low_score_days": 0
+    },
+    {
+      "code": "600105",
+      "name": "永鼎股份",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|其他|综合评分4.8|放量强势+P0评分3.55，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 54.14,
+      "target": 65.54,
+      "signals": [
+        "前高压制-57.160高点56.9,距仅3.6%",
+        "均线多头排列5>10>20>60",
+        "MACD零轴上方-强势"
+      ],
+      "note": "2026-06-16 L6热点自动升级，评分4.8",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-16",
+      "upgrade_type": "normal",
+      "composite_score": 4.8,
+      "low_score_days": 0
+    },
+    {
+      "code": "600487",
+      "name": "亨通光电",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|其他|综合评分4.0|放量强势+P0评分2.353333333333333，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 100.98,
+      "target": 122.23,
+      "signals": [
+        "🔴7.1%异动·其他"
+      ],
+      "note": "2026-06-16 L6热点自动升级，评分4.0",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-16",
+      "upgrade_type": "normal",
+      "composite_score": 4.0,
+      "low_score_days": 0
+    },
+    {
+      "code": "002916",
+      "name": "深南电路",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|PCB/覆铜板|综合评分5.3|放量强势+P0评分4.04，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 409.73,
+      "target": 495.98,
+      "signals": [
+        "获利盘98.1%-兑现压力大",
+        "入场止损:跌破414.17(阳线实体50%位)出清",
+        "前高突破-430.590高点417.1,已超越1.5%"
+      ],
+      "note": "2026-06-17 L6热点自动升级，评分5.3",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-17",
+      "upgrade_type": "normal",
+      "composite_score": 5.3,
+      "low_score_days": 0
+    },
+    {
+      "code": "600183",
+      "name": "生益科技",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|PCB/覆铜板|综合评分4.7|放量强势+P0评分3.91，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 179.42,
+      "target": 217.19,
+      "signals": [
+        "突破183.05.00高点+2.00%",
+        "获利盘100.0%-兑现压力大",
+        "大幅偏离成本50%-获利盘丰厚"
+      ],
+      "note": "2026-06-17 L6热点自动升级，评分4.7",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-17",
+      "upgrade_type": "normal",
+      "composite_score": 4.7,
+      "low_score_days": 0
+    },
+    {
+      "code": "002463",
+      "name": "沪电股份",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|PCB/覆铜板|综合评分4.2|放量强势+P0评分3.24，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 140.6,
+      "target": 170.2,
+      "signals": [
+        "获利盘94.6%-兑现压力大",
+        "大幅偏离成本15%-获利盘丰厚",
+        "前高突破-142.780高点140.82,已超越1.2%"
+      ],
+      "note": "2026-06-17 L6热点自动升级，评分4.2",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-17",
+      "upgrade_type": "normal",
+      "composite_score": 4.2,
+      "low_score_days": 0
+    },
+    {
+      "code": "002384",
+      "name": "东山精密",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|PCB/覆铜板|综合评分4.5|放量强势+P0评分3.68，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 249.16,
+      "target": 301.61,
+      "signals": [
+        "突破253.10.00高点+2.00%",
+        "获利盘100.0%-兑现压力大",
+        "大幅偏离成本19%-获利盘丰厚"
+      ],
+      "note": "2026-06-17 L6热点自动升级，评分4.5",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-17",
+      "upgrade_type": "normal",
+      "composite_score": 4.5,
+      "low_score_days": 0
+    },
+    {
+      "code": "600549",
+      "name": "厦门钨业",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|有色/资源|综合评分5.1|放量强势+P0评分4.49，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 78.31,
+      "target": 94.79,
+      "signals": [
+        "突破78.41.00高点+1.00%",
+        "双峰筹码分布-双峰分布(主峰@59.34,次峰@63.06)",
+        "获利盘100.0%-兑现压力大"
+      ],
+      "note": "2026-06-17 L6热点自动升级，评分5.1",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-17",
+      "upgrade_type": "normal",
+      "composite_score": 5.1,
+      "low_score_days": 0
+    },
+    {
+      "code": "002185",
+      "name": "华天科技",
+      "stars": 3,
+      "hold": true,
+      "status": "持仓",
+      "catalyst": "半导体封测/封测板块走强联动",
+      "entry_low": 18.5,
+      "entry_high": 18.5,
+      "stop_loss": 17.0,
+      "target": 20.5,
+      "signals": [
+        "MACD零轴上方-强势"
+      ],
+      "note": "2026-06-17建仓400@18.50，盘中买入，止损17.00，目标20.50 | 2026-06-18加仓200@19.65",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-17",
+      "upgrade_type": "normal",
+      "composite_score": 4.0,
+      "low_score_days": 0,
+      "shares": 600,
+      "cost": 18.883
+    },
+    {
+      "code": "001309",
+      "name": "德明利",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|存储芯片|综合评分4.3|放量强势+P0评分2.65，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 668.74,
+      "target": 809.53,
+      "signals": [
+        "双峰筹码分布-双峰分布(主峰@695.94,次峰@668.09)",
+        "低位筹码密集-距主力成本2.1%,位置28%",
+        "20日线附近-筹码密集"
+      ],
+      "note": "2026-06-17 L6热点自动升级，评分4.3",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-17",
+      "upgrade_type": "normal",
+      "composite_score": 4.3,
+      "low_score_days": 0
+    },
+    {
+      "code": "300302",
+      "name": "同有科技",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|其他|综合评分4.3|放量强势+P0评分2.7，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 48.62,
+      "target": 58.86,
+      "signals": [
+        "双峰筹码分布-双峰分布(主峰@43.08,次峰@53.81)",
+        "十字星-中性｜多空均衡·方向待次日确认",
+        "均线空头排列5<10<20"
+      ],
+      "note": "2026-06-17 L6热点自动升级，评分4.3",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-17",
+      "upgrade_type": "normal",
+      "composite_score": 4.3,
+      "low_score_days": 0
+    },
+    {
+      "code": "301308",
+      "name": "江波龙",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|存储芯片|综合评分4.0|放量强势+P0评分2.66，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 546.03,
+      "target": 660.99,
+      "signals": [
+        "双峰筹码分布-双峰分布(主峰@549.02,次峰@478.22)",
+        "20日线附近-筹码密集",
+        "向下跳空-2.00%—需警惕"
+      ],
+      "note": "2026-06-17 L6热点自动升级，评分4.0",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-17",
+      "upgrade_type": "normal",
+      "composite_score": 4.0,
+      "low_score_days": 0
+    },
+    {
+      "code": "002156",
+      "name": "通富微电",
+      "stars": 4,
+      "hold": true,
+      "status": "持仓",
+      "catalyst": "半导体封测龙头/AMD链核心",
+      "entry_low": 67.0,
+      "entry_high": 67.0,
+      "stop_loss": 63.0,
+      "target": 75.0,
+      "signals": [
+        "封测板块走强联动"
+      ],
+      "note": "2026-06-17建仓200@67.00，盘中买入，止损63.00，目标75.00",
+      "shares": 200,
+      "cost": 67.0
+    },
+    {
+      "code": "601138",
+      "name": "工业富联",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|AI算力|综合评分4.2|放量强势+P0评分3.37，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 72.47,
+      "target": 87.72,
+      "signals": [
+        "双峰筹码分布-双峰分布(主峰@69.86,次峰@73.73)",
+        "低位筹码密集-距主力成本0.6%,位置42%",
+        "20日线附近-筹码密集"
+      ],
+      "note": "2026-06-18 L6热点自动升级，评分4.2",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-18",
+      "upgrade_type": "normal",
+      "composite_score": 4.2,
+      "low_score_days": 0
+    },
+    {
+      "code": "301018",
+      "name": "申菱环境",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|AI算力|综合评分4.8|放量强势+P0评分3.76，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 113.52,
+      "target": 137.42,
+      "signals": [
+        "低位单峰密集-低位单峰(趋势93%,峰@97.77,集中度75.4%)",
+        "十字星-中性｜多空均衡·方向待次日确认",
+        "MACD底背离-股价新低DIF未新低"
+      ],
+      "note": "2026-06-18 L6热点自动升级，评分4.8",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-18",
+      "upgrade_type": "normal",
+      "composite_score": 4.8,
+      "low_score_days": 0
+    },
+    {
+      "code": "600345",
+      "name": "长江通信",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|其他|综合评分4.5|放量强势+P0评分3.72，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 60.4,
+      "target": 73.12,
+      "signals": [
+        "获利盘96.2%-兑现压力大",
+        "向下跳空-2.00%—需警惕",
+        "均线多头排列5>10>20>60"
+      ],
+      "note": "2026-06-18 L6热点自动升级，评分4.5",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-18",
+      "upgrade_type": "normal",
+      "composite_score": 4.5,
+      "low_score_days": 0
+    },
+    {
+      "code": "300503",
+      "name": "昊志机电",
+      "stars": 3,
+      "hold": false,
+      "status": "L6热点升级",
+      "catalyst": "L6热点异动|其他|综合评分4.1|放量强势+P0评分2.4266666666666667，关注次日分歧低吸",
+      "entry_low": null,
+      "entry_high": null,
+      "stop_loss": 82.55,
+      "target": 99.92,
+      "signals": [
+        "🔴7.3%异动·其他"
+      ],
+      "note": "2026-06-18 L6热点自动升级，评分4.1",
+      "trial_period": true,
+      "trial_days": 3,
+      "upgrade_date": "2026-06-18",
       "upgrade_type": "normal",
       "composite_score": 4.1,
       "low_score_days": 0
@@ -407,24 +582,1503 @@
     {
       "code": "600584",
       "name": "长电科技",
-      "stars": 3,
-      "hold": false,
-      "status": "L6热点升级",
-      "catalyst": "L6热点异动|封测|综合评分4.5|放量强势+P0评分2.6633333333333336，关注次日分歧低吸",
-      "entry_low": null,
-      "entry_high": null,
-      "stop_loss": 70.71,
-      "target": 85.59,
+      "stars": 4,
+      "hold": true,
+      "status": "持仓",
+      "catalyst": "半导体封测龙头/封测板块走强联动",
+      "entry_low": 83.175,
+      "entry_high": 83.175,
+      "stop_loss": 75.0,
+      "target": 90.0,
       "signals": [
-        "🔴8.0%异动·封测"
+        "封测板块走强联动"
       ],
-      "note": "2026-06-15 L6热点自动升级，评分4.5",
-      "trial_period": true,
-      "trial_days": 3,
-      "upgrade_date": "2026-06-15",
-      "upgrade_type": "normal",
-      "composite_score": 4.5,
-      "low_score_days": 0
+      "note": "2026-06-18建仓200@83.175，盘中买入，止损75.00，目标90.00",
+      "shares": 200,
+      "cost": 83.175
     }
-  ]
+  ],
+  "600176": {
+    "name": "中国巨石",
+    "rating": 4,
+    "tags": [
+      "新材料",
+      "玻纤"
+    ],
+    "added": "2026-06-18",
+    "industry": "玻纤",
+    "sector": "新材料/玻纤",
+    "concept": "玻纤龙头·电子布上游·风电",
+    "level": "自选"
+  },
+  "002080": {
+    "name": "中材科技",
+    "rating": 4,
+    "tags": [
+      "新材料",
+      "风电"
+    ],
+    "added": "2026-06-18",
+    "industry": "复合材料",
+    "sector": "新材料/复合材料",
+    "concept": "风电叶片·玻纤·锂膜",
+    "level": "自选"
+  },
+  "603256": {
+    "name": "宏和科技",
+    "rating": 4,
+    "tags": [
+      "PCB上游",
+      "电子布"
+    ],
+    "added": "2026-06-18",
+    "industry": "电子布",
+    "sector": "PCB上游/电子布",
+    "concept": "电子布涨价·AI算力·高端玻纤布",
+    "level": "重点关注"
+  },
+  "605589": {
+    "name": "圣泉集团",
+    "rating": 3,
+    "tags": [
+      "化工"
+    ],
+    "added": "2026-06-18",
+    "industry": "电子树脂",
+    "sector": "PCB上游/电子树脂",
+    "concept": "酚醛树脂·电子级树脂·国产替代",
+    "level": "自选"
+  },
+  "002669": {
+    "name": "康达新材",
+    "rating": 3,
+    "tags": [
+      "新材料"
+    ],
+    "added": "2026-06-18",
+    "industry": "胶粘剂",
+    "sector": "PCB上游/胶粘剂",
+    "concept": "电子胶·结构胶·新材料",
+    "level": "自选"
+  },
+  "601208": {
+    "name": "东材科技",
+    "rating": 3,
+    "tags": [
+      "新材料",
+      "光学膜"
+    ],
+    "added": "2026-06-18",
+    "industry": "绝缘材料",
+    "sector": "PCB上游/绝缘材料",
+    "concept": "光学膜·电子材料·新能源",
+    "level": "自选"
+  },
+  "603002": {
+    "name": "宏昌电子",
+    "rating": 3,
+    "tags": [
+      "电子材料"
+    ],
+    "added": "2026-06-18",
+    "industry": "环氧树脂",
+    "sector": "PCB上游/环氧树脂",
+    "concept": "电子级环氧·覆铜板用树脂·涨价",
+    "level": "自选"
+  },
+  "601636": {
+    "name": "旗滨集团",
+    "rating": 4,
+    "tags": [
+      "玻璃",
+      "光伏"
+    ],
+    "added": "2026-06-18",
+    "industry": "玻璃制造",
+    "sector": "玻璃/光伏玻璃",
+    "concept": "浮法玻璃·光伏玻璃·电子玻璃",
+    "level": "自选"
+  },
+  "000725": {
+    "name": "京东方A",
+    "rating": 5,
+    "tags": [
+      "面板",
+      "OLED"
+    ],
+    "added": "2026-06-18",
+    "industry": "面板制造",
+    "sector": "面板/OLED",
+    "concept": "OLED·LCD龙头·柔性显示",
+    "level": "自选"
+  },
+  "600703": {
+    "name": "三安光电",
+    "rating": 4,
+    "tags": [
+      "LED",
+      "化合物半导体"
+    ],
+    "added": "2026-06-18",
+    "industry": "化合物半导体",
+    "sector": "LED/化合物半导体",
+    "concept": "MiniLED·碳化硅·化合物半导体",
+    "level": "自选"
+  },
+  "002585": {
+    "name": "双星新材",
+    "rating": 3,
+    "tags": [
+      "光学膜"
+    ],
+    "added": "2026-06-18",
+    "industry": "光学膜",
+    "sector": "面板上游/光学膜",
+    "concept": "PET膜·光学膜·新能源",
+    "level": "自选"
+  },
+  "301217": {
+    "name": "铜冠铜箔",
+    "rating": 4,
+    "tags": [
+      "铜箔",
+      "锂电"
+    ],
+    "added": "2026-06-18",
+    "industry": "铜箔",
+    "sector": "PCB上游/铜箔",
+    "concept": "电子铜箔·锂电铜箔·铜价联动",
+    "level": "自选"
+  },
+  "301511": {
+    "name": "德福科技",
+    "rating": 3,
+    "tags": [
+      "锂电铜箔"
+    ],
+    "added": "2026-06-18",
+    "industry": "铜箔",
+    "sector": "PCB上游/铜箔",
+    "concept": "锂电铜箔·电子铜箔·国产替代",
+    "level": "自选"
+  },
+  "301526": {
+    "name": "国际复材",
+    "rating": 3,
+    "tags": [
+      "玻纤",
+      "复合材料"
+    ],
+    "added": "2026-06-18",
+    "industry": "玻纤",
+    "sector": "新材料/玻纤",
+    "concept": "电子玻纤·复合材料·国产替代",
+    "level": "自选"
+  },
+  "301522": {
+    "name": "上大股份",
+    "rating": 3,
+    "tags": [
+      "高温合金",
+      "军工"
+    ],
+    "added": "2026-06-18",
+    "industry": "高温合金",
+    "sector": "新材料/高温合金",
+    "concept": "高温合金·军工材料·航空发动机",
+    "level": "自选"
+  },
+  "002361": {
+    "name": "神剑股份",
+    "rating": 3,
+    "tags": [
+      "军工",
+      "涂料"
+    ],
+    "added": "2026-06-18",
+    "industry": "军工材料",
+    "sector": "军工/材料",
+    "concept": "粉末涂料·商业航天·军工",
+    "level": "自选"
+  },
+  "600118": {
+    "name": "中国卫星",
+    "rating": 4,
+    "tags": [
+      "商业航天",
+      "卫星"
+    ],
+    "added": "2026-06-18",
+    "industry": "卫星制造",
+    "sector": "航天/卫星",
+    "concept": "商业航天·卫星互联网·军工",
+    "level": "自选"
+  },
+  "688523": {
+    "name": "航天环宇",
+    "rating": 4,
+    "tags": [
+      "商业航天",
+      "航天装备"
+    ],
+    "added": "2026-06-18",
+    "industry": "航天装备",
+    "sector": "航天/装备",
+    "concept": "商业航天·精密制造·军工",
+    "level": "自选"
+  },
+  "002151": {
+    "name": "北斗星通",
+    "rating": 4,
+    "tags": [
+      "北斗",
+      "卫星导航"
+    ],
+    "added": "2026-06-18",
+    "industry": "导航芯片",
+    "sector": "航天/导航",
+    "concept": "北斗导航·卫星应用·军工",
+    "level": "自选"
+  },
+  "601698": {
+    "name": "中国卫通",
+    "rating": 4,
+    "tags": [
+      "卫星通信",
+      "卫星互联网"
+    ],
+    "added": "2026-06-18",
+    "industry": "卫星通信",
+    "sector": "航天/卫星通信",
+    "concept": "卫星互联网·商业航天·6G",
+    "level": "自选"
+  },
+  "600343": {
+    "name": "航天动力",
+    "rating": 3,
+    "tags": [
+      "航天",
+      "发动机"
+    ],
+    "added": "2026-06-18",
+    "industry": "航天发动机",
+    "sector": "航天/动力",
+    "concept": "航天泵阀·液体发动机·军工",
+    "level": "自选"
+  },
+  "000551": {
+    "name": "创元科技",
+    "rating": 3,
+    "tags": [
+      "环保",
+      "洁净"
+    ],
+    "added": "2026-06-18",
+    "industry": "环保设备",
+    "sector": "环保/洁净",
+    "concept": "洁净设备·环保·半导体洁净室",
+    "level": "自选"
+  },
+  "300265": {
+    "name": "通光线缆",
+    "rating": 3,
+    "tags": [
+      "通信",
+      "光缆"
+    ],
+    "added": "2026-06-18",
+    "industry": "特种线缆",
+    "sector": "军工/通信线缆",
+    "concept": "特种光缆·军工通信·电力",
+    "level": "自选"
+  },
+  "003009": {
+    "name": "中天火箭",
+    "rating": 4,
+    "tags": [
+      "商业航天",
+      "火箭"
+    ],
+    "added": "2026-06-18",
+    "industry": "固体火箭",
+    "sector": "航天/火箭",
+    "concept": "商业航天·固体发动机·军工",
+    "level": "自选"
+  },
+  "000636": {
+    "name": "风华高科",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "MLCC",
+    "sector": "被动元件/MLCC",
+    "concept": "MLCC涨价·国产替代·消费电子",
+    "level": "自选"
+  },
+  "002156": {
+    "name": "通富微电",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "半导体封测",
+    "sector": "封测",
+    "concept": "先进封装·AMD链·Chiplet",
+    "level": "持仓"
+  },
+  "002185": {
+    "name": "华天科技",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "半导体封测",
+    "sector": "封测",
+    "concept": "先进封装·存储封测·封测联动",
+    "level": "持仓"
+  },
+  "002378": {
+    "name": "章源钨业",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "钨矿",
+    "sector": "有色/钨",
+    "concept": "钨涨价·硬质合金·有色联动",
+    "level": "自选"
+  },
+  "002384": {
+    "name": "东山精密",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "PCB制造",
+    "sector": "PCB/FPC",
+    "concept": "AI服务器·苹果链·消费电子",
+    "level": "重点关注"
+  },
+  "002436": {
+    "name": "兴森科技",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "PCB制造",
+    "sector": "PCB/封装基板",
+    "concept": "先进封装·IC载板·半导体",
+    "level": "自选"
+  },
+  "002463": {
+    "name": "沪电股份",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "PCB制造",
+    "sector": "PCB/通信板",
+    "concept": "AI算力·5G通信·英伟达链",
+    "level": "重点关注"
+  },
+  "002636": {
+    "name": "金安国纪",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "覆铜板CCL",
+    "sector": "PCB上游/覆铜板",
+    "concept": "电子布涨价·AI服务器·国产替代",
+    "level": "自选"
+  },
+  "002842": {
+    "name": "翔鹭钨业",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "钨矿",
+    "sector": "有色/钨",
+    "concept": "钨涨价·硬质合金·有色联动",
+    "level": "自选"
+  },
+  "002916": {
+    "name": "深南电路",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "PCB制造",
+    "sector": "PCB/封装基板",
+    "concept": "AI算力·先进封装·英伟达链",
+    "level": "重点关注"
+  },
+  "002938": {
+    "name": "鹏鼎控股",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "PCB制造",
+    "sector": "PCB/FPC",
+    "concept": "AI服务器·苹果链·消费电子",
+    "level": "重点关注"
+  },
+  "002957": {
+    "name": "科瑞技术",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "自动化设备",
+    "sector": "封测设备",
+    "concept": "半导体检测·自动化·先进封装",
+    "level": "自选"
+  },
+  "300285": {
+    "name": "国瓷材料",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "MLCC粉体",
+    "sector": "被动元件/MLCC上游",
+    "concept": "MLCC粉体·陶瓷材料·国产替代",
+    "level": "自选"
+  },
+  "300408": {
+    "name": "三环集团",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "MLCC",
+    "sector": "被动元件/MLCC",
+    "concept": "MLCC涨价·陶瓷材料·国产替代",
+    "level": "自选"
+  },
+  "300476": {
+    "name": "胜宏科技",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "PCB制造",
+    "sector": "PCB/HDI",
+    "concept": "AI服务器·消费电子·汽车电子",
+    "level": "自选"
+  },
+  "300671": {
+    "name": "富满微",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "模拟芯片",
+    "sector": "芯片设计/模拟",
+    "concept": "电源管理·LED驱动·消费电子",
+    "level": "自选"
+  },
+  "300726": {
+    "name": "宏达电子",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "钽电容",
+    "sector": "被动元件/电容",
+    "concept": "钽电容·军工电子·国产替代",
+    "level": "自选"
+  },
+  "300806": {
+    "name": "斯迪克",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "功能性薄膜",
+    "sector": "新材料/薄膜",
+    "concept": "OCA光学胶·功能性薄膜·消费电子",
+    "level": "自选"
+  },
+  "301021": {
+    "name": "英诺激光",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "激光器",
+    "sector": "激光/精密加工",
+    "concept": "超快激光·半导体加工·光伏",
+    "level": "自选"
+  },
+  "301373": {
+    "name": "凌玮科技",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "纳米材料",
+    "sector": "新材料/纳米",
+    "concept": "纳米二氧化硅·消光剂·新材料",
+    "level": "自选"
+  },
+  "301377": {
+    "name": "鼎泰高科",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "精密刀具",
+    "sector": "PCB设备/刀具",
+    "concept": "PCB钻针·精密刀具·消费电子",
+    "level": "自选"
+  },
+  "301682": {
+    "name": "宏明电子",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "电子元器件",
+    "sector": "元器件/军工",
+    "concept": "军用MLCC·电子元器件·军工",
+    "level": "自选"
+  },
+  "600063": {
+    "name": "皖维高新",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "化工",
+    "sector": "化工/PVA",
+    "concept": "PVA·偏光片·新材料",
+    "level": "自选"
+  },
+  "600172": {
+    "name": "黄河旋风",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "超硬材料",
+    "sector": "新材料/超硬",
+    "concept": "人造金刚石·培育钻石·超硬材料",
+    "level": "自选"
+  },
+  "600183": {
+    "name": "生益科技",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "覆铜板CCL",
+    "sector": "PCB上游/覆铜板",
+    "concept": "AI算力·高频高速CCL·电子布",
+    "level": "重点关注"
+  },
+  "600206": {
+    "name": "有研新材",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "半导体材料",
+    "sector": "半导体材料/靶材",
+    "concept": "溅射靶材·稀土材料·半导体",
+    "level": "自选"
+  },
+  "600549": {
+    "name": "厦门钨业",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "钨矿/稀土",
+    "sector": "有色/钨",
+    "concept": "钨涨价·稀土永磁·新材料",
+    "level": "重点关注"
+  },
+  "600552": {
+    "name": "凯盛科技",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "显示材料",
+    "sector": "显示/玻璃",
+    "concept": "UTG折叠玻璃·显示材料·新材料",
+    "level": "自选"
+  },
+  "600584": {
+    "name": "长电科技",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "半导体封测",
+    "sector": "封测",
+    "concept": "先进封装龙头·Chiplet·封测联动",
+    "level": "持仓"
+  },
+  "600667": {
+    "name": "太极实业",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "半导体工程",
+    "sector": "封测/工程",
+    "concept": "半导体工程·DRAM封测·海力士链",
+    "level": "自选"
+  },
+  "600707": {
+    "name": "彩虹股份",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "玻璃基板",
+    "sector": "面板/玻璃基板",
+    "concept": "LCD玻璃基板·国产替代·面板",
+    "level": "自选"
+  },
+  "603186": {
+    "name": "华正新材",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "覆铜板CCL",
+    "sector": "PCB上游/覆铜板",
+    "concept": "AI算力·高频高速CCL·电子树脂",
+    "level": "自选"
+  },
+  "603678": {
+    "name": "火炬电子",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "MLCC",
+    "sector": "被动元件/MLCC",
+    "concept": "军用MLCC·特种电容·军工电子",
+    "level": "自选"
+  },
+  "603773": {
+    "name": "沃格光电",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "玻璃基板",
+    "sector": "先进封装/玻璃基板",
+    "concept": "TGV·台积电CoPoS·先进封装",
+    "level": "自选"
+  },
+  "688146": {
+    "name": "中船特气",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "电子特气",
+    "sector": "半导体材料/特气",
+    "concept": "六氟化钨·电子特气·半导体材料",
+    "level": "自选"
+  },
+  "688300": {
+    "name": "联瑞新材",
+    "added": "2026-06-22",
+    "source": "辉哥君弘截图",
+    "industry": "硅微粉",
+    "sector": "半导体材料/填料",
+    "concept": "球形硅微粉·EMC填料·先进封装",
+    "level": "自选"
+  },
+  "000032": {
+    "name": "深桑达Ａ",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "000034": {
+    "name": "神州数码",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "000547": {
+    "name": "航天发展",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "000592": {
+    "name": "平潭发展",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "000901": {
+    "name": "航天科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "000938": {
+    "name": "紫光股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "000960": {
+    "name": "锡业股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "000969": {
+    "name": "安泰科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "000977": {
+    "name": "浪潮信息",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "000988": {
+    "name": "华工科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "001309": {
+    "name": "德明利",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "001314": {
+    "name": "亿道信息",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002025": {
+    "name": "航天电器",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002049": {
+    "name": "紫光国微",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002115": {
+    "name": "三维通信",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002119": {
+    "name": "康强电子",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002131": {
+    "name": "利欧股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002195": {
+    "name": "岩山科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002202": {
+    "name": "金风科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002230": {
+    "name": "科大讯飞",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002261": {
+    "name": "拓维信息",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002281": {
+    "name": "光迅科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002335": {
+    "name": "科华数据",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002371": {
+    "name": "北方华创",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002400": {
+    "name": "省广集团",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002413": {
+    "name": "雷科防务",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002428": {
+    "name": "云南锗业",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002465": {
+    "name": "海格通信",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002553": {
+    "name": "南方精工",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002594": {
+    "name": "比亚迪",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002639": {
+    "name": "雪人集团",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002682": {
+    "name": "龙洲股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002837": {
+    "name": "英维克",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002865": {
+    "name": "钧达股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "002881": {
+    "name": "美格智能",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "002896": {
+    "name": "中大力德",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "159667": {
+    "name": "工业母机ETF国泰",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "159858": {
+    "name": "创新药ETF南方",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "159928": {
+    "name": "消费ETF汇添富",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300017": {
+    "name": "网宿科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300045": {
+    "name": "华力创通",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300053": {
+    "name": "航宇微",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300058": {
+    "name": "蓝色光标",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300102": {
+    "name": "乾照光电",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300113": {
+    "name": "顺网科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300115": {
+    "name": "长盈精密",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300124": {
+    "name": "汇川技术",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300142": {
+    "name": "沃森生物",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300189": {
+    "name": "神农种业",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300215": {
+    "name": "电科院",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300223": {
+    "name": "北京君正",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "持仓"
+  },
+  "300300": {
+    "name": "海峡创新",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300302": {
+    "name": "同有科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300308": {
+    "name": "中际旭创",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300364": {
+    "name": "中文在线",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300383": {
+    "name": "光环新网",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300390": {
+    "name": "天华新能",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300394": {
+    "name": "天孚通信",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300432": {
+    "name": "富临精工",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300442": {
+    "name": "润泽科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300444": {
+    "name": "双杰电气",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300450": {
+    "name": "先导智能",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300455": {
+    "name": "航天智装",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300456": {
+    "name": "赛微电子",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300475": {
+    "name": "香农芯创",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300499": {
+    "name": "高澜股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300502": {
+    "name": "新易盛",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300620": {
+    "name": "光库科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300660": {
+    "name": "江苏雷利",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300661": {
+    "name": "圣邦股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300738": {
+    "name": "奥飞数据",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300750": {
+    "name": "宁德时代",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300753": {
+    "name": "爱朋医疗",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300762": {
+    "name": "上海瀚讯",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "300809": {
+    "name": "华辰装备",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "300857": {
+    "name": "协创数据",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "301005": {
+    "name": "超捷股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "301018": {
+    "name": "申菱环境",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "301171": {
+    "name": "易点天下",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "301306": {
+    "name": "西测测试",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "301308": {
+    "name": "江波龙",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "301556": {
+    "name": "托普云农",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "600029": {
+    "name": "南方航空",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "600089": {
+    "name": "特变电工",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "600105": {
+    "name": "永鼎股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "600115": {
+    "name": "中国东航",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "600151": {
+    "name": "航天机电",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "600309": {
+    "name": "万华化学",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "600345": {
+    "name": "长江通信",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "600391": {
+    "name": "航发科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "600409": {
+    "name": "三友化工",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "600522": {
+    "name": "中天科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "持仓"
+  },
+  "600580": {
+    "name": "卧龙电驱",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "600592": {
+    "name": "XD龙溪股",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "600602": {
+    "name": "云赛智联",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "600809": {
+    "name": "山西汾酒",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "600835": {
+    "name": "上海机电",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "600871": {
+    "name": "石化油服",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "600879": {
+    "name": "航天电子",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "600961": {
+    "name": "株冶集团",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "601111": {
+    "name": "中国国航",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "601138": {
+    "name": "工业富联",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "601600": {
+    "name": "中国铝业",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "601678": {
+    "name": "滨化股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "601869": {
+    "name": "长飞光纤",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "601985": {
+    "name": "中国核电",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "持仓"
+  },
+  "603113": {
+    "name": "金能科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "603203": {
+    "name": "快克智能",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "603232": {
+    "name": "格尔软件",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "603283": {
+    "name": "赛腾股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "持仓"
+  },
+  "603667": {
+    "name": "五洲新春",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "603688": {
+    "name": "石英股份",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "603799": {
+    "name": "华友钴业",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "603881": {
+    "name": "数据港",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "603893": {
+    "name": "瑞芯微",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "603986": {
+    "name": "兆易创新",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "603990": {
+    "name": "麦迪科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "603993": {
+    "name": "洛阳钼业",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "重点关注"
+  },
+  "688008": {
+    "name": "澜起科技",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "688012": {
+    "name": "中微公司",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "688041": {
+    "name": "海光信息",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "688525": {
+    "name": "佰维存储",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "688568": {
+    "name": "中科星图",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "688798": {
+    "name": "艾为电子",
+    "added": "2026-06-22",
+    "source": "历史硬编码合并",
+    "level": "自选"
+  },
+  "000001": {
+    "name": "平安银行",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "000002": {
+    "name": "万  科Ａ",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "000601": {
+    "name": "韶能股份",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "000657": {
+    "name": "中钨高新",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "002050": {
+    "name": "三花智控",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "002421": {
+    "name": "达实智能",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "002579": {
+    "name": "中京电子",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "300136": {
+    "name": "信维通信",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "300503": {
+    "name": "昊志机电",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "300964": {
+    "name": "本川智能",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "301182": {
+    "name": "凯旺科技",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "600100": {
+    "name": "同方股份",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "600158": {
+    "name": "中体产业",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "600378": {
+    "name": "昊华科技",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "600487": {
+    "name": "亨通光电",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "600589": {
+    "name": "大位科技",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "600726": {
+    "name": "华电能源",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  },
+  "603618": {
+    "name": "杭电股份",
+    "added": "2026-06-22",
+    "source": "升降级系统补充",
+    "level": "自选"
+  }
 }

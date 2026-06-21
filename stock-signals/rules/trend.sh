@@ -85,7 +85,7 @@ prices=[]
 with open('$cache') as f:
   for line in f:
     parts=line.split()
-    if len(parts) in (2,3):  # 只取3列(收盘价 成交量 日期)或2列(收盘价 成交量)的行，跳过OHLC格式
+    if len(parts) >= 5:  # 6列格式(close open high low vol date)，取第1列收盘价
       try: prices.append(float(parts[0]))
       except: pass
 n=len(prices)
@@ -102,7 +102,12 @@ for d in dif_v:
   else: dea_v.append(d*k9+dea_v[-1]*(1-k9))
 prev_state = 1 if dif_v[-2] > dea_v[-2] else (-1 if dif_v[-2] < dea_v[-2] else 0)
 cur_state = 1 if dif_v[-1] > dea_v[-1] else (-1 if dif_v[-1] < dea_v[-1] else 0)
-print(f'{dif_v[-2]:.4f} {dea_v[-2]:.4f} {dif_v[-1]:.4f} {dea_v[-1]:.4f} {prev_state} {cur_state}')
+# 死叉收敛判定：DIF上升 + 差距缩小
+dif_trend = dif_v[-1] - dif_v[-2]
+gap_cur = abs(dif_v[-1] - dea_v[-1])
+gap_prev = abs(dif_v[-2] - dea_v[-2])
+converging = 1 if (dif_trend > 0 and gap_cur < gap_prev) else 0
+print(f'{dif_v[-2]:.4f} {dea_v[-2]:.4f} {dif_v[-1]:.4f} {dea_v[-1]:.4f} {prev_state} {cur_state} {converging} {dif_trend:.4f} {gap_cur:.4f}')
 " 2>/dev/null)
   [ -z "$result" ] && return
 
@@ -112,6 +117,9 @@ print(f'{dif_v[-2]:.4f} {dea_v[-2]:.4f} {dif_v[-1]:.4f} {dea_v[-1]:.4f} {prev_st
   local cur_dea_full=$(echo "$result" | awk '{print $4}')
   local prev_state=$(echo "$result" | awk '{print $5}')
   local cur_state=$(echo "$result" | awk '{print $6}')
+  local converging=$(echo "$result" | awk '{print $7}')
+  local dif_trend=$(echo "$result" | awk '{print $8}')
+  local gap_cur=$(echo "$result" | awk '{print $9}')
   [ -z "$cur_dif_full" ] || [ -z "$cur_dea_full" ] && return
 
   # 金叉: prev死叉→cur金叉（刚发生穿越）
@@ -126,9 +134,15 @@ print(f'{dif_v[-2]:.4f} {dea_v[-2]:.4f} {dif_v[-1]:.4f} {dea_v[-1]:.4f} {prev_st
   # 死叉: prev金叉→cur死叉（刚发生穿越）
   elif [ "$prev_state" = "1" ] && [ "$cur_state" = "-1" ]; then
     echo "{\"rule\":\"macd_death_cross\",\"direction\":\"sell_signal\",\"dif\":$cur_dif_full,\"dea\":$cur_dea_full,\"strength\":\"high\",\"note\":\"MACD死叉-DIF下穿DEA\"}"
-  # 持续死叉状态（DIF<DEA且前一天也<DEA）→ 警告但不报新信号
+  # 持续死叉状态（DIF<DEA且前一天也<DEA）
   elif [ "$prev_state" = "-1" ] && [ "$cur_state" = "-1" ]; then
-    echo "{\"rule\":\"macd_death_ongoing\",\"direction\":\"bearish_warn\",\"dif\":$cur_dif_full,\"dea\":$cur_dea_full,\"strength\":\"medium\",\"note\":\"MACD持续死叉-DIF仍低于DEA\"}"
+    # 子状态：死叉收敛（DIF上升+差距缩小）→ 即将金叉预警
+    if [ "$converging" = "1" ]; then
+      local gap_pct=$(echo "scale=1; $gap_cur / $cur_dea_full * 100" | bc -l 2>/dev/null | sed 's/^-//')
+      echo "{\"rule\":\"macd_death_converging\",\"direction\":\"bullish_watch\",\"dif\":$cur_dif_full,\"dea\":$cur_dea_full,\"strength\":\"medium\",\"note\":\"MACD死叉收敛-DIF上升${dif_trend}+差距缩至${gap_cur}+逼近金叉\"}"
+    else
+      echo "{\"rule\":\"macd_death_ongoing\",\"direction\":\"bearish_warn\",\"dif\":$cur_dif_full,\"dea\":$cur_dea_full,\"strength\":\"medium\",\"note\":\"MACD持续死叉-DIF仍低于DEA\"}"
+    fi
   fi
 }
 

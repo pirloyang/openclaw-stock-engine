@@ -12,7 +12,7 @@ rule_rsi() {
 
   local rsi=$(python3 -c "
 f=open('$cache'); lines=f.readlines(); f.close()
-prices=[float(l.split()[0]) for l in lines[-21:] if len(l.split()) in (2,3)]  # 取21天算RSI(14)，跳过OHLC行
+prices=[float(l.split()[0]) for l in lines[-21:] if len(l.split()) >= 5]  # 6列格式(close open high low vol date)，取第1列收盘价
 if len(prices) < 15:
     exit()
 gains,losses=[],[]

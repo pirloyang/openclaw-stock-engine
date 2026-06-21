@@ -12,10 +12,9 @@ _read_kline_history() {
   local code="$1" n="${2:-5}"
   local cache_dir="/root/.openclaw/workspace/stock-signals/cache"
   local found=""
-  for prefix in sh sz; do
-    local p="$cache_dir/${prefix}${code}.day"
-    [ -f "$p" ] && { found="$p"; break; }
-  done
+  # 直接匹配无前缀缓存文件名（engine.sh写入格式为 ${code}.day）
+  local p="$cache_dir/${code}.day"
+  [ -f "$p" ] && found="$p"
   [ -z "$found" ] && return 1
   
   local lines=$(cat "$found" 2>/dev/null | tail -"$n")
@@ -251,9 +250,9 @@ rule_three_candles() {
   
   # 红三兵 + 量能确认（至少1天成交量>10日均量）
   if [ "$(echo "$d2 > 0.5 && $d1 > 0.5 && $change > 0" | bc -l 2>/dev/null)" = "1" ]; then
-    local v2=$(tail -2 "$cache" | head -1 | awk '{print $2}')
-    local v1=$(tail -1 "$cache" | awk '{print $2}')
-    local avgvol=$(tail -10 "$cache" | awk '{s+=$2} END{printf "%.0f", s/10}')
+    local v2=$(tail -2 "$cache" | head -1 | awk '{print $5}')
+    local v1=$(tail -1 "$cache" | awk '{print $5}')
+    local avgvol=$(tail -10 "$cache" | awk '{s+=$5} END{printf "%.0f", s/10}')
     local vol_ok=0
     [ -n "$v2" ] && [ -n "$avgvol" ] && [ "$v2" -gt "$avgvol" ] 2>/dev/null && ((vol_ok++))
     [ -n "$v1" ] && [ -n "$avgvol" ] && [ "$v1" -gt "$avgvol" ] 2>/dev/null && ((vol_ok++))
@@ -464,10 +463,10 @@ rule_shrink_reversal() {
   local cache="$SIGNAL_DIR/cache/${code}.day"
   [ ! -f "$cache" ] || [ "$(wc -l < "$cache")" -lt 3 ] && return
 
-  # 前日数据 (cache格式: close vol open high low)
+  # 前日数据 (cache格式: close open high low vol date)
   local prev_data=($(tail -2 "$cache" | head -1))
-  local prev_close="${prev_data[0]}" prev_vol="${prev_data[1]}"
-  local prev_open="${prev_data[2]}" prev_high="${prev_data[3]}"
+  local prev_close="${prev_data[0]}" prev_vol="${prev_data[4]}"
+  local prev_open="${prev_data[1]}" prev_high="${prev_data[2]}"
 
   local prev2_data=($(tail -3 "$cache" | head -1))
   local prev2_close="${prev2_data[0]}"
@@ -475,7 +474,7 @@ rule_shrink_reversal() {
   [ -z "$prev_close" ] || [ -z "$prev_vol" ] || [ -z "$prev2_close" ] && return
 
   # 10日均量
-  local avg_vol=$(tail -10 "$cache" | awk '{s+=$2} END{printf "%.0f", s/10}')
+  local avg_vol=$(tail -10 "$cache" | awk '{s+=$5} END{printf "%.0f", s/10}')
   [ -z "$avg_vol" ] || [ "$avg_vol" = "0" ] && return
 
   # 条件1：前日缩量（量<均量的70%）

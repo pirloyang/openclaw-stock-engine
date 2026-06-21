@@ -89,35 +89,16 @@ def get_current_holdings():
     return holdings
 
 def get_watchlist_codes():
-    """从tools.sh获取所有自选代码"""
-    result = subprocess.run(
-        ["bash", f"{WORKSPACE}/scripts/tools.sh", "holdings"],
-        capture_output=True, text=True, timeout=30
-    )
+    """从 focus_watchlist.json 动态读取所有自选代码（不再硬编码）"""
     codes = []
-    for line in result.stdout.strip().split('\n'):
-        parts = line.strip().split()
-        if parts and parts[0].isdigit():
-            codes.append(parts[0])
-    
-    # 额外自选
-    extra = ["300456","002281","300620","601138","000977","300476","000034",
-             "002837","300499","301018","300738","300383","001309","300475",
-             "002119","300302","300661","688798","300223","603881","300857",
-             "000032","002335","600602","600118","002025","300045","688568",
-             "300762","600343","300455","688523","301306","002465","600391",
-             "600592","301005","000901","002682","600151","000551","300265",
-             "002361","003009","600345","002151","688008","300394","300502",
-             "600522","300750","002230","002384","000988","000636","300660",
-             "002938","002881","300503","301182","300964","603618","603893",
-             "000938","002195","301308","601600","000592","600409","600549",
-             "000547","002185","600100","300017","600105","600879","300102",
-             "002553","603256","600183","002916","300058","300113","300442",
-             "002463","600584","600487","002050","300115"]
-    for c in extra:
-        if c not in codes:
-            codes.append(c)
-    return sorted(set(codes))
+    try:
+        with open(f"{WORKSPACE}/stock-signals/focus_watchlist.json") as f:
+            data = json.load(f)
+        meta = {'focus_list', 'last_update', 'version'}
+        codes = sorted([c for c in data if c not in meta])
+    except Exception as e:
+        print(f"[WARN] focus_watchlist.json 读取失败: {e}", file=sys.stderr)
+    return codes
 
 # ========== 数据采集 ==========
 
@@ -143,8 +124,15 @@ def fetch_batch_prices():
         prefix = "sh" if code.startswith("6") else "sz"
         query_parts.append(f"{prefix}{code}")
     
-    # 重点 = 自选中的核心标的
-    focus_codes = ["000969","300660","002938","002881","000988","000636"]
+    # 重点 = focus_watchlist 中 level='重点关注' 的标的
+    focus_codes = []
+    try:
+        with open(f"{WORKSPACE}/stock-signals/focus_watchlist.json") as f:
+            fw = json.load(f)
+        meta = {'focus_list', 'last_update', 'version'}
+        focus_codes = [c for c in fw if c not in meta and fw[c].get('level') == '重点关注']
+    except:
+        focus_codes = []
     for code in focus_codes:
         pfx = "sh" if code.startswith(("6","9")) else "sz"
         q = f"{pfx}{code}"
