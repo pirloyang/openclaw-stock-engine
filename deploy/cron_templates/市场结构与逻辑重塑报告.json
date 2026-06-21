@@ -10,11 +10,11 @@
   "wakeMode": "now",
   "payload": {
     "kind": "agentTurn",
-    "message": "【前置·规则加载】\nexec cat ${WORKSPACE_ROOT}/docs/交易风控规则.md\nexec cat ${WORKSPACE_ROOT}/docs/重点关注清单维护规则.md\nexec cat ${WORKSPACE_ROOT}/docs/信号引擎规则手册.md\n明日诊断必须符合规则。信号词汇严格按《信号引擎规则手册》定义。\n\n【数据源】先exec read /tmp/stock_alerts/L1_market.txt L2_holdings.txt L6_hot_alerts.txt。引用分层数据做市场分析。\n您是辉哥的专属顶级股票策略官。生成《市场结构与逻辑重塑报告》。\n\n【写作风格】像交易员给合伙人讲盘——有大局观、有判断、每句话都有数据但不是表格堆砌。不要表格和口号。\n\n先讲大盘气质（一句话）：\n\"今天科技爆了消费崩了，三万亿成交不是散户干的。\"\n\n逐只持仓诊断，V1.0风格：\n\"亨通光电 MA5=75.75（当前75.43）。多头排列，股价微贴5日线。上涨途中缩量回调不破位=洗盘，正常持有。\"\n\"长电科技 +4.07%，MA5=53.61偏离约7%。多头排列不拐头不走——拿着，偏离过大禁止加仓（《风控规则》R3）。\"\n⚠️明日操作建议必须符合《风控规则》R1/R2/R10/R11，违规撤回\n\n历史自选挑最重要的讲（最多5只），每只一句判断+入场价+止损价。依据《重点关注清单维护规则》U1覆盖focus_watchlist分组（持仓/重点监控/观察）。\n\n明日推演：三句话说清明天怎么走怎么应对。\n\n【风控自检】末尾必须输出（依据《风控规则》R16）：\n```\n【风控自检 · 风控规则 v1.0】\n✅ R2 止损：明日需处理 N 只\n✅ R3 单票上限：最大 X%\n✅ R7 总仓位： X%\n✅ R10 移动止损：N 只需上移\n✅ R11 信号一票否决：无相反建议\n✅ R13 白名单：已清仓 0 出现\n```\n\n【自律规则】\n⚠️ 先exec cat reports/$(date +%Y-%m-%d)-1600-盘后审计.md 2>/dev/null 读取今日16:00报告，开头引用其核心结论\n⚠️ 持仓以TOOLS.md为准，已清仓标的不得出现\n⚠️ 完成后用write保存到 reports/$(date +%Y-%m-%d)-2100-结构重塑.md\n⚠️ 最后exec cat reports/$(date +%Y-%m-%d)-2100-结构重塑.md 输出报告正文确保推送",
+    "message": "【前置·规则加载】\nexec cat ${WORKSPACE_ROOT}/docs/交易风控规则.md\nexec cat ${WORKSPACE_ROOT}/docs/重点关注清单维护规则.md\nexec cat ${WORKSPACE_ROOT}/docs/信号引擎规则手册.md\n明日诊断必须符合规则。信号词汇严格按《信号引擎规则手册》定义。\n\n【报告前先执行外部搜索】\n⚠️ 在执行其他步骤之前，先用 web_search 搜索：\n1. web_search query=\"site:cls.cn 今日A股收盘 主力资金 板块 2026年6月\" count=5\n2. web_search query=\"site:cls.cn 晚间重大消息 政策 $(date +%Y年%m月%d日)\" count=5\n3. web_search query=\"A股 收盘 热门板块 涨幅 主力资金\" time_range=day count=5\n\n【数据源】先exec read /tmp/stock_alerts/L1_market.txt L2_holdings.txt L6_hot_alerts.txt。引用分层数据做市场分析。\n您是辉哥的专属顶级股票策略官。生成《市场结构与逻辑重塑报告》。\n\n【写作风格】像交易员给合伙人讲盘——有大局观、有判断、每句话都有数据但不是表格堆砌。不要表格和口号。\n\n先讲大盘气质（一句话）：\n\"今天科技爆了消费崩了，三万亿成交不是散户干的。\"\n\n逐只持仓诊断，V1.0风格：\n\"亨通光电 MA5=75.75（当前75.43）。多头排列，股价微贴5日线。上涨途中缩量回调不破位=洗盘，正常持有。\"\n\"长电科技 +4.07%，MA5=53.61偏离约7%。多头排列不拐头不走——拿着，偏离过大禁止加仓（《风控规则》R3）。\"\n⚠️明日操作建议必须符合《风控规则》R1/R2/R10/R11，违规撤回\n\n历史自选挑最重要的讲（最多5只），每只一句判断+入场价+止损价。依据《重点关注清单维护规则》U1覆盖focus_watchlist分组（持仓/重点监控/观察）。\n\n明日推演：三句话说清明天怎么走怎么应对。\n\n【风控自检】末尾必须输出（依据《风控规则》R16）：\n```\n【风控自检 · 风控规则 v1.0】\n✅ R2 止损：明日需处理 N 只\n✅ R3 单票上限：最大 X%\n✅ R7 总仓位： X%\n✅ R10 移动止损：N 只需上移\n✅ R11 信号一票否决：无相反建议\n✅ R13 白名单：已清仓 0 出现\n```\n\n【自律规则】\n⚠️ 先exec cat reports/$(date +%Y-%m-%d)-1600-盘后审计.md 2>/dev/null 读取今日16:00报告，开头引用其核心结论\n⚠️ 持仓以TOOLS.md为准，已清仓标的不得出现\n⚠️ 完成后用write保存到 reports/$(date +%Y-%m-%d)-2100-结构重塑.md\n⚠️ 最后exec cat reports/$(date +%Y-%m-%d)-2100-结构重塑.md 输出报告正文确保推送",
     "timeoutSeconds": 600,
     "lightContext": true,
     "fallbacks": [
-      "deepseek-v4-flash"
+      "deepseek/deepseek-v4-flash"
     ]
   },
   "delivery": {

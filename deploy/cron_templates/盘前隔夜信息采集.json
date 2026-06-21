@@ -11,11 +11,11 @@
   "wakeMode": "now",
   "payload": {
     "kind": "agentTurn",
-    "message": "【盘前隔夜信息采集任务 — 08:10执行】\n\n采集以下信息并保存到 /tmp/stock_alerts/overnight_news.json：\n\n1. web_search 搜索\"隔夜美股三大指数收盘 英伟达 科技股\" time_range=day count=5\n2. web_search 搜索\"A股今日早间重磅资讯 政策 板块催化\" time_range=day count=5\n3. web_search 搜索\"中东局势 原油 黄金 最新\" time_range=day count=3\n\n汇总为JSON格式保存：\n{\n  \"date\": \"$(date +%Y-%m-%d)\",\n  \"us_market\": { \"summary\": \"一句话总结\", \"details\": [\"要点1\", \"要点2\"] },\n  \"a_share_news\": { \"summary\": \"一句话总结\", \"details\": [\"要点1\", \"要点2\"] },\n  \"geopolitics\": { \"summary\": \"一句话总结\", \"details\": [\"要点1\"] },\n  \"key_catalysts\": [\"催化1\", \"催化2\"]\n}\n\n用write保存到 /tmp/stock_alerts/overnight_news.json。\n完成后输出✅文件大小。不做任何分析报告。",
+    "message": "【盘前隔夜信息采集任务 — 08:10执行】\n\n采集以下信息并保存到 /tmp/stock_alerts/overnight_news.json：\n\n1. web_search query=\"site:cls.cn 美股收盘 三大指数 英伟达 $(date -d '-1 day' +%Y年%m月%d日)\" count=5\n2. web_search query=\"site:cls.cn 早间新闻精选 $(date +%Y年%m月%d日)\" count=3\n3. web_search query=\"隔夜美股 道琼斯 纳斯达克 标普500 英伟达 收盘\" time_range=day count=5\n4. web_search query=\"A股 今日早间重磅资讯 政策 板块催化\" time_range=day count=5\n5. web_search query=\"中东局势 原油 黄金 最新\" time_range=day count=3\n\n汇总为JSON格式保存：\n{\n  \"date\": \"$(date +%Y-%m-%d)\",\n  \"us_market\": { \"summary\": \"一句话总结\", \"details\": [\"要点1\", \"要点2\"] },\n  \"a_share_news\": { \"summary\": \"一句话总结\", \"details\": [\"要点1\", \"要点2\"] },\n  \"geopolitics\": { \"summary\": \"一句话总结\", \"details\": [\"要点1\"] },\n  \"key_catalysts\": [\"催化1\", \"催化2\"]\n}\n\n用write保存到 /tmp/stock_alerts/overnight_news.json。\n完成后输出✅文件大小。不做任何分析报告。",
     "timeoutSeconds": 300,
     "lightContext": true,
     "fallbacks": [
-      "deepseek-v4-flash"
+      "deepseek/deepseek-v4-flash"
     ]
   },
   "delivery": {
