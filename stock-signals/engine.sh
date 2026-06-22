@@ -738,6 +738,85 @@ evaluate() {
   local quality_score=$state_score
   local total_score_ext=$(echo "$state_score + $morph_score" | bc -l 2>/dev/null)
   total_score_ext=$(echo "$total_score_ext" | sed 's/^\./0./;s/^-\./-0./')
+  
+  # ── v6.2 entry_score：买点质量评分（不推翻总分，只加裁决后缀）──
+  # 从 signals 中提取关键字段
+  local profit_pct=0 dev_cost=0 today_limit=0 vol_ratio=0
+  for sig in "${signals[@]}"; do
+    local r=$(echo "$sig" | grep -o '"rule":"[^"]*"' | cut -d'"' -f4)
+    local note=$(echo "$sig" | grep -o '"note":"[^"]*"' | cut -d'"' -f4)
+    case "$r" in
+      chip_profit_high) profit_pct=$(echo "$note" | grep -oP '\d+\.?\d*(?=%\-兑现压力大)' | head -1) ;;
+      chip_deviation_high) dev_cost=$(echo "$note" | grep -oP '\d+\.?\d*(?=%\-获利盘丰厚)' | head -1) ;;
+      limit_up) today_limit=1 ;;
+    esac
+  done
+  [ -z "$profit_pct" ] && profit_pct=0
+  [ -z "$dev_cost" ] && dev_cost=0
+  vol_ratio=$VOL_RATIO_GLOBAL
+  [ -z "$vol_ratio" ] && vol_ratio=0
+  
+  local entry_type="NO_ENTRY" entry_trigger="" entry_score=-1
+  
+  # 计算是否在MA5/MA10附近
+  local near_ma5=0 near_ma10=0
+  [ "$ma5" != "n/a" ] && [ -n "$ma5" ] && {
+    local dist_ma5=$(echo "scale=4; ($price - $ma5) / $price" | bc -l 2>/dev/null)
+    dist_ma5=$(echo "$dist_ma5" | sed 's/^-//')
+    [ "$(echo "$dist_ma5 < 0.015" | bc -l 2>/dev/null)" = "1" ] && near_ma5=1
+  }
+  [ "$ma10" != "n/a" ] && [ -n "$ma10" ] && {
+    local dist_ma10=$(echo "scale=4; ($price - $ma10) / $price" | bc -l 2>/dev/null)
+    dist_ma10=$(echo "$dist_ma10" | sed 's/^-//')
+    [ "$(echo "$dist_ma10 < 0.02" | bc -l 2>/dev/null)" = "1" ] && near_ma10=1
+  }
+  
+  local is_shrink=0
+  [ "$(echo "$vol_ratio < 0.85" | bc -l 2>/dev/null)" = "1" ] && is_shrink=1
+  
+  # ── A. 回踩买 PULLBACK_BUY ──
+  if [ "$market_state" = "STRONG_UP" ] && [ "$today_limit" -eq 0 ]; then
+    if [ "$near_ma5" -eq 1 ] || [ "$near_ma10" -eq 1 ]; then
+      if [ "$is_shrink" -eq 1 ] || [ "$(echo "$profit_pct < 90" | bc -l 2>/dev/null)" = "1" ]; then
+        entry_type="PULLBACK_BUY"
+        entry_score=0.30
+        [ "$(echo "$profit_pct > 95" | bc -l 2>/dev/null)" = "1" ] && entry_score=$(echo "$entry_score - 0.05" | bc -l)
+        [ "$(echo "$dev_cost > 30" | bc -l 2>/dev/null)" = "1" ] && entry_score=$(echo "$entry_score - 0.10" | bc -l)
+        [ "$near_ma5" -eq 1 ] && entry_trigger="MA5≈$ma5 缩量回踩" || entry_trigger="MA10≈$ma10 缩量回踩"
+      fi
+    fi
+  fi
+  
+  # ── B. 突破买 BREAKOUT_BUY ──
+  if [ "$entry_type" = "NO_ENTRY" ] && [ "$market_state" = "STRONG_UP" ] && [ "$today_limit" -eq 0 ]; then
+    local has_breakout=0
+    for sig in "${signals[@]}"; do
+      local r=$(echo "$sig" | grep -o '"rule":"[^"]*"' | cut -d'"' -f4)
+      case "$r" in
+        breakout_up|historical_breakthrough|morning_star|fairy_guide|shrink_then_breakout) has_breakout=1 ;;
+      esac
+    done
+    if [ "$has_breakout" -eq 1 ] && [ "$(echo "$profit_pct < 90" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$dev_cost < 20" | bc -l 2>/dev/null)" = "1" ]; then
+      entry_type="BREAKOUT_BUY"
+      entry_score=0.25
+      entry_trigger="突破确认 量比=$vol_ratio"
+    fi
+  fi
+  
+  # ── C. 不买区 NO_ENTRY ──
+  if [ "$today_limit" -eq 1 ] || [ "$(echo "$profit_pct >= 98 && $dev_cost > 25" | bc -l 2>/dev/null)" = "1" ]; then
+    entry_type="NO_ENTRY"
+    entry_score=-1
+    if [ "$today_limit" -eq 1 ]; then
+      entry_trigger="今日涨停·不追"
+    else
+      # 对NO_ENTRY但趋势强的标的，加潜在买点提示
+      local potential=""
+      [ "$ma5" != "n/a" ] && [ -n "$ma5" ] && potential="等回踩MA5≈$ma5"
+      entry_trigger="获利盘${profit_pct}%+偏离${dev_cost}%·过热 | ${potential}"
+    fi
+  fi
+  
   # 拼接 signals JSON 数组
   local json_sigs=$(IFS=,; echo "${signals[*]}")
   
@@ -759,6 +838,9 @@ evaluate() {
   \"buy_vote\":$buy_vote,
   \"sell_vote\":$sell_vote,
   \"total_score_ext\":$total_score_ext,
+  \"entry_type\":\"$entry_type\",
+  \"entry_trigger\":\"$entry_trigger\",
+  \"entry_score\":$entry_score,
   \"score_details\":\"state=$market_state|vol=$vol_detail|$tier_summary\",
   \"resonance\":$resonance,
   \"signals\":[$json_sigs]
@@ -849,18 +931,24 @@ done < <(get_all_codes)
 
 echo "]" >> "$REPORT_FILE"
 echo "signal_file=$REPORT_FILE"
-# v6.0 后处理：修复 signals 数组中缺失的逗号 + 前导零
+# v6.2 后处理：修复 signals 缺逗号 + 前导零（先修复再解析）
 python3 -c "
-import re, sys
+import re, json
 with open('$REPORT_FILE') as f:
     content = f.read()
-# 修复: }{  →  },{  （JSON对象间缺逗号）
-content = re.sub(r'\}\\s*\{', '},{', content)
-# 修复: :. → :0. （bc输出.5而不是0.5）
-content = re.sub(r':\.(\d)', r':0.\1', content)
+# 修复1: signals 数组内 JSON 对象间缺逗号（多行输出导致 }\\n{）
+content = re.sub(r'\\}(?:\\s*\\n)+\\s*\\{', '},{', content)
+# 修复2: :. → :0. （bc输出.5而不是0.5）
+content = re.sub(r':\\.(\\d)', r':0.\\1', content)
+# 修复3: 对象末尾 ,{ 但缺少闭合 }（chip_distribution 信号拼接异常）
+content = re.sub(r':\\"[a-z]+\\"\\s*,\\s*\\{', lambda m: m.group(0).replace(',{', '},{'), content)
 with open('$REPORT_FILE', 'w') as f:
     f.write(content)
+# 验证 JSON 合法性
+with open('$REPORT_FILE') as f:
+    json.load(f)
 " 2>/dev/null
+
 # 后处理：计算概念板块相对强度
 python3 "$SIGNAL_DIR/concept_relative_strength.py" 2>/dev/null
 # 合并概念信号到引擎输出，生成统一信号文件
