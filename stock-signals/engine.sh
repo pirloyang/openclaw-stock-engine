@@ -73,6 +73,8 @@ avgvol_n() { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] 
 
 # 近N日最高/最低价（6字段格式: $3=high, $4=low）
 high_n() { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] && tail -"$n" "$f" | awk 'max==""||$3>max{max=$3} END{printf "%.2f", max}'; }
+# 排除当天（最后1行）的近N日最高价 — 避免冲高回落当天HH被当日盘中高点污染误杀
+high_n_excl_today() { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -gt "$n" ] && tail -"$n" "$f" | head -"$((n-1))" | awk 'max==""||$3>max{max=$3} END{printf "%.2f", max}'; }
 low_n()  { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] && tail -"$n" "$f" | awk 'min==""||$4<min{min=$4} END{printf "%.2f", min}'; }
 
 # EMA (指数移动平均) — 用于 MACD
@@ -156,8 +158,19 @@ compute_market_state() {
     range_20=$(echo "scale=2; ($high20 - $low20) / $low20 * 100" | bc -l 2>/dev/null)
   fi
   
-  # ── STRONG_UP: 多头排列 + 价在20日高点2%内 + MACD>0 ──
-  if [ "$is_bullish_arr" -eq 1 ] && [ -n "$high20" ] && [ "$(echo "$price >= $high20 * 0.98" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$dif > 0" | bc -l 2>/dev/null)" = "1" ]; then
+  # ── STRONG_UP: 多头排列 + 三选一守卫 + MACD>0 ──
+  # v6.1: 用辉哥的三选一策略替代旧HH20*0.98单条件
+  #   cond1: 价格紧贴前高（排除当天，0.995阈值）— 突破位守护
+  #   cond2: 收盘沿5日线强势上行，均线张开>2% — 趋势中继
+  #   cond3: 收盘在MA20上方 + 近5日涨幅>5% — 加速段
+  # 三选一满足即进STRONG_UP，避免冲高回落/高位回踩被误杀
+  if [ "$is_bullish_arr" -eq 1 ] && [ -n "$high20" ] && [ "$(echo "$dif > 0" | bc -l 2>/dev/null)" = "1" ]; then
+    local cond1=0 cond2=0 cond3=0
+    [ "$(echo "$price >= $high20 * 0.995" | bc -l 2>/dev/null)" = "1" ] && cond1=1
+    [ "$(echo "$price > $ma5 && $ma5 > $ma10 * 1.02" | bc -l 2>/dev/null)" = "1" ] && cond2=1
+    # cond3: 近5日涨幅 > 5%（从ma5推算：price/ma5-1>5% 即 price>ma5*1.05）
+    [ "$(echo "$price > $ma20 && $price > $ma5 * 1.05" | bc -l 2>/dev/null)" = "1" ] && cond3=1
+    if [ "$cond1" -eq 1 ] || [ "$cond2" -eq 1 ] || [ "$cond3" -eq 1 ]; then
     state="STRONG_UP"; state_score=5
   # ── WEAK_UP: 多头排列但不满足STRONG_UP ──
   elif [ "$is_bullish_arr" -eq 1 ]; then
@@ -557,6 +570,7 @@ _is_valid_in_state() {
 scan_morphology_signals_v6() {
   local market_state="$1"; shift
   local signals=("$@")
+  local has_breakout=0 has_pullback_signal=0
   
   local buy_vote=0 sell_vote=0
   local buy_count=0 sell_count=0
@@ -579,6 +593,14 @@ scan_morphology_signals_v6() {
     fi
     
     rules_fired="${rules_fired},${rule}"
+    
+    # 标记突破信号（用于post_breakout_pullback判定）
+    case "$rule" in
+      breakout_up|historical_breakthrough|morning_star|fairy_guide|shrink_then_breakout)
+        has_breakout=1 ;;
+      doji|shooting_star|hammer)
+        has_pullback_signal=1 ;;
+    esac
     
     if [ "$(echo "$weight > 0" | bc -l 2>/dev/null)" = "1" ]; then
       buy_vote=$(echo "$buy_vote + $weight" | bc -l)
@@ -604,6 +626,26 @@ scan_morphology_signals_v6() {
   local morph_score=$(echo "$buy_vote - $sell_vote" | bc -l 2>/dev/null)
   morph_score=$(echo "$morph_score" | sed 's/^\./0./;s/^-\./-0./')
   
+  # ── v6.1 post_breakout_pullback：刚突破后回踩企稳 = 加分而非减分 ──
+  # 条件：近期有突破信号 + 当前有十字星/缩量等回踩特征 + 趋势未破
+  # 命中: morph_score += 0.25 (限幅1.0上限)
+  if [ "$has_breakout" -eq 1 ]; then
+    if [ "$has_pullback_signal" -eq 1 ]; then
+      # 检查是否缩量
+      local has_shrink=0
+      for sig in "${signals[@]}"; do
+        local r=$(echo "$sig" | grep -o '"rule":"[^"]*"' | cut -d'"' -f4)
+        [ "$r" = "volume_shrink" ] || [ "$r" = "shrink_reversal" ] && { has_shrink=1; break; }
+      done
+      if [ "$has_shrink" -eq 1 ] || [ "$market_state" = "STRONG_UP" ] || [ "$market_state" = "WEAK_UP" ]; then
+        local bonus=0.25
+        local pulled_up=$(echo "$morph_score + $bonus" | bc -l 2>/dev/null)
+        [ "$(echo "$pulled_up > 1.0" | bc -l 2>/dev/null)" = "1" ] && pulled_up=1.0
+        morph_score=$pulled_up
+      fi
+    fi
+  fi
+  
   # 前导零修复
   buy_vote=$(echo "$buy_vote" | sed 's/^\./0./')
   sell_vote=$(echo "$sell_vote" | sed 's/^\./0./')
@@ -626,6 +668,7 @@ evaluate() {
   local ma60=$(ma_n "$cache" 60)
   local avg10v=$(avgvol_n "$cache" 10)
   local high20=$(high_n "$cache" 20)
+  local high20_excl_today=$(high_n_excl_today "$cache" 20)
   local low20=$(low_n "$cache" 20)
   local dif=$(calc_dif "$cache")
   local prev_dif=$(calc_prev_dif "$cache")
@@ -664,7 +707,7 @@ evaluate() {
   fi
   
   # ── v6.0 State机：判定市场状态 ──
-  local state_result=$(compute_market_state "$price" "$ma5" "$ma10" "$ma20" "$high20" "$low20" "$dif" "$cache")
+  local state_result=$(compute_market_state "$price" "$ma5" "$ma10" "$ma20" "$high20_excl_today" "$low20" "$dif" "$cache")
   local market_state=$(echo "$state_result" | cut -d'|' -f1)
   local state_score=$(echo "$state_result" | cut -d'|' -f2)
   
