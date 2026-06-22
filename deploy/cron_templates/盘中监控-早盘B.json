@@ -10,7 +10,7 @@
   "wakeMode": "now",
   "payload": {
     "kind": "agentTurn",
-    "message": "【前置·规则+模板加载】\nexec cat ${WORKSPACE_ROOT}/docs/交易风控规则.md\nexec cat ${WORKSPACE_ROOT}/docs/盘中监控简报模板.md\nexec cat ${WORKSPACE_ROOT}/docs/信号引擎规则手册.md\n\n【盘间呼应】先 exec head -3 reports/$(date +%Y-%m-%d)-0830-盘前作战.md 2>/dev/null，引用盘前作战核心判断，标注「✅符合 / ⚠️偏离」。\n\n严格按《盘中监控简报模板》六段结构+字数上限生成。信号引用按《信号引擎规则手册》语义。任何买卖提示遵《交易风控规则》R1/R2/R11。\n\n读/tmp/stock_alerts/下全部txt文件和signals_summary.json，给我盘中监控简报。\n\n数据源：L1大盘/L2持仓/L3重点/L4ETF/L5自选/L6热点/urgent紧急/signals_summary.json引擎信号。\n\n严格按模板输出6段。\n\n【消息精简】2000字以内，重点监控≤5只，自选异动只写±8%以上，已清仓不写。",
+    "message": "【前置·规则+模板加载】\nexec cat ${WORKSPACE_ROOT}/docs/交易风控规则.md\nexec cat ${WORKSPACE_ROOT}/docs/盘中监控简报模板.md\nexec cat ${WORKSPACE_ROOT}/docs/信号引擎规则手册.md\n\n【盘间呼应】先 exec head -3 reports/$(date +%Y-%m-%d)-0830-盘前作战.md 2>/dev/null，引用盘前作战核心判断，标注「✅符合 / ⚠️偏离」。\n\n严格按《盘中监控简报模板》六段结构+字数上限生成。信号引用按《信号引擎规则手册》语义。任何买卖提示遵《交易风控规则》R1/R2/R11。\n\n读/tmp/stock_alerts/下全部txt文件和signals_summary.json，给我盘中监控简报。\n\n数据源：L1大盘/L2持仓/L3重点/L4ETF/L5自选/L6热点/urgent紧急/signals_summary.json引擎信号。\n【gtimg字段定义】量比=下标49(awk $50)，换手率=下标38(awk $39)，涨停价=下标47，跌停价=下标48。报告里量比取$50，勿将换手率当量比输出。\n\n\n严格按模板输出6段。\n\n【消息精简】2000字以内，重点监控≤5只，自选异动只写±8%以上，已清仓不写。",
     "timeoutSeconds": 600,
     "fallbacks": [
       "deepseek-v4-flash"
