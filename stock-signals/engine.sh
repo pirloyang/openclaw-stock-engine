@@ -739,9 +739,19 @@ evaluate() {
   local total_score_ext=$(echo "$state_score + $morph_score" | bc -l 2>/dev/null)
   total_score_ext=$(echo "$total_score_ext" | sed 's/^\./0./;s/^-\./-0./')
   
-  # ── v6.2 entry_score：买点质量评分（不推翻总分，只加裁决后缀）──
+  # ── v6.3 entry_score v2：五类买点质量评分 ──
   # 从 signals 中提取关键字段
-  local profit_pct=0 dev_cost=0 today_limit=0 vol_ratio=0
+  local profit_pct=0 dev_cost=0 today_limit=0 today_down_limit=0 vol_ratio=0
+  local has_breakout=0 has_bottom_div=0 has_oversold=0 has_hammer=0
+  local has_morning_star=0 has_fairy_guide=0 has_should_fall_strong=0
+  local has_red_three=0 has_gap_up=0 has_bullish_arr=0 has_macd_above=0
+  local has_chip_density_low=0 has_chip_below_cost=0 has_chip_peak_low=0
+  local has_ma_convergence=0 has_ma_golden_cross=0 has_macd_golden=0
+  local has_shrink=0 has_vol_pullback=0 has_vol_surge=0
+  local has_shooting_star=0 has_hanging_man=0 has_breakdown=0 has_2b_fake=0
+  local has_bearish_arr=0 has_death_ongoing=0 has_should_rise_fail=0
+  local has_limit_down=0 has_upper_wick=0
+  
   for sig in "${signals[@]}"; do
     local r=$(echo "$sig" | grep -o '"rule":"[^"]*"' | cut -d'"' -f4)
     local note=$(echo "$sig" | grep -o '"note":"[^"]*"' | cut -d'"' -f4)
@@ -749,6 +759,35 @@ evaluate() {
       chip_profit_high) profit_pct=$(echo "$note" | grep -oP '\d+\.?\d*(?=%\-兑现压力大)' | head -1) ;;
       chip_deviation_high) dev_cost=$(echo "$note" | grep -oP '\d+\.?\d*(?=%\-获利盘丰厚)' | head -1) ;;
       limit_up) today_limit=1 ;;
+      limit_down) today_down_limit=1 ;;
+      breakout_up|historical_breakthrough|shrink_then_breakout) has_breakout=1 ;;
+      macd_bottom_div) has_bottom_div=1 ;;
+      rsi_oversold) has_oversold=1 ;;
+      hammer) has_hammer=1 ;;
+      morning_star) has_morning_star=1 ;;
+      fairy_guide) has_fairy_guide=1 ;;
+      should_fall_strong) has_should_fall_strong=1 ;;
+      red_three) has_red_three=1 ;;
+      gap_up) has_gap_up=1 ;;
+      bullish_arrangement) has_bullish_arr=1 ;;
+      macd_above_zero) has_macd_above=1 ;;
+      chip_density_low) has_chip_density_low=1 ;;
+      chip_below_cost) has_chip_below_cost=1 ;;
+      chip_peak_low_single) has_chip_peak_low=1 ;;
+      ma_convergence_up) has_ma_convergence=1 ;;
+      ma_golden_cross) has_ma_golden_cross=1 ;;
+      macd_golden_cross) has_macd_golden=1 ;;
+      volume_shrink) has_shrink=1 ;;
+      volume_pullback_support) has_vol_pullback=1 ;;
+      volume_surge) has_vol_surge=1 ;;
+      shooting_star) has_shooting_star=1 ;;
+      hanging_man) has_hanging_man=1 ;;
+      breakdown) has_breakdown=1 ;;
+      2b_fake_breakout) has_2b_fake=1 ;;
+      upper_wick) has_upper_wick=1 ;;
+      bearish_arrangement) has_bearish_arr=1 ;;
+      macd_death_ongoing) has_death_ongoing=1 ;;
+      should_rise_fail) has_should_rise_fail=1 ;;
     esac
   done
   [ -z "$profit_pct" ] && profit_pct=0
@@ -774,46 +813,117 @@ evaluate() {
   local is_shrink=0
   [ "$(echo "$vol_ratio < 0.85" | bc -l 2>/dev/null)" = "1" ] && is_shrink=1
   
-  # ── A. 回踩买 PULLBACK_BUY ──
-  if [ "$market_state" = "STRONG_UP" ] && [ "$today_limit" -eq 0 ]; then
+  # ── 1. 回踩买 PULLBACK_BUY ──
+  if [ "$market_state" = "STRONG_UP" ] && [ "$today_limit" -eq 0 ] && [ "$today_down_limit" -eq 0 ]; then
     if [ "$near_ma5" -eq 1 ] || [ "$near_ma10" -eq 1 ]; then
       if [ "$is_shrink" -eq 1 ] || [ "$(echo "$profit_pct < 90" | bc -l 2>/dev/null)" = "1" ]; then
         entry_type="PULLBACK_BUY"
         entry_score=0.30
         [ "$(echo "$profit_pct > 95" | bc -l 2>/dev/null)" = "1" ] && entry_score=$(echo "$entry_score - 0.05" | bc -l)
         [ "$(echo "$dev_cost > 30" | bc -l 2>/dev/null)" = "1" ] && entry_score=$(echo "$entry_score - 0.10" | bc -l)
+        [ "$has_vol_pullback" -eq 1 ] && entry_score=$(echo "$entry_score + 0.05" | bc -l)
+        [ "$has_bullish_arr" -eq 1 ] && entry_score=$(echo "$entry_score + 0.03" | bc -l)
+        [ "$has_macd_above" -eq 1 ] && entry_score=$(echo "$entry_score + 0.02" | bc -l)
+        [ "$has_red_three" -eq 1 ] && entry_score=$(echo "$entry_score + 0.02" | bc -l)
         [ "$near_ma5" -eq 1 ] && entry_trigger="MA5≈$ma5 缩量回踩" || entry_trigger="MA10≈$ma10 缩量回踩"
       fi
     fi
   fi
   
-  # ── B. 突破买 BREAKOUT_BUY ──
-  if [ "$entry_type" = "NO_ENTRY" ] && [ "$market_state" = "STRONG_UP" ] && [ "$today_limit" -eq 0 ]; then
-    local has_breakout=0
-    for sig in "${signals[@]}"; do
-      local r=$(echo "$sig" | grep -o '"rule":"[^"]*"' | cut -d'"' -f4)
-      case "$r" in
-        breakout_up|historical_breakthrough|morning_star|fairy_guide|shrink_then_breakout) has_breakout=1 ;;
-      esac
-    done
+  # ── 2. 突破买 BREAKOUT_BUY ──
+  if [ "$entry_type" = "NO_ENTRY" ] && [ "$market_state" = "STRONG_UP" ] && [ "$today_limit" -eq 0 ] && [ "$today_down_limit" -eq 0 ]; then
     if [ "$has_breakout" -eq 1 ] && [ "$(echo "$profit_pct < 90" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$dev_cost < 20" | bc -l 2>/dev/null)" = "1" ]; then
       entry_type="BREAKOUT_BUY"
       entry_score=0.25
-      entry_trigger="突破确认 量比=$vol_ratio"
+      [ "$has_vol_surge" -eq 1 ] && entry_score=$(echo "$entry_score + 0.03" | bc -l)
+      [ "$has_bullish_arr" -eq 1 ] && entry_score=$(echo "$entry_score + 0.02" | bc -l)
+      [ "$has_macd_above" -eq 1 ] && entry_score=$(echo "$entry_score + 0.02" | bc -l)
+      entry_trigger="突破确认 获利盘${profit_pct}%"
     fi
   fi
   
-  # ── C. 不买区 NO_ENTRY ──
-  if [ "$today_limit" -eq 1 ] || [ "$(echo "$profit_pct >= 98 && $dev_cost > 25" | bc -l 2>/dev/null)" = "1" ]; then
-    entry_type="NO_ENTRY"
-    entry_score=-1
+  # ── 3. 底部反转买 REVERSAL_BUY ──
+  if [ "$entry_type" = "NO_ENTRY" ] && [ "$today_limit" -eq 0 ] && [ "$today_down_limit" -eq 0 ]; then
+    local rev_score=0 rev_reasons=""
+    [ "$has_bottom_div" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.20" | bc -l); rev_reasons="${rev_reasons}MACD底背离+"; }
+    [ "$has_morning_star" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.20" | bc -l); rev_reasons="${rev_reasons}早晨之星+"; }
+    [ "$has_should_fall_strong" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.15" | bc -l); rev_reasons="${rev_reasons}该跌不跌+"; }
+    [ "$has_fairy_guide" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.15" | bc -l); rev_reasons="${rev_reasons}仙人指路+"; }
+    [ "$has_hammer" -eq 1 ] && [ "$has_chip_below_cost" -eq 1 -o "$has_chip_density_low" -eq 1 -o "$has_chip_peak_low" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.15" | bc -l); rev_reasons="${rev_reasons}锤子线低位+"; }
+    [ "$has_oversold" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.10" | bc -l); rev_reasons="${rev_reasons}RSI超卖+"; }
+    [ "$has_chip_density_low" -eq 1 -o "$has_chip_peak_low" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.08" | bc -l); rev_reasons="${rev_reasons}低位密集+"; }
+    [ "$has_shrink" -eq 1 ] && [ "$has_breakout" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.10" | bc -l); rev_reasons="${rev_reasons}缩量后突破+"; }
+    [ "$has_ma_convergence" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.08" | bc -l); rev_reasons="${rev_reasons}均线收敛+"; }
+    rev_reasons=$(echo "$rev_reasons" | sed 's/+$//; s/+/+/g')
+    if [ "$(echo "$rev_score >= 0.20" | bc -l 2>/dev/null)" = "1" ]; then
+      entry_type="REVERSAL_BUY"
+      [ "$(echo "$rev_score > 0.40" | bc -l 2>/dev/null)" = "1" ] && rev_score=0.40
+      entry_score=$rev_score
+      entry_trigger="$rev_reasons"
+    fi
+  fi
+  
+  # ── 4. 趋势中继买 TREND_CONTINUE ──
+  # 注：在STRONG_UP+获利盘过热时，趋势中继信号被NO_ENTRY覆盖
+  if [ "$entry_type" = "NO_ENTRY" ] && [ "$market_state" = "STRONG_UP" ] && [ "$today_limit" -eq 0 ] && [ "$today_down_limit" -eq 0 ]; then
+    # 获利盘>=90%时跳过趋势中继（过热不追，等回踩）
+    if [ "$(echo "$profit_pct < 90" | bc -l 2>/dev/null)" = "1" ]; then
+      local cont_score=0 cont_reasons=""
+      [ "$has_red_three" -eq 1 ] && { cont_score=$(echo "$cont_score + 0.10" | bc -l); cont_reasons="${cont_reasons}红三兵+"; }
+      [ "$has_gap_up" -eq 1 ] && [ "$has_hanging_man" -eq 0 ] && { cont_score=$(echo "$cont_score + 0.08" | bc -l); cont_reasons="${cont_reasons}跳空+"; }
+      [ "$has_bullish_arr" -eq 1 ] && [ "$has_macd_above" -eq 1 ] && { cont_score=$(echo "$cont_score + 0.10" | bc -l); cont_reasons="${cont_reasons}多头零轴上+"; }
+      [ "$has_ma_golden_cross" -eq 1 -o "$has_macd_golden" -eq 1 ] && { cont_score=$(echo "$cont_score + 0.08" | bc -l); cont_reasons="${cont_reasons}金叉+"; }
+      cont_reasons=$(echo "$cont_reasons" | sed 's/+$//; s/+/+/g')
+      if [ "$(echo "$cont_score >= 0.15" | bc -l 2>/dev/null)" = "1" ]; then
+        entry_type="TREND_CONTINUE"
+        [ "$(echo "$cont_score > 0.30" | bc -l 2>/dev/null)" = "1" ] && cont_score=0.30
+        entry_score=$cont_score
+        entry_trigger="$cont_reasons"
+      fi
+    fi
+  fi
+  
+  # ── 5. 超跌反弹买 OVERSOLD_BUY ──
+  if [ "$entry_type" = "NO_ENTRY" ] && [ "$today_limit" -eq 0 ] && [ "$today_down_limit" -eq 0 ]; then
+    if [ "$market_state" = "WEAK_DOWN" ] || [ "$market_state" = "CHOP_DOWN" ]; then
+      local over_score=0 over_reasons=""
+      [ "$has_chip_below_cost" -eq 1 ] && { over_score=$(echo "$over_score + 0.10" | bc -l); over_reasons="${over_reasons}低于成本+"; }
+      [ "$has_chip_density_low" -eq 1 -o "$has_chip_peak_low" -eq 1 ] && { over_score=$(echo "$over_score + 0.08" | bc -l); over_reasons="${over_reasons}低位密集+"; }
+      [ "$has_bottom_div" -eq 1 ] && { over_score=$(echo "$over_score + 0.15" | bc -l); over_reasons="${over_reasons}MACD底背离+"; }
+      [ "$has_oversold" -eq 1 ] && { over_score=$(echo "$over_score + 0.10" | bc -l); over_reasons="${over_reasons}RSI超卖+"; }
+      [ "$has_hammer" -eq 1 ] && { over_score=$(echo "$over_score + 0.08" | bc -l); over_reasons="${over_reasons}锤子线+"; }
+      [ "$has_should_fall_strong" -eq 1 ] && { over_score=$(echo "$over_score + 0.12" | bc -l); over_reasons="${over_reasons}该跌不跌+"; }
+      [ "$has_ma_convergence" -eq 1 ] && { over_score=$(echo "$over_score + 0.08" | bc -l); over_reasons="${over_reasons}均线收敛+"; }
+      over_reasons=$(echo "$over_reasons" | sed 's/+$//; s/+/+/g')
+      if [ "$(echo "$over_score >= 0.15" | bc -l 2>/dev/null)" = "1" ]; then
+        entry_type="OVERSOLD_BUY"
+        [ "$(echo "$over_score > 0.35" | bc -l 2>/dev/null)" = "1" ] && over_score=0.35
+        entry_score=$over_score
+        entry_trigger="$over_reasons"
+      fi
+    fi
+  fi
+  
+  # ── 6. 不买区 NO_ENTRY（含涨停/跌停/过热/弱势）──
+  if [ "$entry_type" = "NO_ENTRY" ]; then
     if [ "$today_limit" -eq 1 ]; then
       entry_trigger="今日涨停·不追"
-    else
-      # 对NO_ENTRY但趋势强的标的，加潜在买点提示
+    elif [ "$today_down_limit" -eq 1 ]; then
+      entry_trigger="跌停·不碰"
+    elif [ "$market_state" = "STRONG_UP" ] && [ "$(echo "$profit_pct >= 98 && $dev_cost > 25" | bc -l 2>/dev/null)" = "1" ]; then
       local potential=""
       [ "$ma5" != "n/a" ] && [ -n "$ma5" ] && potential="等回踩MA5≈$ma5"
       entry_trigger="获利盘${profit_pct}%+偏离${dev_cost}%·过热 | ${potential}"
+    elif [ "$market_state" = "STRONG_UP" ] && [ "$(echo "$profit_pct >= 90" | bc -l 2>/dev/null)" = "1" ]; then
+      local potential=""
+      [ "$ma5" != "n/a" ] && [ -n "$ma5" ] && potential="等回踩MA5≈$ma5"
+      entry_trigger="获利盘${profit_pct}%·偏热 | ${potential}"
+    elif [ "$market_state" = "CHOP" ] || [ "$market_state" = "CHOP_UP" ]; then
+      entry_trigger="震荡·观望"
+    elif [ "$market_state" = "WEAK_DOWN" ] || [ "$market_state" = "CHOP_DOWN" ]; then
+      entry_trigger="弱势·观望"
+    else
+      entry_trigger="无明确买点"
     fi
   fi
   
