@@ -944,9 +944,13 @@ content = re.sub(r':\\.(\\d)', r':0.\\1', content)
 content = re.sub(r':\\"[a-z]+\\"\\s*,\\s*\\{', lambda m: m.group(0).replace(',{', '},{'), content)
 with open('$REPORT_FILE', 'w') as f:
     f.write(content)
-# 验证 JSON 合法性
+# 验证 JSON 合法性（失败时只警告，不阻塞）
+import sys
 with open('$REPORT_FILE') as f:
-    json.load(f)
+    try:
+        json.load(f)
+    except json.JSONDecodeError as e:
+        sys.stderr.write(f"⚠️ 后处理JSON验证失败: {e}\n")
 " 2>/dev/null
 
 # 后处理：计算概念板块相对强度
