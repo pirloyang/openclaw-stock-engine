@@ -820,34 +820,12 @@ while read code; do
   low=$(echo "$d"     | awk -F'~' '{print $35}')
   yclose=$(echo "$d"  | awk -F'~' '{print $5}')
   vol=$(echo "$d" | awk -F'~' '{print $36}' | awk -F/ '{print $2}')  # 手数
-  # 换手率($39)（全局变量，规则函数可访问）
+  # 换手率($39)和量比($50)（全局变量，规则函数可访问）
+  # gtimg字段定义（辉哥确认）：下标47=涨停价, 48=跌停价, 49=量比
+  # awk从1开始计数，所以$50=下标49=量比
   STOCK_TURNOVER=$(echo "$d" | awk -F'~' '{print $39}' 2>/dev/null)
+  VOL_RATIO_GLOBAL=$(echo "$d" | awk -F'~' '{print $50}' 2>/dev/null)
   [ -z "$STOCK_TURNOVER" ] && STOCK_TURNOVER=0
-  # 量比：gtimg字段位置不统一（深交所字段50，上交所字段47），自行计算
-  # 量比 = (今日成交量/已交易分钟数) / (近5日均量/240)
-  local cache="$CACHE_DIR/${code}.day"
-  local avg5v=$(avgvol_n "$cache" 5)
-  if [ -n "$avg5v" ] && [ "$(echo "$avg5v > 0" | bc -l 2>/dev/null)" = "1" ]; then
-    # 已交易分钟数：从gtimg时间字段(30)推算
-    local now_str=$(echo "$d" | awk -F'~' '{print $31}' 2>/dev/null)
-    local hour=${now_str:8:2}
-    local min=${now_str:10:2}
-    # 9:30开盘，上午11:30休市，下午13:00开盘
-    local total_min=0
-    if [ -n "$hour" ] && [ "$hour" -ge 9 ]; then
-      if [ "$hour" -lt 12 ]; then
-        # 上午盘
-        total_min=$(( (hour - 9) * 60 + min - 30 ))
-      else
-        # 下午盘
-        total_min=$(( 120 + (hour - 13) * 60 + min ))
-      fi
-    fi
-    [ "$total_min" -lt 1 ] && total_min=1
-    VOL_RATIO_GLOBAL=$(echo "scale=2; ($vol / $total_min) / ($avg5v / 240)" | bc -l 2>/dev/null)
-  else
-    VOL_RATIO_GLOBAL=0
-  fi
   [ -z "$VOL_RATIO_GLOBAL" ] && VOL_RATIO_GLOBAL=0
   # 内外盘（全局变量，规则函数可访问）
   OUTER_DISK=$(echo "$d" | awk -F'~' '{print $8}' 2>/dev/null)
