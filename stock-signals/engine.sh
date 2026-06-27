@@ -434,13 +434,58 @@ classify_level() {
 }
 
 # =============== v6.0 裁决树：State × Tier 加权裁决 ===============
-# 输入: market_state, buy_vote, sell_vote, buy_count, sell_count, volume_factor
+# 输入: market_state, buy_vote, sell_vote, buy_count, sell_count, volume_factor, tier_summary, key_signals
 # 输出: verdict + strength
 # ====================================================================
 
+# v7.0: 信号名称中英映射表
+_translate_signal() {
+  case "$1" in
+    morning_star) echo "早晨之星" ;;
+    doji_bullish_confirmed) echo "十字星向上确认" ;;
+    doji_bullish_candidate) echo "十字星向上候选" ;;
+    fairy_guide_confirmed) echo "仙人指路确认" ;;
+    fairy_guide_forming) echo "仙人指路待确认" ;;
+    red_three) echo "红三兵" ;;
+    hammer) echo "锤子线" ;;
+    shrink_reversal) echo "缩量反转" ;;
+    volume_pullback_support) echo "缩量回踩支撑" ;;
+    breakout_up) echo "放量突破" ;;
+    historical_breakthrough) echo "前高突破" ;;
+    bullish_arrangement) echo "多头排列" ;;
+    macd_golden_cross) echo "MACD金叉" ;;
+    macd_bottom_div) echo "MACD底背离" ;;
+    ma_golden_cross) echo "均线金叉" ;;
+    chip_peak_low_single) echo "筹码低位密集" ;;
+    shrink_then_breakout) echo "缩量后放量突破" ;;
+    should_fall_strong) echo "该跌不跌" ;;
+    2b_fake_breakdown) echo "2B假跌破" ;;
+    gap_up) echo "跳空高开" ;;
+    vol_up_with_price) echo "量价齐升" ;;
+    outperform_sector) echo "跑赢板块" ;;
+    shooting_star) echo "射击之星" ;;
+    three_crows) echo "三只乌鸦" ;;
+    hanging_man) echo "上吊线" ;;
+    bearish_arrangement) echo "空头排列" ;;
+    macd_death_cross) echo "MACD死叉" ;;
+    macd_top_div) echo "MACD顶背离" ;;
+    ma_death_cross) echo "均线死叉" ;;
+    breakdown) echo "跌破支撑" ;;
+    gap_down) echo "跳空低开" ;;
+    should_rise_fail) echo "该涨不涨" ;;
+    2b_fake_breakout) echo "2B假突破" ;;
+    doji_bearish_warn) echo "十字星向下预警" ;;
+    surge_shooting_star_confirm) echo "连板射击之星" ;;
+    surge_touch_plate_dump) echo "触板跳水" ;;
+    chip_resistance) echo "筹码压力位" ;;
+    approach_resistance) echo "接近压力位" ;;
+    *) echo "$1" ;;
+  esac
+}
+
 calc_resonance_v6() {
   local market_state="$1" buy_vote="$2" sell_vote="$3" buy_count="$4" sell_count="$5"
-  local volume_factor="$6" tier_summary="$7"
+  local volume_factor="$6" tier_summary="$7" key_signals="$8"
   
   # 前导零修复
   buy_vote=$(echo "$buy_vote" | sed 's/^\./0./')
@@ -448,6 +493,34 @@ calc_resonance_v6() {
   volume_factor=$(echo "$volume_factor" | sed 's/^\./0./')
   
   local verdict="观望" strength=0
+  
+  # v7.0: 解析关键信号名称
+  local buy_sig_names="" sell_sig_names=""
+  if [ -n "$key_signals" ]; then
+    local raw_buy=$(echo "$key_signals" | cut -d'|' -f1)
+    local raw_sell=$(echo "$key_signals" | cut -d'|' -f2)
+    # 翻译买入信号名
+    if [ "$raw_buy" != "无" ] && [ -n "$raw_buy" ]; then
+      local old_ifs="$IFS"; IFS='+'; for s in $raw_buy; do
+        local cn=$(_translate_signal "$s")
+        [ -n "$buy_sig_names" ] && buy_sig_names="${buy_sig_names}·"
+        buy_sig_names="${buy_sig_names}${cn}"
+      done; IFS="$old_ifs"
+    fi
+    # 翻译卖出信号名
+    if [ "$raw_sell" != "无" ] && [ -n "$raw_sell" ]; then
+      local old_ifs="$IFS"; IFS='+'; for s in $raw_sell; do
+        local cn=$(_translate_signal "$s")
+        [ -n "$sell_sig_names" ] && sell_sig_names="${sell_sig_names}·"
+        sell_sig_names="${sell_sig_names}${cn}"
+      done; IFS="$old_ifs"
+    fi
+  fi
+  
+  # 构建信号摘要后缀
+  local sig_suffix=""
+  [ -n "$buy_sig_names" ] && sig_suffix="｜买入:${buy_sig_names}"
+  [ -n "$sell_sig_names" ] && sig_suffix="${sig_suffix}｜卖出:${sell_sig_names}"
   
   # ── Tier-S 否决权：突破/跌破关键位置一票否决 ──
   # 由 scan_morphology_signals_v6 的 tier_summary 传入
@@ -458,21 +531,21 @@ calc_resonance_v6() {
   
   # 卖出优先：sell_vote >= 0.60 → 卖出确认
   if cmp "$sell_vote >= 0.80"; then
-    verdict="卖出确认-减仓"; strength=-3
+    verdict="卖出确认-减仓${sig_suffix}"; strength=-3
   elif cmp "$sell_vote >= 0.60"; then
-    verdict="卖出预警-关注"; strength=-2
+    verdict="卖出预警-关注${sig_suffix}"; strength=-2
   elif cmp "$sell_vote >= 0.35" && cmp "$buy_vote < 0.30"; then
-    verdict="卖出预警-关注"; strength=-1
+    verdict="卖出预警-关注${sig_suffix}"; strength=-1
   fi
   
   # 买入判定（仅在卖出未触发时）
   if [ "$strength" -eq 0 ]; then
     if cmp "$buy_vote >= 0.80 && $sell_vote < 0.30"; then
-      verdict="三重共振-出手"; strength=3
+      verdict="三重共振-出手${sig_suffix}"; strength=3
     elif cmp "$buy_vote >= 0.55 && $sell_vote < 0.35"; then
-      verdict="双重确认-可参与"; strength=2
+      verdict="双重确认-可参与${sig_suffix}"; strength=2
     elif cmp "$buy_vote >= 0.30"; then
-      verdict="单一信号-观察"; strength=1
+      verdict="单一信号-观察${sig_suffix}"; strength=1
     fi
   fi
   
@@ -486,11 +559,11 @@ calc_resonance_v6() {
   fi
   if [ "$strength" -ge 1 ] && [ "$tier_ab_sell" -ge 3 ]; then
     if [ "$strength" -eq 3 ]; then
-      verdict="双重确认-可参与(多风险信号)"; strength=2
+      verdict="双重确认-可参与(多风险)${sig_suffix}"; strength=2
     elif [ "$strength" -eq 2 ]; then
-      verdict="单一信号-观察(多风险信号)"; strength=1
+      verdict="单一信号-观察(多风险)${sig_suffix}"; strength=1
     elif [ "$strength" -eq 1 ]; then
-      verdict="观望(多风险信号叠加)"; strength=0
+      verdict="观望(多风险叠加)${sig_suffix}"; strength=0
     fi
   fi
   
@@ -500,9 +573,9 @@ calc_resonance_v6() {
   elif [ "$strength" -ge 2 ] && cmp "$volume_factor < 0.3"; then
     # 缩量反弹，降一级
     if [ "$strength" -eq 3 ]; then
-      verdict="双重确认-可参与(量能不足)"; strength=2
+      verdict="双重确认-可参与(量能不足)${sig_suffix}"; strength=2
     elif [ "$strength" -eq 2 ]; then
-      verdict="单一信号-观察(量能不足)"; strength=1
+      verdict="单一信号-观察(量能不足)${sig_suffix}"; strength=1
     fi
   fi
   
@@ -510,12 +583,17 @@ calc_resonance_v6() {
   # STRONG_UP中卖出信号降权（牛市不言顶）
   if [ "$market_state" = "STRONG_UP" ] && [ "$strength" -lt 0 ]; then
     strength=$((strength + 1))  # 卖出一级降为预警
-    [ "$strength" -ge 0 ] && { verdict="高位震荡-观望"; strength=0; }
+    [ "$strength" -ge 0 ] && { verdict="高位震荡-观望${sig_suffix}"; strength=0; }
   fi
   # STRONG_DOWN中买入信号降权（熊市不抄底）
   if [ "$market_state" = "STRONG_DOWN" ] && [ "$strength" -gt 0 ]; then
     strength=$((strength - 1))  # 买入降一级
-    [ "$strength" -le 0 ] && { verdict="弱势反弹-观望"; strength=0; }
+    [ "$strength" -le 0 ] && { verdict="弱势反弹-观望${sig_suffix}"; strength=0; }
+  fi
+  
+  # 无信号时也补充后缀
+  if [ "$strength" -eq 0 ] && [ "$verdict" = "观望" ] && [ -n "$sig_suffix" ]; then
+    verdict="观望${sig_suffix}"
   fi
   
   echo "{\"verdict\":\"$verdict\",\"buy_vote\":$buy_vote,\"sell_vote\":$sell_vote,\"buy_count\":$buy_count,\"sell_count\":$sell_count,\"strength\":$strength,\"volume_factor\":$volume_factor,\"market_state\":\"$market_state\",\"tier_summary\":\"$tier_summary\"}"
@@ -642,7 +720,7 @@ _is_valid_in_state() {
 
 # v6.0 形态评分：Tier分级 + only_valid_in过滤 + 加权投票
 # 输入: market_state signals[]
-# 输出: "morph_score|buy_vote|sell_vote|buy_count|sell_count|tier_summary"
+# 输出: "morph_score|buy_vote|sell_vote|buy_count|sell_count|tier_summary|key_signals"
 scan_morphology_signals_v6() {
   local market_state="$1"; shift
   local signals=("$@")
@@ -653,6 +731,8 @@ scan_morphology_signals_v6() {
   local tier_a_buy=0 tier_b_buy=0 tier_c_buy=0
   local tier_a_sell=0 tier_b_sell=0 tier_c_sell=0
   local rules_fired=""
+  # v7.0: 收集关键形态名称用于判决描述
+  local key_buy_signals="" key_sell_signals=""
   
   for sig in "${signals[@]}"; do
     local rule=$(echo "$sig" | grep -o '"rule":"[^"]*"' | cut -d'"' -f4)
@@ -686,6 +766,11 @@ scan_morphology_signals_v6() {
         B) ((tier_b_buy++)) ;;
         C) ((tier_c_buy++)) ;;
       esac
+      # v7.0: 收集Tier-A/B买入信号名称
+      if [ "$tier" = "A" ] || [ "$tier" = "B" ]; then
+        [ -n "$key_buy_signals" ] && key_buy_signals="${key_buy_signals}+"
+        key_buy_signals="${key_buy_signals}${rule}"
+      fi
     elif cmp "$weight < 0"; then
       local abs_w=$(echo "$weight" | sed 's/^-//')
       sell_vote=$(calc "$sell_vote + $abs_w")
@@ -695,6 +780,11 @@ scan_morphology_signals_v6() {
         B) ((tier_b_sell++)) ;;
         C) ((tier_c_sell++)) ;;
       esac
+      # v7.0: 收集Tier-A/B卖出信号名称
+      if [ "$tier" = "A" ] || [ "$tier" = "B" ]; then
+        [ -n "$key_sell_signals" ] && key_sell_signals="${key_sell_signals}+"
+        key_sell_signals="${key_sell_signals}${rule}"
+      fi
     fi
   done
   
@@ -727,8 +817,12 @@ scan_morphology_signals_v6() {
   sell_vote=$(echo "$sell_vote" | sed 's/^\./0./')
   
   local tier_summary="A买${tier_a_buy}/B买${tier_b_buy}/C买${tier_c_buy}·A卖${tier_a_sell}/B卖${tier_b_sell}/C卖${tier_c_sell}"
+  # v7.0: 关键信号摘要（买|卖），确保始终有|分隔
+  [ -z "$key_buy_signals" ] && key_buy_signals="无"
+  [ -z "$key_sell_signals" ] && key_sell_signals="无"
+  local key_signals="${key_buy_signals}|${key_sell_signals}"
   
-  echo "$morph_score|$buy_vote|$sell_vote|$buy_count|$sell_count|$tier_summary"
+  echo "$morph_score|$buy_vote|$sell_vote|$buy_count|$sell_count|$tier_summary|$key_signals"
 }
 
 # --------------- 主评估流程 ---------------
@@ -805,6 +899,13 @@ evaluate() {
   local buy_count=$(echo "$morph_result" | cut -d'|' -f4)
   local sell_count=$(echo "$morph_result" | cut -d'|' -f5)
   local tier_summary=$(echo "$morph_result" | cut -d'|' -f6)
+  local key_signals_raw=$(echo "$morph_result" | cut -d'|' -f7-)
+  # 确保 key_signals 包含买卖两侧（买|卖格式）
+  local key_signals="$key_signals_raw"
+  # 如果 morph_result 的 key_signals 字段不含|，手动补
+  if ! echo "$key_signals" | grep -q '|'; then
+    key_signals="${key_signals}|无"
+  fi
   [ -z "$morph_score" ] && morph_score=0
   [ -z "$buy_vote" ] && buy_vote=0
   [ -z "$sell_vote" ] && sell_vote=0
@@ -812,7 +913,7 @@ evaluate() {
   [ -z "$sell_count" ] && sell_count=0
   
   # ── v6.0 加权裁决 ──
-  local resonance=$(calc_resonance_v6 "$market_state" "$buy_vote" "$sell_vote" "$buy_count" "$sell_count" "$volume_factor" "$tier_summary")
+  local resonance=$(calc_resonance_v6 "$market_state" "$buy_vote" "$sell_vote" "$buy_count" "$sell_count" "$volume_factor" "$tier_summary" "$key_signals")
   
   # ── 旧版兼容：保留 quality_score / morph_score / total_score_ext ──
   local quality_score=$state_score
