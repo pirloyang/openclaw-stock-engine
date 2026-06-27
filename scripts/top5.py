@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Top5 精选 — 信号引擎评价体系 v5.1 (2026-06-12)
+Top10 精选 — 信号引擎评价体系 v7.0 (2026-06-27)
 ================================================
-直接用引擎 total_score_ext 排名，不再自算权重
+排名依据: IQ_Score（统一投资价值评分 0~100）
+公式: State基础分 × 形态乘数 + 量能调节 - 风险惩罚
 """
 import json, re, os, sys
 from datetime import datetime
@@ -116,24 +117,29 @@ def main():
     sys.stderr.write(" morph=%d\n" % len(mmap))
 
     sys.stderr.write("  ranking...")
-    # 直接用引擎 total_score_ext 排名
+    # v7.0: 统一用 IQ_Score 排名（0~100，越高越值得买）
     results = []
     for item in raw:
         code = item.get('code', '')
         if not code or code in EXCLUDE or code in cleared:
             continue
-        ts = item.get('total_score_ext', 0)
-        results.append((ts, code, item))
+        iq = item.get('iq_score', 0)
+        # 兼容：如果引擎未输出 iq_score，用 total_score_ext 估算
+        if iq == 0:
+            ts = item.get('total_score_ext', 0)
+            iq = round(ts / 6.0 * 100)  # 归一化到 0~100
+        results.append((iq, code, item))
     results.sort(key=lambda x: x[0], reverse=True)
     sys.stderr.write(" done\n\n")
 
     print('=' * 50)
-    print('  TOP10 精选 -- 信号引擎评价体系 v6.0')
-    print('  排名依据: 引擎 total_score_ext（State×Tier加权）')
+    print('  TOP10 精选 -- 信号引擎评价体系 v7.0')
+    print('  排名依据: IQ_Score（统一投资价值 0~100）')
+    print('  公式: State基础分 × 形态乘数 + 量能调节 - 风险惩罚')
     print('=' * 50)
     print()
 
-    for i, (ts, code, item) in enumerate(results[:10], 1):
+    for i, (iq, code, item) in enumerate(results[:10], 1):
         name = item.get('name', '?')
         chg = float(item.get('change_pct', 0) or 0)
         arrow = '🟢' if chg >= 0 else '🔴'
@@ -143,14 +149,18 @@ def main():
         sell_vote = item.get('sell_vote', 0)
         market_state = item.get('market_state', '?')
         price = item.get('price', 0)
+        iq_grade = item.get('iq_grade', '')
+        iq_detail = item.get('iq_detail', '')
         verdict = item.get('resonance', {}).get('verdict', '')
         bn = item.get('resonance', {}).get('buy_count', 0)
         sn = item.get('resonance', {}).get('sell_count', 0)
         tier_info = item.get('resonance', {}).get('tier_summary', '')
 
         print('  #%d  %s (%s)  %s %s' % (i, name, code, arrow, chg_s))
-        print('      Y%s  引擎分%.2f | State=%s' % (str(price), ts, market_state))
+        print('      Y%s  IQ=%d %s | State=%s' % (str(price), iq, iq_grade, market_state))
         print('      形态%.2f | 买权%.2f/卖权%.2f | 共振: buy=%d sell=%d' % (morph, buy_vote, sell_vote, bn, sn))
+        if iq_detail:
+            print('      评分明细: %s' % iq_detail)
         print('      引擎判决: %s' % verdict)
 
         # 形态规则（从signals数组提取，优先展示具体形态名）
@@ -224,16 +234,17 @@ def main():
 
     print('  Full Top 20:')
     print()
-    for i, (ts, code, item) in enumerate(results[:20], 1):
+    for i, (iq, code, item) in enumerate(results[:20], 1):
         name = item.get('name', '?')
         chg = float(item.get('change_pct', 0) or 0)
         chg_s = ('+' + str(chg) + '%') if chg >= 0 else (str(chg) + '%')
         arrow = '🟢' if chg >= 0 else '🔴'
         morph = item.get('morph_score', 0)
+        iq_grade = item.get('iq_grade', '')[:3]
         morphs = '·'.join([x[:2] for x in mmap.get(code, [])[:3]])
         verdict = item.get('resonance', {}).get('verdict', '')[:8]
-        print('  %2d. %-10s(%-6s) %s%8s  %5.2f  形态%4.2f  %-12s %s'
-              % (i, name, code, arrow, chg_s, ts, morph, morphs, verdict))
+        print('  %2d. %-10s(%-6s) %s%8s  IQ=%3d %-4s 形态%4.2f  %-12s %s'
+              % (i, name, code, arrow, chg_s, iq, iq_grade, morph, morphs, verdict))
 
     mt = [(item.get('morph_score', 0), code, item.get('name', '?'), item.get('price', 0))
           for _, code, item in results if item.get('morph_score', 0) >= 0.5]
@@ -242,12 +253,13 @@ def main():
         for ms, c, n, pr in sorted(mt, key=lambda x: x[0], reverse=True)[:12]:
             print('    %s(%s) Y%s  morph=%.2f' % (n, c, str(pr), ms))
 
-    bins = {'3.0+': 0, '2.0-2.9': 0, '1.0-1.9': 0, '<1.0': 0}
-    for ts, *_ in results:
-        if ts >= 3.0: bins['3.0+'] += 1
-        elif ts >= 2.0: bins['2.0-2.9'] += 1
-        elif ts >= 1.0: bins['1.0-1.9'] += 1
-        else: bins['<1.0'] += 1
+    bins = {'A(80+)': 0, 'B(60-79)': 0, 'C(40-59)': 0, 'D(20-39)': 0, 'F(<20)': 0}
+    for iq, *_ in results:
+        if iq >= 80: bins['A(80+)'] += 1
+        elif iq >= 60: bins['B(60-79)'] += 1
+        elif iq >= 40: bins['C(40-59)'] += 1
+        elif iq >= 20: bins['D(20-39)'] += 1
+        else: bins['F(<20)'] += 1
     print('\n  %d stocks | %s' % (len(results), ' | '.join('%s: %d' % (k, v) for k, v in bins.items() if v)))
     print('\n  %s' % datetime.now().strftime('%Y-%m-%d %H:%M'))
 

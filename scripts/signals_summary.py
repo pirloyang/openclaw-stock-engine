@@ -57,8 +57,14 @@ def main():
         elif "观望" in v:
             resonance["single"].append(e)
 
-        # 评分TOP15
-        score_ranking.append((ts, ms, e, v[:6]))
+        # 评分TOP15 — v7.0: 统一用引擎 IQ_Score
+        iq = item.get('iq_score', 0)
+        iq_grade = item.get('iq_grade', '')
+        # 兼容：如果引擎未输出 iq_score，用 total_score_ext 估算
+        if iq == 0:
+            ts = item.get('total_score_ext', 0)
+            iq = round(ts / 6.0 * 100)
+        score_ranking.append((iq, ts, ms, e, v[:6], iq_grade))
 
         # 紧急信号
         if level == "L3_URGENT":
@@ -124,9 +130,9 @@ def main():
             deduped = deduped[:6]
         morph[k] = deduped
 
-    # 评分TOP15
+    # 评分TOP15（按 IQ_Score 排序）
     score_ranking.sort(key=lambda x: -x[0])
-    top_scored = [f"{e} | TS:{ts:.2f} MS:{ms:+.2f} | {v}" for ts,ms,e,v in score_ranking[:15]]
+    top_scored = [f"{e} | IQ:{iq:3d} {grade} TS:{ts:.2f} MS:{ms:+.2f} | {v}" for iq,ts,ms,e,v,grade in score_ranking[:15]]
 
     # 不再裁剪——sell层全量保留供top5扣分，observe_weak也一样
     # （文件大小从3-5KB增加到~8-12KB，仍可接受）
