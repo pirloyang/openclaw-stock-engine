@@ -476,8 +476,15 @@ calc_resonance_v6() {
     fi
   fi
   
-  # ── 多风险信号叠加否决：≥3个卖出信号 → 强制降级 ──
-  if [ "$strength" -ge 1 ] && [ "$sell_count" -ge 3 ]; then
+  # ── 多风险信号叠加否决：≥3个Tier-A/B卖出信号 → 强制降级 ──
+  # v7.0: 只计Tier-A和Tier-B卖出信号，Tier-C弱信号（chip_profit_high等）不参与叠加
+  local tier_ab_sell=0
+  if [ -n "$tier_summary" ]; then
+    local ta_sell=$(echo "$tier_summary" | grep -oP 'A卖\K[0-9]+' 2>/dev/null || echo 0)
+    local tb_sell=$(echo "$tier_summary" | grep -oP 'B卖\K[0-9]+' 2>/dev/null || echo 0)
+    tier_ab_sell=$((ta_sell + tb_sell))
+  fi
+  if [ "$strength" -ge 1 ] && [ "$tier_ab_sell" -ge 3 ]; then
     if [ "$strength" -eq 3 ]; then
       verdict="双重确认-可参与(多风险信号)"; strength=2
     elif [ "$strength" -eq 2 ]; then
@@ -875,9 +882,15 @@ evaluate() {
   
   # ── Step 4: 风险惩罚（0~-30）──
   local risk_penalty=0
-  # 卖出信号数量惩罚
-  [ "$sell_count" -ge 1 ] && risk_penalty=$(calc "$risk_penalty + $sell_count * 3")
-  [ "$sell_count" -ge 3 ] && risk_penalty=$(calc "$risk_penalty + 5")  # 多信号叠加额外罚
+  # 卖出信号数量惩罚（只计Tier-A/B，Tier-C弱信号不参与）
+  local tier_ab_sell_risk=0
+  if [ -n "$tier_summary" ]; then
+    local ta_sell_r=$(echo "$tier_summary" | grep -oP 'A卖\K[0-9]+' 2>/dev/null || echo 0)
+    local tb_sell_r=$(echo "$tier_summary" | grep -oP 'B卖\K[0-9]+' 2>/dev/null || echo 0)
+    tier_ab_sell_risk=$((ta_sell_r + tb_sell_r))
+  fi
+  [ "$tier_ab_sell_risk" -ge 1 ] && risk_penalty=$(calc "$risk_penalty + $tier_ab_sell_risk * 3")
+  [ "$tier_ab_sell_risk" -ge 3 ] && risk_penalty=$(calc "$risk_penalty + 5")  # 多信号叠加额外罚
   # 高位风险
   cmp "$profit_pct > 90" && risk_penalty=$(calc "$risk_penalty + 8")
   cmp "$profit_pct > 95" && risk_penalty=$(calc "$risk_penalty + 5")
