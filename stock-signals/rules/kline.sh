@@ -66,7 +66,9 @@ rule_hammer_hanging_man() {
   
   local body=$(echo "scale=2; $price - $open" | bc -l 2>/dev/null)
   local body_abs=$(echo "$body" | sed 's/^-//')
-  local shadow_down=$(echo "scale=2; $price - $low" | bc -l 2>/dev/null)
+  # 下影线 = min(close, open) - low（实体下沿到最低价）
+  local lower_end=$(echo "if($price < $open) $price else $open" | bc -l 2>/dev/null)
+  local shadow_down=$(echo "scale=2; $lower_end - $low" | bc -l 2>/dev/null)
   
   [ "$(echo "$body_abs == 0" | bc -l 2>/dev/null)" = "1" ] && return
   [ "$(echo "$shadow_down >= $body_abs * 1.5" | bc -l 2>/dev/null)" != "1" ] && return
@@ -235,23 +237,24 @@ rule_doji_confirmed() {
 }
 
 rule_three_candles() {
-  local price="$3" change="$4" code="$1"
+  local price="$3" change="$4" code="$1" open="$5" vol="$9"
   local cache="$SIGNAL_DIR/cache/${code}.day"
   [ ! -f "$cache" ] || [ "$(wc -l < "$cache")" -lt 3 ] && return
   
-  local c3=$(tail -3 "$cache" | head -1 | awk '{print $1}')
-  local c2=$(tail -2 "$cache" | head -1 | awk '{print $1}')
-  local c1=$(tail -1 "$cache" | awk '{print $1}')
-  [ -z "$c3" ] || [ -z "$c2" ] || [ -z "$c1" ] && return
+  # 缓存最新两条是D-2和D-1（昨日），今日D0用实时参数
+  local c3=$(tail -2 "$cache" | head -1 | awk '{print $1}')  # D-2
+  local c2=$(tail -1 "$cache" | awk '{print $1}')             # D-1（昨日）
+  local c1="$price"                                            # D0（今日实时）
+  [ -z "$c3" ] || [ -z "$c2" ] && return
   
-  local d2=$(echo "scale=2; ($c2-$c3)/$c3*100" | bc -l 2>/dev/null)
-  local d1=$(echo "scale=2; ($c1-$c2)/$c2*100" | bc -l 2>/dev/null)
+  local d2=$(echo "scale=2; ($c2-$c3)/$c3*100" | bc -l 2>/dev/null)  # D-1 vs D-2
+  local d1=$(echo "scale=2; ($c1-$c2)/$c2*100" | bc -l 2>/dev/null)  # D0 vs D-1
   [ "$(echo "$d2 > 0" | bc -l 2>/dev/null)" != "1" ] && return
   
   # 红三兵 + 量能确认（至少1天成交量>10日均量）
   if [ "$(echo "$d2 > 0.5 && $d1 > 0.5 && $change > 0" | bc -l 2>/dev/null)" = "1" ]; then
-    local v2=$(tail -2 "$cache" | head -1 | awk '{print $5}')
-    local v1=$(tail -1 "$cache" | awk '{print $5}')
+    local v2=$(tail -1 "$cache" | awk '{print $5}')  # D-1量
+    local v1="$vol"                                   # D0量（今日实时）
     local avgvol=$(tail -10 "$cache" | awk '{s+=$5} END{printf "%.0f", s/10}')
     local vol_ok=0
     [ -n "$v2" ] && [ -n "$avgvol" ] && [ "$v2" -gt "$avgvol" ] 2>/dev/null && ((vol_ok++))
@@ -606,7 +609,9 @@ rule_fairy_guide_confirmed() {
   [ "$(echo "$open <= $y_close" | bc -l 2>/dev/null)" = "1" ] && return
   
   # 条件F：今日量能 ≥ 昨日量能 × 0.7（温和放量，不缩量）
-  [ "$(echo "$t_vol < $y_vol * 0.7" | bc -l 2>/dev/null)" = "1" ] && return
+  # 注意：$9=今日vol参数，t_vol是缓存最新一条（昨日），这里用今日量
+  local today_vol="${9}"
+  [ "$(echo "$today_vol < $y_vol * 0.7" | bc -l 2>/dev/null)" = "1" ] && return
   
   # 加分项：今日是否突破昨日最高价
   local broke_high="否"
@@ -643,11 +648,11 @@ rule_gap_detection() {
 
   if [ "$(echo "$abs_gap > 1" | bc -l 2>/dev/null)" = "1" ]; then
     if [ "$(echo "$gap_pct > 0" | bc -l 2>/dev/null)" = "1" ]; then
-      # 高开跳空——检查是否高开低走（收盘回补缺口）
-      local decline=$(echo "scale=2; ($high - $price) / $high * 100" | bc -l 2>/dev/null 2>/dev/null)
-      if [ "$(echo "$gap_pct >= 5 && $price < $open && $decline >= 5" | bc -l 2>/dev/null 2>/dev/null)" = "1" ]; then
-        # 高开5%以上 + 收盘回落超5% → 假突破式高开
-        echo "{\"rule\":\"gap_up_meltdown\",\"direction\":\"bearish_warn\",\"gap_pct\":$gap_pct,\"strength\":\"very_high\",\"note\":\"跳空高开+${gap_pct}%但收盘回落${decline}%,缺口全吞-假突破\"}"
+      # 高开跳空——检查是否高开低走（从开盘价回落，非从最高点）
+      local decline_from_open=$(echo "scale=2; ($open - $price) / $open * 100" | bc -l 2>/dev/null 2>/dev/null)
+      if [ "$(echo "$gap_pct >= 5 && $price < $open && $decline_from_open >= 5" | bc -l 2>/dev/null 2>/dev/null)" = "1" ]; then
+        # 高开5%以上 + 从开盘价回落超5% → 假突破式高开
+        echo "{\"rule\":\"gap_up_meltdown\",\"direction\":\"bearish_warn\",\"gap_pct\":$gap_pct,\"strength\":\"very_high\",\"note\":\"跳空高开+${gap_pct}%但收盘回落${decline_from_open}%,缺口全吞-假突破\"}"
       else
         echo "{\"rule\":\"gap_up\",\"direction\":\"bullish\",\"gap_pct\":$gap_pct,\"strength\":\"medium\",\"note\":\"向上跳空+${gap_pct}%—突破或消息驱动\"}"
       fi

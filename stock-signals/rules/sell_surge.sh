@@ -68,28 +68,29 @@ rule_surge_touch_plate_dump() {
   [ "$vol_ok" -eq 0 ] && return
 
   # ── 条件6：前N天有连板/大涨背景 ──
-  # 用缓存检查前几日是否有涨停或连续大涨
+  # 缓存最新一条=昨日(D-1)，检查D-1/D-2/D-3是否有涨停或连续大涨
   local cache="$SIGNAL_DIR/cache/${code}.day"
   local surge_bg=0
   if [ -f "$cache" ]; then
     local lines=$(wc -l < "$cache")
-    if [ "$lines" -ge 4 ]; then
-      # 检查前2天是否有涨停（涨幅>=9.5%）
-      local d1_close=$(tail -2 "$cache" | head -1 | awk '{print $1}')
-      local d2_close=$(tail -3 "$cache" | head -1 | awk '{print $1}')
-      local d3_close=$(tail -4 "$cache" | head -1 | awk '{print $1}')
+    if [ "$lines" -ge 5 ]; then
+      # 缓存索引：tail -1=昨日(D-1), tail -2=D-2, tail -3=D-3, tail -4=D-4
+      local d1_close=$(tail -1 "$cache" | awk '{print $1}')  # D-1
+      local d2_close=$(tail -2 "$cache" | head -1 | awk '{print $1}')  # D-2
+      local d3_close=$(tail -3 "$cache" | head -1 | awk '{print $1}')  # D-3
+      local d4_close=$(tail -4 "$cache" | head -1 | awk '{print $1}')  # D-4
       if [ -n "$d1_close" ] && [ -n "$d2_close" ] && [ -n "$d3_close" ]; then
         local d1_chg=$(echo "scale=2; ($d1_close - $d2_close) / $d2_close * 100" | bc -l 2>/dev/null)
         local d2_chg=$(echo "scale=2; ($d2_close - $d3_close) / $d3_close * 100" | bc -l 2>/dev/null)
-        # 前2天有涨停
+        # D-1或D-2有涨停
         if [ "$(echo "$d1_chg >= 9.5" | bc -l 2>/dev/null)" = "1" ] || \
            [ "$(echo "$d2_chg >= 9.5" | bc -l 2>/dev/null)" = "1" ]; then
           surge_bg=1
         fi
-        # 或连续3日累计涨幅>15%
-        if [ "$surge_bg" -eq 0 ] && [ -n "$d3_close" ]; then
-          local d3_chg=$(echo "scale=2; ($d3_close - $(tail -5 "$cache" | head -1 | awk '{print $1}')) / $(tail -5 "$cache" | head -1 | awk '{print $1}') * 100" | bc -l 2>/dev/null)
-          [ "$(echo "$d3_chg >= 15" | bc -l 2>/dev/null)" = "1" ] && surge_bg=1
+        # 或D-1→D-3连续3日累计涨幅>15%
+        if [ "$surge_bg" -eq 0 ] && [ -n "$d4_close" ]; then
+          local cum3_chg=$(echo "scale=2; ($d1_close - $d4_close) / $d4_close * 100" | bc -l 2>/dev/null)
+          [ "$(echo "$cum3_chg >= 15" | bc -l 2>/dev/null)" = "1" ] && surge_bg=1
         fi
       fi
     fi
@@ -161,8 +162,8 @@ rule_surge_shooting_star_confirm() {
   if [ -f "$cache" ]; then
     local lines=$(wc -l < "$cache")
     if [ "$lines" -ge 2 ]; then
-      # 读取昨日成交量
-      local prev_vol=$(tail -2 "$cache" | head -1 | awk '{print $2}')
+      # 读取昨日成交量（6列格式: close open high low vol date，vol是第5列）
+      local prev_vol=$(tail -2 "$cache" | head -1 | awk '{print $5}')
       local prev_close=$(tail -2 "$cache" | head -1 | awk '{print $1}')
       if [ -n "$prev_vol" ] && [ -n "$avg10v" ] && [ "$(echo "$avg10v > 0" | bc -l 2>/dev/null)" = "1" ]; then
         local prev_vol_ratio=$(echo "scale=2; $prev_vol / $avg10v" | bc -l 2>/dev/null)
