@@ -1,4 +1,9 @@
 #!/bin/bash
+# ===== awk 辅助函数（替代 bc -l，v6.5 性能优化）=====
+# awk 启动速度比 bc 快 10x+，且原生支持浮点
+calc() { awk "BEGIN{v=($1); if(v==int(v)) printf \"%d\", v; else printf \"%.4f\", v}" 2>/dev/null; }
+calc_scale() { awk "BEGIN{printf \"%.${2:-4}f\", $1}" 2>/dev/null; }
+cmp() { [ "$(awk "BEGIN{printf \"%d\", ($1) ? 1 : 0}")" = "1" ]; }
 # ==========================================================
 # 信号引擎 V3 — 数据预取架构
 # 1. 一次拉取全池行情 (gtimg 单次 curl)
@@ -79,48 +84,109 @@ low_n()  { local f="$1" n="$2"; [ -f "$f" ] && [ "$(wc -l < "$f")" -ge "$n" ] &&
 
 # EMA (指数移动平均) — 用于 MACD
 # v5.3: 全序列递推EMA，修复v5.2只取最后N行导致的DIF计算错误
-calc_ema() {
-  local f="$1" n="$2"
-  [ ! -f "$f" ] && return
-  local total=$(wc -l < "$f")
-  [ "$total" -lt "$n" ] && return
+# v6.4: 批量计算，一次python3处理所有标的，避免每只启动子进程
+calc_ema_batch() {
+  local cache_dir="$1"
+  # 输出文件: code|ema12|ema26|prev_dif
   python3 -c "
-f=open('$f'); lines=f.readlines(); f.close()
-n=$n
-prices=[]
-for l in lines:
-  parts=l.split()
-  if len(parts) >= 1:
-    try: prices.append(float(parts[0]))
-    except: pass
-if len(prices) < n: exit(0)
-ema=prices[0]
-k=2/(n+1)
-for p in prices[1:]:
-    ema=p*k+ema*(1-k)
-print(f'{ema:.2f}')
+import os, sys
+
+cache_dir = '$cache_dir'
+results = {}
+
+for fname in os.listdir(cache_dir):
+    if not fname.endswith('.day'):
+        continue
+    code = fname[:-4]
+    fpath = os.path.join(cache_dir, fname)
+    with open(fpath) as f:
+        lines = f.readlines()
+    
+    prices = []
+    for l in lines:
+        parts = l.split()
+        if parts:
+            try:
+                prices.append(float(parts[0]))
+            except:
+                pass
+    
+    if len(prices) < 26:
+        continue
+    
+    # ema12
+    ema = prices[0]
+    k = 2/13
+    for p in prices[1:]:
+        ema = p*k + ema*(1-k)
+    ema12 = ema
+    
+    # ema26
+    ema = prices[0]
+    k = 2/27
+    for p in prices[1:]:
+        ema = p*k + ema*(1-k)
+    ema26 = ema
+    
+    dif = ema12 - ema26
+    
+    # prev_dif: 去掉最后一行
+    if len(prices) >= 27:
+        prev_prices = prices[:-1]
+        ema = prev_prices[0]
+        k = 2/13
+        for p in prev_prices[1:]:
+            ema = p*k + ema*(1-k)
+        prev_ema12 = ema
+        
+        ema = prev_prices[0]
+        k = 2/27
+        for p in prev_prices[1:]:
+            ema = p*k + ema*(1-k)
+        prev_ema26 = ema
+        prev_dif = prev_ema12 - prev_ema26
+    else:
+        prev_dif = dif
+    
+    results[code] = (f'{ema12:.2f}', f'{ema26:.2f}', f'{dif:.2f}', f'{prev_dif:.2f}')
+
+for code, (e12, e26, d, pd) in results.items():
+    print(f'{code}|{e12}|{e26}|{d}|{pd}')
 " 2>/dev/null
 }
 
-# MACD DIF (EMA12 - EMA26) — 全序列递推
-calc_dif() {
-  local f="$1"
-  [ ! -f "$f" ] || [ "$(wc -l < "$f")" -lt 26 ] && return
-  local ema12=$(calc_ema "$f" 12)
-  local ema26=$(calc_ema "$f" 26)
-  [ -z "$ema12" ] || [ -z "$ema26" ] && return
-  echo "scale=2; $ema12 - $ema26" | bc -l 2>/dev/null | sed 's/^\./0./;s/^-\./-0./'
+# 从批量结果中查找指定code的MACD值
+# 全局变量 MACD_BATCH_RESULT 由 precompute_macd 填充
+MACD_BATCH_RESULT=""
+precompute_macd() {
+  MACD_BATCH_RESULT=$(calc_ema_batch "$CACHE_DIR")
 }
 
-# v5.3: 前一天DIF — 去掉最后一行后用全序列递推
+get_macd_for_code() {
+  local code="$1" field="$2"
+  # field: ema12|ema26|dif|prev_dif
+  echo "$MACD_BATCH_RESULT" | grep "^${code}|" | cut -d'|' -f"$3"
+}
+
+# 兼容旧接口：单标的 calc_ema（通过批量结果查找）
+calc_ema() {
+  local code="$1" n="$2"
+  local field_idx=1
+  [ "$n" = "12" ] && field_idx=1
+  [ "$n" = "26" ] && field_idx=2
+  echo "$MACD_BATCH_RESULT" | grep "^${code}|" | cut -d'|' -f$field_idx
+}
+
+# MACD DIF
+calc_dif() {
+  local code="$1"
+  echo "$MACD_BATCH_RESULT" | grep "^${code}|" | cut -d'|' -f3
+}
+
+# 前一天DIF
 calc_prev_dif() {
-  local f="$1"
-  [ ! -f "$f" ] || [ "$(wc -l < "$f")" -lt 27 ] && return
-  local tmp=$(mktemp)
-  head -n -1 "$f" > "$tmp"
-  local result=$(calc_dif "$tmp")
-  rm -f "$tmp"
-  echo "$result"
+  local code="$1"
+  echo "$MACD_BATCH_RESULT" | grep "^${code}|" | cut -d'|' -f4
 }
 
 # =============== v6.0 State机：市场状态判定 ===============
@@ -145,17 +211,17 @@ compute_market_state() {
   
   # 均线排列判定
   if [ -n "$ma5" ] && [ -n "$ma10" ] && [ -n "$ma20" ]; then
-    if [ "$(echo "$ma5 > $ma10 && $ma10 > $ma20" | bc -l 2>/dev/null)" = "1" ]; then
+    if cmp "$ma5 > $ma10 && $ma10 > $ma20"; then
       is_bullish_arr=1
-    elif [ "$(echo "$ma5 < $ma10 && $ma10 < $ma20" | bc -l 2>/dev/null)" = "1" ]; then
+    elif cmp "$ma5 < $ma10 && $ma10 < $ma20"; then
       is_bearish_arr=1
     fi
   fi
   
   # 20日振幅（用于CHOP判定）
   local range_20=0
-  if [ -n "$high20" ] && [ -n "$low20" ] && [ "$(echo "$low20 > 0" | bc -l 2>/dev/null)" = "1" ]; then
-    range_20=$(echo "scale=2; ($high20 - $low20) / $low20 * 100" | bc -l 2>/dev/null)
+  if [ -n "$high20" ] && [ -n "$low20" ] && cmp "$low20 > 0"; then
+    range_20=$(calc_scale "($high20 - $low20) / $low20 * 100" 2) 2>/dev/null
   fi
   
   # ── STRONG_UP: 多头排列 + 三选一守卫 + MACD>0 ──
@@ -164,12 +230,12 @@ compute_market_state() {
   #   cond2: 收盘沿5日线强势上行，均线张开>2% — 趋势中继
   #   cond3: 收盘在MA20上方 + 近5日涨幅>5% — 加速段
   # 三选一满足即进STRONG_UP，避免冲高回落/高位回踩被误杀
-  if [ "$is_bullish_arr" -eq 1 ] && [ -n "$high20" ] && [ "$(echo "$dif > 0" | bc -l 2>/dev/null)" = "1" ]; then
+  if [ "$is_bullish_arr" -eq 1 ] && [ -n "$high20" ] && cmp "$dif > 0"; then
     local cond1=0 cond2=0 cond3=0
-    [ "$(echo "$price >= $high20 * 0.995" | bc -l 2>/dev/null)" = "1" ] && cond1=1
-    [ "$(echo "$price > $ma5 && $ma5 > $ma10 * 1.02" | bc -l 2>/dev/null)" = "1" ] && cond2=1
+    cmp "$price >= $high20 * 0.995" && cond1=1
+    cmp "$price > $ma5 && $ma5 > $ma10 * 1.02" && cond2=1
     # cond3: 近5日涨幅 > 5%（从ma5推算：price/ma5-1>5% 即 price>ma5*1.05）
-    [ "$(echo "$price > $ma20 && $price > $ma5 * 1.05" | bc -l 2>/dev/null)" = "1" ] && cond3=1
+    cmp "$price > $ma20 && $price > $ma5 * 1.05" && cond3=1
     if [ "$cond1" -eq 1 ] || [ "$cond2" -eq 1 ] || [ "$cond3" -eq 1 ]; then
       state="STRONG_UP"; state_score=5
     fi
@@ -177,7 +243,7 @@ compute_market_state() {
   elif [ "$is_bullish_arr" -eq 1 ]; then
     state="WEAK_UP"; state_score=4
   # ── STRONG_DOWN: 空头排列 + 价在20日低点2%内 + MACD<0 ──
-  elif [ "$is_bearish_arr" -eq 1 ] && [ -n "$low20" ] && [ "$(echo "$price <= $low20 * 1.02" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$dif < 0" | bc -l 2>/dev/null)" = "1" ]; then
+  elif [ "$is_bearish_arr" -eq 1 ] && [ -n "$low20" ] && cmp "$price <= $low20 * 1.02" && cmp "$dif < 0"; then
     state="STRONG_DOWN"; state_score=1
   # ── WEAK_DOWN: 空头排列但不满足STRONG_DOWN ──
   elif [ "$is_bearish_arr" -eq 1 ]; then
@@ -186,9 +252,9 @@ compute_market_state() {
   else
     state="CHOP"; state_score=3
     # 微调：价在MA20上方偏强，下方偏弱
-    if [ -n "$ma20" ] && [ "$(echo "$price > $ma20 * 1.03" | bc -l 2>/dev/null)" = "1" ]; then
+    if [ -n "$ma20" ] && cmp "$price > $ma20 * 1.03"; then
       state="CHOP_UP"; state_score=3.5
-    elif [ -n "$ma20" ] && [ "$(echo "$price < $ma20 * 0.97" | bc -l 2>/dev/null)" = "1" ]; then
+    elif [ -n "$ma20" ] && cmp "$price < $ma20 * 0.97"; then
       state="CHOP_DOWN"; state_score=2.5
     fi
   fi
@@ -202,18 +268,18 @@ compute_market_state() {
 
 compute_volume_factor() {
   local vol="$1" avg10v="$2"
-  [ -z "$avg10v" ] || [ "$(echo "$avg10v <= 0" | bc -l 2>/dev/null)" = "1" ] && { echo "0|量能:无数据"; return; }
+  [ -z "$avg10v" ] || cmp "$avg10v <= 0" && { echo "0|量能:无数据"; return; }
   
-  local ratio=$(echo "scale=2; $vol / $avg10v" | bc -l 2>/dev/null)
+  local ratio=$(calc_scale "$vol / $avg10v" 2) 2>/dev/null
   ratio=$(echo "$ratio" | sed 's/^\./0./')
   
-  if [ "$(echo "$ratio >= 2.0" | bc -l 2>/dev/null)" = "1" ]; then
+  if cmp "$ratio >= 2.0"; then
     echo "1.0|量能:1.0(放量${ratio}x)"
-  elif [ "$(echo "$ratio >= 1.3" | bc -l 2>/dev/null)" = "1" ]; then
+  elif cmp "$ratio >= 1.3"; then
     echo "0.8|量能:0.8(温和放量${ratio}x)"
-  elif [ "$(echo "$ratio >= 0.8" | bc -l 2>/dev/null)" = "1" ]; then
+  elif cmp "$ratio >= 0.8"; then
     echo "0.5|量能:0.5(正常${ratio}x)"
-  elif [ "$(echo "$ratio >= 0.4" | bc -l 2>/dev/null)" = "1" ]; then
+  elif cmp "$ratio >= 0.4"; then
     echo "0.3|量能:0.3(缩量${ratio}x)"
   else
     echo "0.1|量能:0.1(地量${ratio}x)"
@@ -235,22 +301,22 @@ compute_signal_quality() {
   # 1️⃣ 涨幅因子（0-1分）: 线性函数 max(0, 1-|chg|/5)，越接近0越好
   local abs_chg=$(echo "$change" | sed 's/^-//' | tr -d '%')
   if [ -z "$abs_chg" ] || [ "$abs_chg" = "0" ]; then
-    score=$(echo "$score + 1.0" | bc -l)
+    score=$(calc "$score + 1.0")
     details="${details}涨幅:1.0(无数据)"
   else
-    local chg_score=$(echo "scale=2; if(1 - $abs_chg/5 > 0) 1 - $abs_chg/5 else 0" | bc -l 2>/dev/null)
+    local chg_score=$(calc_scale "if(1 - $abs_chg/5 > 0) 1 - $abs_chg/5 else 0" 2) 2>/dev/null
     [ -z "$chg_score" ] && chg_score=0
-    score=$(echo "$score + $chg_score" | bc -l)
+    score=$(calc "$score + $chg_score")
     details="${details}涨幅:${chg_score}"
   fi
 
   # 2️⃣ 量能因子（0-1分）: 成交量相比10日均量的倍数
   if [ -n "$ratio" ] && [ "$ratio" != "0" ] && [ -n "$(echo "$ratio" | grep -E '^[0-9.]')" ]; then
-    if [ "$(echo "$ratio >= 1.5" | bc -l 2>/dev/null)" = "1" ]; then
-      score=$(echo "$score + 1.0" | bc -l)
+    if cmp "$ratio >= 1.5"; then
+      score=$(calc "$score + 1.0")
       details="${details}|量能:1.0"
-    elif [ "$(echo "$ratio >= 1.3" | bc -l 2>/dev/null)" = "1" ]; then
-      score=$(echo "$score + 0.5" | bc -l)
+    elif cmp "$ratio >= 1.3"; then
+      score=$(calc "$score + 0.5")
       details="${details}|量能:0.5"
     else
       details="${details}|量能:0"
@@ -261,41 +327,41 @@ compute_signal_quality() {
 
   # 3️⃣ 位置因子（0-1分）: 股价处于MA20附近或突破20日高点
   local pos_score=0
-  if [ -n "$ma20" ] && [ -n "$price" ] && [ "$(echo "$ma20 > 0" | bc -l 2>/dev/null)" = "1" ]; then
-    local dist_to_ma20=$(echo "scale=2; (($price - $ma20) / $ma20) * 100" | bc -l 2>/dev/null | sed 's/^-//')
+  if [ -n "$ma20" ] && [ -n "$price" ] && cmp "$ma20 > 0"; then
+    local dist_to_ma20=$(calc "(($price - $ma20) / $ma20) * 100" 2>/dev/null | sed 's/^-//')
     # 在MA20附近5%以内 -> 支撑位确认
-    if [ -n "$dist_to_ma20" ] && [ "$(echo "$dist_to_ma20 <= 5" | bc -l 2>/dev/null)" = "1" ]; then
+    if [ -n "$dist_to_ma20" ] && cmp "$dist_to_ma20 <= 5"; then
       pos_score=0.5
     fi
     # 突破20日高点 -> 强势启动
-    if [ -n "$high20" ] && [ "$(echo "$price >= $high20" | bc -l 2>/dev/null)" = "1" ]; then
-      pos_score=$(echo "$pos_score + 0.5" | bc -l)
-      [ "$(echo "$pos_score > 1.0" | bc -l)" = "1" ] && pos_score=1.0
+    if [ -n "$high20" ] && cmp "$price >= $high20"; then
+      pos_score=$(calc "$pos_score + 0.5")
+      cmp "$pos_score > 1.0" && pos_score=1.0
     fi
     # 回踩20日低点附近（±3%）-> 关键支撑确认（辉哥指定：回踩支撑位加分）
-    if [ -n "$low20" ] && [ "$(echo "$low20 > 0" | bc -l 2>/dev/null)" = "1" ]; then
-      local signed_dist_low=$(echo "scale=2; ($price - $low20) / $low20 * 100" | bc -l 2>/dev/null)
+    if [ -n "$low20" ] && cmp "$low20 > 0"; then
+      local signed_dist_low=$(calc_scale "($price - $low20) / $low20 * 100" 2) 2>/dev/null
       local dist_low=$(echo "$signed_dist_low" | sed 's/^-//')
-      if [ "$(echo "$dist_low <= 3" | bc -l 2>/dev/null)" = "1" ]; then
+      if cmp "$dist_low <= 3"; then
         # 取max：支撑分不覆盖其他加分，但在其他分数更低时生效
-        [ "$(echo "$pos_score < 0.3" | bc -l 2>/dev/null)" = "1" ] && pos_score=0.3
+        cmp "$pos_score < 0.3" && pos_score=0.3
       fi
     fi
     # 远离MA20超过10% -> 追高风险（仅上穿方向惩罚，下穿是超跌不罚）
-    if [ -n "$dist_to_ma20" ] && [ "$(echo "$dist_to_ma20 > 10" | bc -l 2>/dev/null)" = "1" ]; then
-      local signed_pos=$(echo "scale=2; ($price - $ma20) / $ma20 * 100" | bc -l 2>/dev/null)
-      [ "$(echo "$signed_pos > 10" | bc -l 2>/dev/null)" = "1" ] && pos_score=$(echo "$pos_score * 0.5" | bc -l 2>/dev/null)
+    if [ -n "$dist_to_ma20" ] && cmp "$dist_to_ma20 > 10"; then
+      local signed_pos=$(calc_scale "($price - $ma20) / $ma20 * 100" 2) 2>/dev/null
+      cmp "$signed_pos > 10" && pos_score=$(calc "$pos_score * 0.5") 2>/dev/null
     fi
   fi
-  score=$(echo "$score + $pos_score" | bc -l)
+  score=$(calc "$score + $pos_score")
   details="${details}|位置:$pos_score"
 
   # 4️⃣ 趋势因子（0-1分）: MA20方向 + 高位约束
   local trend_score=0
   # 高位降级：股价偏离MA20超过10%时，趋势因子降级
   local dist_pct=""
-  if [ -n "$ma20" ] && [ -n "$price" ] && [ "$(echo "$ma20 > 0" | bc -l 2>/dev/null)" = "1" ]; then
-    dist_pct=$(echo "scale=2; ($price - $ma20) / $ma20 * 100" | bc -l 2>/dev/null)
+  if [ -n "$ma20" ] && [ -n "$price" ] && cmp "$ma20 > 0"; then
+    dist_pct=$(calc_scale "($price - $ma20) / $ma20 * 100" 2) 2>/dev/null
   fi
 
   if [ -n "$ma20" ] && [ -f "$cache" ]; then
@@ -303,31 +369,31 @@ compute_signal_quality() {
     if [ "$total_lines" -ge 25 ]; then
       # 用5天前的收盘价估算5日前MA20（尾-5行到尾-24行）
       local prev_ma20=$(tail -25 "$cache" | head -20 | awk '{s+=$1} END{printf "%.2f", s/20}' 2>/dev/null)
-      if [ -n "$prev_ma20" ] && [ "$(echo "$prev_ma20 > 0" | bc -l 2>/dev/null)" = "1" ]; then
-        local trend_slope=$(echo "scale=2; ($ma20 - $prev_ma20) / $prev_ma20 * 100" | bc -l 2>/dev/null)
+      if [ -n "$prev_ma20" ] && cmp "$prev_ma20 > 0"; then
+        local trend_slope=$(calc_scale "($ma20 - $prev_ma20) / $prev_ma20 * 100" 2) 2>/dev/null
         # 基础趋势判定
-        if [ "$(echo "$trend_slope > 1.0" | bc -l 2>/dev/null)" = "1" ]; then
+        if cmp "$trend_slope > 1.0"; then
           trend_score=1.0
-        elif [ "$(echo "$trend_slope < -1.0" | bc -l 2>/dev/null)" = "1" ]; then
+        elif cmp "$trend_slope < -1.0"; then
           trend_score=0.0
         else
           trend_score=0.5  # 走平
         fi
         # 高位约束：偏离MA20超过10%时趋势分折半（仅上穿，远离均线=追高风险）
-        if [ -n "$dist_pct" ] && [ "$(echo "$dist_pct > 10" | bc -l 2>/dev/null)" = "1" ]; then
-          trend_score=$(echo "$trend_score * 0.5" | bc -l 2>/dev/null)
+        if [ -n "$dist_pct" ] && cmp "$dist_pct > 10"; then
+          trend_score=$(calc "$trend_score * 0.5") 2>/dev/null
         fi
         # 短期转弱：股价跌破MA5时趋势分折半
-        if [ -n "$ma5" ] && [ "$(echo "$ma5 > 0" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$price < $ma5" | bc -l 2>/dev/null)" = "1" ]; then
-          trend_score=$(echo "$trend_score * 0.5" | bc -l 2>/dev/null)
+        if [ -n "$ma5" ] && cmp "$ma5 > 0" && cmp "$price < $ma5"; then
+          trend_score=$(calc "$trend_score * 0.5") 2>/dev/null
         fi
       fi
-    elif [ "$(echo "$price > $ma20" | bc -l 2>/dev/null)" = "1" ]; then
+    elif cmp "$price > $ma20"; then
       # 缓存不足时降级判断：price>MA20视为弱势向上
       trend_score=0.5
     fi
   fi
-  score=$(echo "$score + $trend_score" | bc -l)
+  score=$(calc "$score + $trend_score")
   details="${details}|趋势:$trend_score"
 
   # 5️⃣ 盘前/盘后缓冲因子（0-1分）：量能不可用时，用日线趋势替代
@@ -335,21 +401,21 @@ compute_signal_quality() {
   if echo "$details" | grep -q '量能:0'; then
     # A: 均线多头排列 MA5>MA10>MA20
     if [ -n "$ma5" ] && [ -n "$ma10" ] && [ -n "$ma20" ]; then
-      if [ "$(echo "$ma5 > $ma10" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$ma10 > $ma20" | bc -l 2>/dev/null)" = "1" ]; then
-        buffer_score=$(echo "$buffer_score + 0.5" | bc -l)
+      if cmp "$ma5 > $ma10" && cmp "$ma10 > $ma20"; then
+        buffer_score=$(calc "$buffer_score + 0.5")
       fi
     fi
     # B: 股价维持MA5之上（短线未破位）
-    if [ -n "$ma5" ] && [ -n "$price" ] && [ "$(echo "$price > $ma5" | bc -l 2>/dev/null)" = "1" ]; then
-      buffer_score=$(echo "$buffer_score + 0.25" | bc -l)
+    if [ -n "$ma5" ] && [ -n "$price" ] && cmp "$price > $ma5"; then
+      buffer_score=$(calc "$buffer_score + 0.25")
     fi
     # C: MACD零轴上方
-    if [ -n "$dif" ] && [ "$(echo "$dif > 0" | bc -l 2>/dev/null)" = "1" ]; then
-      buffer_score=$(echo "$buffer_score + 0.25" | bc -l)
+    if [ -n "$dif" ] && cmp "$dif > 0"; then
+      buffer_score=$(calc "$buffer_score + 0.25")
     fi
-    if [ "$(echo "$buffer_score > 0" | bc -l 2>/dev/null)" = "1" ]; then
+    if cmp "$buffer_score > 0"; then
       details="${details}|缓:$buffer_score"
-      score=$(echo "$score + $buffer_score" | bc -l)
+      score=$(calc "$score + $buffer_score")
     fi
   fi
 
@@ -362,9 +428,9 @@ compute_signal_quality() {
 
 classify_level() {
   local abs=$(echo "$1" | sed 's/^-//' | tr -d '%')
-  [ "$(echo "$abs > 7" | bc -l 2>/dev/null)" = "1" ] && { echo "L3_URGENT"; return; }
-  [ "$(echo "$abs > 4" | bc -l 2>/dev/null)" = "1" ] && { echo "L2_STRONG"; return; }
-  [ "$(echo "$abs > 2" | bc -l 2>/dev/null)" = "1" ] && { echo "L1_NORMAL"; return; }
+  cmp "$abs > 7" && { echo "L3_URGENT"; return; }
+  cmp "$abs > 4" && { echo "L2_STRONG"; return; }
+  cmp "$abs > 2" && { echo "L1_NORMAL"; return; }
 }
 
 # =============== v6.0 裁决树：State × Tier 加权裁决 ===============
@@ -388,24 +454,24 @@ calc_resonance_v6() {
   # 这里通过 buy_vote/sell_vote 已体现（S级权重高）
   
   # ── 加权裁决 ──
-  local net_vote=$(echo "$buy_vote - $sell_vote" | bc -l 2>/dev/null)
+  local net_vote=$(calc "$buy_vote - $sell_vote") 2>/dev/null
   
   # 卖出优先：sell_vote >= 0.60 → 卖出确认
-  if [ "$(echo "$sell_vote >= 0.80" | bc -l 2>/dev/null)" = "1" ]; then
+  if cmp "$sell_vote >= 0.80"; then
     verdict="卖出确认-减仓"; strength=-3
-  elif [ "$(echo "$sell_vote >= 0.60" | bc -l 2>/dev/null)" = "1" ]; then
+  elif cmp "$sell_vote >= 0.60"; then
     verdict="卖出预警-关注"; strength=-2
-  elif [ "$(echo "$sell_vote >= 0.35" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$buy_vote < 0.30" | bc -l 2>/dev/null)" = "1" ]; then
+  elif cmp "$sell_vote >= 0.35" && cmp "$buy_vote < 0.30"; then
     verdict="卖出预警-关注"; strength=-1
   fi
   
   # 买入判定（仅在卖出未触发时）
   if [ "$strength" -eq 0 ]; then
-    if [ "$(echo "$buy_vote >= 0.80 && $sell_vote < 0.30" | bc -l 2>/dev/null)" = "1" ]; then
+    if cmp "$buy_vote >= 0.80 && $sell_vote < 0.30"; then
       verdict="三重共振-出手"; strength=3
-    elif [ "$(echo "$buy_vote >= 0.55 && $sell_vote < 0.35" | bc -l 2>/dev/null)" = "1" ]; then
+    elif cmp "$buy_vote >= 0.55 && $sell_vote < 0.35"; then
       verdict="双重确认-可参与"; strength=2
-    elif [ "$(echo "$buy_vote >= 0.30" | bc -l 2>/dev/null)" = "1" ]; then
+    elif cmp "$buy_vote >= 0.30"; then
       verdict="单一信号-观察"; strength=1
     fi
   fi
@@ -422,9 +488,9 @@ calc_resonance_v6() {
   fi
   
   # ── 量能辅助确认：放量突破加分，缩量反弹降级 ──
-  if [ "$strength" -ge 2 ] && [ "$(echo "$volume_factor >= 0.8" | bc -l 2>/dev/null)" = "1" ]; then
+  if [ "$strength" -ge 2 ] && cmp "$volume_factor >= 0.8"; then
     :  # 放量确认，维持原级
-  elif [ "$strength" -ge 2 ] && [ "$(echo "$volume_factor < 0.3" | bc -l 2>/dev/null)" = "1" ]; then
+  elif [ "$strength" -ge 2 ] && cmp "$volume_factor < 0.3"; then
     # 缩量反弹，降一级
     if [ "$strength" -eq 3 ]; then
       verdict="双重确认-可参与(量能不足)"; strength=2
@@ -511,8 +577,9 @@ _get_signal_tier() {
     vol_down_with_vol)     echo "B|-0.30|ALL" ;;
     limit_down)            echo "B|-0.30|ALL" ;;
     hanging_man)           echo "B|-0.25|STRONG_UP,WEAK_UP" ;;
-    gap_down)              echo "B|-0.25|ALL" ;;
-    rsi_overbought)        echo "B|-0.25|STRONG_UP,WEAK_UP" ;;
+    # v6.7: gap_down/rsi_overbought 降权（大涨标的跳空+超买是正常特征）
+    gap_down)              echo "B|-0.05|ALL" ;;
+    rsi_overbought)        echo "B|-0.05|STRONG_UP,WEAK_UP" ;;
     doji_bearish_warn)     echo "B|-0.35|STRONG_UP,WEAK_UP,CHOP_UP" ;;
     macd_death_ongoing)    echo "B|-0.20|STRONG_DOWN,WEAK_DOWN" ;;
     upper_wick)            echo "B|-0.20|STRONG_UP,WEAK_UP" ;;
@@ -530,20 +597,21 @@ _get_signal_tier() {
     surge_extreme_gamble)  echo "C|-0.40|STRONG_UP,WEAK_UP" ;;
     macd_below_zero)       echo "C|-0.15|ALL" ;;
     vol_up_no_vol)         echo "C|-0.15|ALL" ;;
-    chip_deviation_high)   echo "C|-0.15|STRONG_UP,WEAK_UP" ;;
+    chip_deviation_high)   echo "C|-0.05|STRONG_UP,WEAK_UP" ;;
     underperform_sector)   echo "C|-0.15|ALL" ;;
     volume_surge)          echo "C|-0.10|ALL" ;;
     
-    # ── Tier-C: 偏离度/换手率风险信号 ──
-    ma5_gap)               echo "C|-0.20|STRONG_UP,WEAK_UP,CHOP_UP" ;;
-    turnover_abnormal)     echo "C|-0.25|STRONG_UP,WEAK_UP,CHOP_UP" ;;
+    # ── Tier-C: 偏离度/换手率风险信号（v6.6: 降低权重，大涨标的必然特征）──
+    ma5_gap)               echo "C|-0.05|STRONG_UP,WEAK_UP,CHOP_UP" ;;
+    turnover_abnormal)     echo "C|-0.05|STRONG_UP,WEAK_UP,CHOP_UP" ;;
     
     # ── Tier-C: 估值预警 ──
-    pe_overvalued)         echo "C|-0.25|STRONG_UP,WEAK_UP,CHOP_UP" ;;
-    pe_extreme)            echo "C|-0.30|STRONG_UP,WEAK_UP,CHOP_UP" ;;
+    # v6.7: pe_overvalued 降权（辉哥诊断：大涨标的PE高是正常特征，非形态破坏）
+    pe_overvalued)         echo "C|-0.05|STRONG_UP,WEAK_UP,CHOP_UP" ;;
+    pe_extreme)            echo "C|-0.10|STRONG_UP,WEAK_UP,CHOP_UP" ;;
     
-    # ── Tier-C: 获利盘高位风险（从Z升级为C）──
-    chip_profit_high)      echo "C|-0.15|STRONG_UP,WEAK_UP,CHOP_UP" ;;
+    # ── Tier-C: 获利盘高位风险（v6.6: 从-0.15降至-0.05）──
+    chip_profit_high)      echo "C|-0.05|STRONG_UP,WEAK_UP,CHOP_UP" ;;
     
     # ── 中性（0分，不参与投票）──
     doji)                  echo "Z|0|ALL" ;;
@@ -603,17 +671,17 @@ scan_morphology_signals_v6() {
         has_pullback_signal=1 ;;
     esac
     
-    if [ "$(echo "$weight > 0" | bc -l 2>/dev/null)" = "1" ]; then
-      buy_vote=$(echo "$buy_vote + $weight" | bc -l)
+    if cmp "$weight > 0"; then
+      buy_vote=$(calc "$buy_vote + $weight")
       ((buy_count++))
       case "$tier" in
         A) ((tier_a_buy++)) ;;
         B) ((tier_b_buy++)) ;;
         C) ((tier_c_buy++)) ;;
       esac
-    elif [ "$(echo "$weight < 0" | bc -l 2>/dev/null)" = "1" ]; then
+    elif cmp "$weight < 0"; then
       local abs_w=$(echo "$weight" | sed 's/^-//')
-      sell_vote=$(echo "$sell_vote + $abs_w" | bc -l)
+      sell_vote=$(calc "$sell_vote + $abs_w")
       ((sell_count++))
       case "$tier" in
         A) ((tier_a_sell++)) ;;
@@ -624,7 +692,7 @@ scan_morphology_signals_v6() {
   done
   
   # morph_score = buy_vote - sell_vote（限幅-1.0~+1.0）
-  local morph_score=$(echo "$buy_vote - $sell_vote" | bc -l 2>/dev/null)
+  local morph_score=$(calc "$buy_vote - $sell_vote") 2>/dev/null
   morph_score=$(echo "$morph_score" | sed 's/^\./0./;s/^-\./-0./')
   
   # ── v6.1 post_breakout_pullback：刚突破后回踩企稳 = 加分而非减分 ──
@@ -640,8 +708,8 @@ scan_morphology_signals_v6() {
       done
       if [ "$has_shrink" -eq 1 ] || [ "$market_state" = "STRONG_UP" ] || [ "$market_state" = "WEAK_UP" ]; then
         local bonus=0.25
-        local pulled_up=$(echo "$morph_score + $bonus" | bc -l 2>/dev/null)
-        [ "$(echo "$pulled_up > 1.0" | bc -l 2>/dev/null)" = "1" ] && pulled_up=1.0
+        local pulled_up=$(calc "$morph_score + $bonus") 2>/dev/null
+        cmp "$pulled_up > 1.0" && pulled_up=1.0
         morph_score=$pulled_up
       fi
     fi
@@ -671,8 +739,8 @@ evaluate() {
   local high20=$(high_n "$cache" 20)
   local high20_excl_today=$(high_n_excl_today "$cache" 20)
   local low20=$(low_n "$cache" 20)
-  local dif=$(calc_dif "$cache")
-  local prev_dif=$(calc_prev_dif "$cache")
+  local dif=$(calc_dif "$code")
+  local prev_dif=$(calc_prev_dif "$code")
   local prev_close=$(tail -2 "$cache" 2>/dev/null | head -1 | awk '{print $1}')
   
   local level=$(classify_level "$change")
@@ -688,16 +756,21 @@ evaluate() {
       "$avg10v" "$high20" "$low20" \
       "$dif" "$prev_dif" "$prev_close" \
       "$MARKET_SH" "$MARKET_CY" 2>/dev/null)
-    [ -n "$result" ] && signals+=("$result")
+    # v6.5: 拆分行（chip_distribution 等多行输出），每行作为一个独立信号
+    if [ -n "$result" ]; then
+      while IFS= read -r line; do
+        [ -n "$line" ] && signals+=("$line")
+      done <<< "$result"
+    fi
   done
   
   # ── PE 估值判定（内联，避免子 shell 中 $RAW 不可见）──
   [ -n "$pe_ttm" ] && [ "$pe_ttm" != "0" ] && {
-    if [ "$(echo "$pe_ttm > 300" | bc 2>/dev/null)" = "1" ]; then
+    if cmp "$pe_ttm > 300"; then
       signals+=('{"rule":"pe_extreme","direction":"sell","note":"PE_TTM='$pe_ttm'极高估值,风险极大","strength":"high"}')
-    elif [ "$(echo "$pe_ttm > 120" | bc 2>/dev/null)" = "1" ]; then
+    elif cmp "$pe_ttm > 120"; then
       signals+=('{"rule":"pe_overvalued","direction":"sell","note":"PE_TTM='$pe_ttm'偏高估值","strength":"medium"}')
-    elif [ "$(echo "$pe_ttm > 80" | bc 2>/dev/null)" = "1" ]; then
+    elif cmp "$pe_ttm > 80"; then
       signals+=('{"rule":"pe_overvalued","direction":"sell","note":"PE_TTM='$pe_ttm'估值偏高","strength":"low"}')
     fi
   }
@@ -736,8 +809,113 @@ evaluate() {
   
   # ── 旧版兼容：保留 quality_score / morph_score / total_score_ext ──
   local quality_score=$state_score
-  local total_score_ext=$(echo "$state_score + $morph_score" | bc -l 2>/dev/null)
+  local total_score_ext=$(calc "$state_score + $morph_score") 2>/dev/null
   total_score_ext=$(echo "$total_score_ext" | sed 's/^\./0./;s/^-\./-0./')
+  
+  # ═══════════════════════════════════════════════════════════
+  # v7.0 IQ_Score：统一投资价值评分（0~100）
+  # 公式：State基础分 × 形态乘数 + 风险惩罚
+  # 高分=好标的+好时机+值得买，低分=风险大+不值得碰
+  # ═══════════════════════════════════════════════════════════
+  local iq_score=50 iq_grade="C-观望" iq_detail=""
+  
+  # ── Step 1: State基础分（0~60）──
+  # 将5态映射到连续分值，同态内用均线发散度/价格位置微调
+  local state_base=30  # 默认中性
+  case "$market_state" in
+    STRONG_UP)   state_base=55
+      # 同态微调：均线发散度越大越强，但偏离MA20超15%扣分（追高风险）
+      if [ -n "$ma20" ] && cmp "$ma20 > 0"; then
+        local dev_ma20=$(calc_scale "($price - $ma20) / $ma20 * 100" 1) 2>/dev/null
+        dev_ma20=$(echo "$dev_ma20" | sed 's/^-//')
+        cmp "$dev_ma20 < 5" && state_base=58   # 紧贴MA20启动，最佳
+        cmp "$dev_ma20 > 15" && state_base=50  # 偏离过大，追高风险
+      fi
+      ;;
+    WEAK_UP)     state_base=42
+      # 同态微调：价在MA5上方+2，在MA5下方-3
+      [ -n "$ma5" ] && cmp "$price > $ma5" && state_base=44
+      [ -n "$ma5" ] && cmp "$price < $ma5" && state_base=39
+      ;;
+    CHOP_UP)     state_base=38 ;;
+    CHOP)        state_base=30 ;;
+    CHOP_DOWN)   state_base=22 ;;
+    WEAK_DOWN)   state_base=18
+      # 同态微调：价在MA5上方+2（可能止跌），在MA5下方-2
+      [ -n "$ma5" ] && cmp "$price > $ma5" && state_base=20
+      ;;
+    STRONG_DOWN) state_base=8
+      # 同态微调：价在20日低点附近可能超跌反弹+3
+      [ -n "$low20" ] && cmp "$price <= $low20 * 1.03" && state_base=11
+      ;;
+  esac
+  
+  # ── Step 2: 形态乘数（0.5~1.5）──
+  # morph_score ∈ [-1.0, +1.0] → multiplier ∈ [0.5, 1.5]
+  # 线性映射：multiplier = 1.0 + morph_score × 0.5
+  local morph_mult=$(calc "1.0 + $morph_score * 0.5") 2>/dev/null
+  morph_mult=$(echo "$morph_mult" | sed 's/^\./0./;s/^-\./-0./')
+  # 限幅
+  cmp "$morph_mult < 0.5" && morph_mult=0.5
+  cmp "$morph_mult > 1.5" && morph_mult=1.5
+  
+  # ── Step 3: 量能调节（-8~+8）──
+  local vol_adj=0
+  case "$volume_factor" in
+    1.0) vol_adj=8 ;;   # 放量2x+，强势确认
+    0.8) vol_adj=5 ;;   # 温和放量
+    0.5) vol_adj=0 ;;   # 正常
+    0.3) vol_adj=-3 ;;  # 缩量（上涨中=蓄力+3，下跌中=无力-5）
+    0.1) vol_adj=-8 ;;  # 地量
+  esac
+  # 缩量在上涨趋势中是蓄力而非弱势
+  if cmp "$volume_factor == 0.3" && [ "$market_state" = "STRONG_UP" ]; then
+    vol_adj=3  # 强势股缩量回踩=洗盘，加分
+  fi
+  
+  # ── Step 4: 风险惩罚（0~-30）──
+  local risk_penalty=0
+  # 卖出信号数量惩罚
+  [ "$sell_count" -ge 1 ] && risk_penalty=$(calc "$risk_penalty + $sell_count * 3")
+  [ "$sell_count" -ge 3 ] && risk_penalty=$(calc "$risk_penalty + 5")  # 多信号叠加额外罚
+  # 高位风险
+  cmp "$profit_pct > 90" && risk_penalty=$(calc "$risk_penalty + 8")
+  cmp "$profit_pct > 95" && risk_penalty=$(calc "$risk_penalty + 5")
+  # 跌停/涨停一字板
+  [ "$today_down_limit" -eq 1 ] && risk_penalty=$(calc "$risk_penalty + 15")
+  [ "$today_limit" -eq 1 ] && risk_penalty=$(calc "$risk_penalty + 5")  # 涨停不追
+  # 限幅
+  cmp "$risk_penalty > 30" && risk_penalty=30
+  
+  # ── Step 5: 合成 IQ_Score ──
+  iq_score=$(calc "$state_base * $morph_mult + $vol_adj - $risk_penalty") 2>/dev/null
+  iq_score=$(echo "$iq_score" | sed 's/^\./0./;s/^-\./-0./')
+  # 限幅 0~100
+  cmp "$iq_score < 0" && iq_score=0
+  cmp "$iq_score > 100" && iq_score=100
+  iq_score=$(calc_scale "$iq_score" 0) 2>/dev/null
+  
+  # ── Step 6: 评级映射 ──
+  if cmp "$iq_score >= 80"; then
+    iq_grade="A-强烈推荐"
+  elif cmp "$iq_score >= 70"; then
+    iq_grade="B+-推荐买入"
+  elif cmp "$iq_score >= 60"; then
+    iq_grade="B-可以买入"
+  elif cmp "$iq_score >= 50"; then
+    iq_grade="C+-谨慎参与"
+  elif cmp "$iq_score >= 40"; then
+    iq_grade="C-观望"
+  elif cmp "$iq_score >= 30"; then
+    iq_grade="D-偏弱回避"
+  elif cmp "$iq_score >= 20"; then
+    iq_grade="E-弱势勿碰"
+  else
+    iq_grade="F-高风险远离"
+  fi
+  
+  # 构建详情
+  iq_detail="state=${state_base}×morph=${morph_mult}+vol=${vol_adj}-risk=${risk_penalty}"
   
   # ── v6.3 entry_score v2：五类买点质量评分 ──
   # 从 signals 中提取关键字段
@@ -800,31 +978,31 @@ evaluate() {
   # 计算是否在MA5/MA10附近
   local near_ma5=0 near_ma10=0
   [ "$ma5" != "n/a" ] && [ -n "$ma5" ] && {
-    local dist_ma5=$(echo "scale=4; ($price - $ma5) / $price" | bc -l 2>/dev/null)
+    local dist_ma5=$(calc_scale "($price - $ma5) / $price" 4) 2>/dev/null
     dist_ma5=$(echo "$dist_ma5" | sed 's/^-//')
-    [ "$(echo "$dist_ma5 < 0.015" | bc -l 2>/dev/null)" = "1" ] && near_ma5=1
+    cmp "$dist_ma5 < 0.015" && near_ma5=1
   }
   [ "$ma10" != "n/a" ] && [ -n "$ma10" ] && {
-    local dist_ma10=$(echo "scale=4; ($price - $ma10) / $price" | bc -l 2>/dev/null)
+    local dist_ma10=$(calc_scale "($price - $ma10) / $price" 4) 2>/dev/null
     dist_ma10=$(echo "$dist_ma10" | sed 's/^-//')
-    [ "$(echo "$dist_ma10 < 0.02" | bc -l 2>/dev/null)" = "1" ] && near_ma10=1
+    cmp "$dist_ma10 < 0.02" && near_ma10=1
   }
   
   local is_shrink=0
-  [ "$(echo "$vol_ratio < 0.85" | bc -l 2>/dev/null)" = "1" ] && is_shrink=1
+  cmp "$vol_ratio < 0.85" && is_shrink=1
   
   # ── 1. 回踩买 PULLBACK_BUY ──
   if [ "$market_state" = "STRONG_UP" ] && [ "$today_limit" -eq 0 ] && [ "$today_down_limit" -eq 0 ]; then
     if [ "$near_ma5" -eq 1 ] || [ "$near_ma10" -eq 1 ]; then
-      if [ "$is_shrink" -eq 1 ] || [ "$(echo "$profit_pct < 90" | bc -l 2>/dev/null)" = "1" ]; then
+      if [ "$is_shrink" -eq 1 ] || cmp "$profit_pct < 90"; then
         entry_type="PULLBACK_BUY"
         entry_score=0.30
-        [ "$(echo "$profit_pct > 95" | bc -l 2>/dev/null)" = "1" ] && entry_score=$(echo "$entry_score - 0.05" | bc -l)
-        [ "$(echo "$dev_cost > 30" | bc -l 2>/dev/null)" = "1" ] && entry_score=$(echo "$entry_score - 0.10" | bc -l)
-        [ "$has_vol_pullback" -eq 1 ] && entry_score=$(echo "$entry_score + 0.05" | bc -l)
-        [ "$has_bullish_arr" -eq 1 ] && entry_score=$(echo "$entry_score + 0.03" | bc -l)
-        [ "$has_macd_above" -eq 1 ] && entry_score=$(echo "$entry_score + 0.02" | bc -l)
-        [ "$has_red_three" -eq 1 ] && entry_score=$(echo "$entry_score + 0.02" | bc -l)
+        cmp "$profit_pct > 95" && entry_score=$(calc "$entry_score - 0.05")
+        cmp "$dev_cost > 30" && entry_score=$(calc "$entry_score - 0.10")
+        [ "$has_vol_pullback" -eq 1 ] && entry_score=$(calc "$entry_score + 0.05")
+        [ "$has_bullish_arr" -eq 1 ] && entry_score=$(calc "$entry_score + 0.03")
+        [ "$has_macd_above" -eq 1 ] && entry_score=$(calc "$entry_score + 0.02")
+        [ "$has_red_three" -eq 1 ] && entry_score=$(calc "$entry_score + 0.02")
         [ "$near_ma5" -eq 1 ] && entry_trigger="MA5≈$ma5 缩量回踩" || entry_trigger="MA10≈$ma10 缩量回踩"
       fi
     fi
@@ -832,12 +1010,12 @@ evaluate() {
   
   # ── 2. 突破买 BREAKOUT_BUY ──
   if [ "$entry_type" = "NO_ENTRY" ] && [ "$market_state" = "STRONG_UP" ] && [ "$today_limit" -eq 0 ] && [ "$today_down_limit" -eq 0 ]; then
-    if [ "$has_breakout" -eq 1 ] && [ "$(echo "$profit_pct < 90" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$dev_cost < 20" | bc -l 2>/dev/null)" = "1" ]; then
+    if [ "$has_breakout" -eq 1 ] && cmp "$profit_pct < 90" && cmp "$dev_cost < 20"; then
       entry_type="BREAKOUT_BUY"
       entry_score=0.25
-      [ "$has_vol_surge" -eq 1 ] && entry_score=$(echo "$entry_score + 0.03" | bc -l)
-      [ "$has_bullish_arr" -eq 1 ] && entry_score=$(echo "$entry_score + 0.02" | bc -l)
-      [ "$has_macd_above" -eq 1 ] && entry_score=$(echo "$entry_score + 0.02" | bc -l)
+      [ "$has_vol_surge" -eq 1 ] && entry_score=$(calc "$entry_score + 0.03")
+      [ "$has_bullish_arr" -eq 1 ] && entry_score=$(calc "$entry_score + 0.02")
+      [ "$has_macd_above" -eq 1 ] && entry_score=$(calc "$entry_score + 0.02")
       entry_trigger="突破确认 获利盘${profit_pct}%"
     fi
   fi
@@ -845,19 +1023,19 @@ evaluate() {
   # ── 3. 底部反转买 REVERSAL_BUY ──
   if [ "$entry_type" = "NO_ENTRY" ] && [ "$today_limit" -eq 0 ] && [ "$today_down_limit" -eq 0 ]; then
     local rev_score=0 rev_reasons=""
-    [ "$has_bottom_div" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.20" | bc -l); rev_reasons="${rev_reasons}MACD底背离+"; }
-    [ "$has_morning_star" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.20" | bc -l); rev_reasons="${rev_reasons}早晨之星+"; }
-    [ "$has_should_fall_strong" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.15" | bc -l); rev_reasons="${rev_reasons}该跌不跌+"; }
-    [ "$has_fairy_guide" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.15" | bc -l); rev_reasons="${rev_reasons}仙人指路+"; }
-    [ "$has_hammer" -eq 1 ] && [ "$has_chip_below_cost" -eq 1 -o "$has_chip_density_low" -eq 1 -o "$has_chip_peak_low" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.15" | bc -l); rev_reasons="${rev_reasons}锤子线低位+"; }
-    [ "$has_oversold" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.10" | bc -l); rev_reasons="${rev_reasons}RSI超卖+"; }
-    [ "$has_chip_density_low" -eq 1 -o "$has_chip_peak_low" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.08" | bc -l); rev_reasons="${rev_reasons}低位密集+"; }
-    [ "$has_shrink" -eq 1 ] && [ "$has_breakout" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.10" | bc -l); rev_reasons="${rev_reasons}缩量后突破+"; }
-    [ "$has_ma_convergence" -eq 1 ] && { rev_score=$(echo "$rev_score + 0.08" | bc -l); rev_reasons="${rev_reasons}均线收敛+"; }
+    [ "$has_bottom_div" -eq 1 ] && { rev_score=$(calc "$rev_score + 0.20"); rev_reasons="${rev_reasons}MACD底背离+"; }
+    [ "$has_morning_star" -eq 1 ] && { rev_score=$(calc "$rev_score + 0.20"); rev_reasons="${rev_reasons}早晨之星+"; }
+    [ "$has_should_fall_strong" -eq 1 ] && { rev_score=$(calc "$rev_score + 0.15"); rev_reasons="${rev_reasons}该跌不跌+"; }
+    [ "$has_fairy_guide" -eq 1 ] && { rev_score=$(calc "$rev_score + 0.15"); rev_reasons="${rev_reasons}仙人指路+"; }
+    [ "$has_hammer" -eq 1 ] && [ "$has_chip_below_cost" -eq 1 -o "$has_chip_density_low" -eq 1 -o "$has_chip_peak_low" -eq 1 ] && { rev_score=$(calc "$rev_score + 0.15"); rev_reasons="${rev_reasons}锤子线低位+"; }
+    [ "$has_oversold" -eq 1 ] && { rev_score=$(calc "$rev_score + 0.10"); rev_reasons="${rev_reasons}RSI超卖+"; }
+    [ "$has_chip_density_low" -eq 1 -o "$has_chip_peak_low" -eq 1 ] && { rev_score=$(calc "$rev_score + 0.08"); rev_reasons="${rev_reasons}低位密集+"; }
+    [ "$has_shrink" -eq 1 ] && [ "$has_breakout" -eq 1 ] && { rev_score=$(calc "$rev_score + 0.10"); rev_reasons="${rev_reasons}缩量后突破+"; }
+    [ "$has_ma_convergence" -eq 1 ] && { rev_score=$(calc "$rev_score + 0.08"); rev_reasons="${rev_reasons}均线收敛+"; }
     rev_reasons=$(echo "$rev_reasons" | sed 's/+$//; s/+/+/g')
-    if [ "$(echo "$rev_score >= 0.20" | bc -l 2>/dev/null)" = "1" ]; then
+    if cmp "$rev_score >= 0.20"; then
       entry_type="REVERSAL_BUY"
-      [ "$(echo "$rev_score > 0.40" | bc -l 2>/dev/null)" = "1" ] && rev_score=0.40
+      cmp "$rev_score > 0.40" && rev_score=0.40
       entry_score=$rev_score
       entry_trigger="$rev_reasons"
     fi
@@ -867,16 +1045,16 @@ evaluate() {
   # 注：在STRONG_UP+获利盘过热时，趋势中继信号被NO_ENTRY覆盖
   if [ "$entry_type" = "NO_ENTRY" ] && [ "$market_state" = "STRONG_UP" ] && [ "$today_limit" -eq 0 ] && [ "$today_down_limit" -eq 0 ]; then
     # 获利盘>=90%时跳过趋势中继（过热不追，等回踩）
-    if [ "$(echo "$profit_pct < 90" | bc -l 2>/dev/null)" = "1" ]; then
+    if cmp "$profit_pct < 90"; then
       local cont_score=0 cont_reasons=""
-      [ "$has_red_three" -eq 1 ] && { cont_score=$(echo "$cont_score + 0.10" | bc -l); cont_reasons="${cont_reasons}红三兵+"; }
-      [ "$has_gap_up" -eq 1 ] && [ "$has_hanging_man" -eq 0 ] && { cont_score=$(echo "$cont_score + 0.08" | bc -l); cont_reasons="${cont_reasons}跳空+"; }
-      [ "$has_bullish_arr" -eq 1 ] && [ "$has_macd_above" -eq 1 ] && { cont_score=$(echo "$cont_score + 0.10" | bc -l); cont_reasons="${cont_reasons}多头零轴上+"; }
-      [ "$has_ma_golden_cross" -eq 1 -o "$has_macd_golden" -eq 1 ] && { cont_score=$(echo "$cont_score + 0.08" | bc -l); cont_reasons="${cont_reasons}金叉+"; }
+      [ "$has_red_three" -eq 1 ] && { cont_score=$(calc "$cont_score + 0.10"); cont_reasons="${cont_reasons}红三兵+"; }
+      [ "$has_gap_up" -eq 1 ] && [ "$has_hanging_man" -eq 0 ] && { cont_score=$(calc "$cont_score + 0.08"); cont_reasons="${cont_reasons}跳空+"; }
+      [ "$has_bullish_arr" -eq 1 ] && [ "$has_macd_above" -eq 1 ] && { cont_score=$(calc "$cont_score + 0.10"); cont_reasons="${cont_reasons}多头零轴上+"; }
+      [ "$has_ma_golden_cross" -eq 1 -o "$has_macd_golden" -eq 1 ] && { cont_score=$(calc "$cont_score + 0.08"); cont_reasons="${cont_reasons}金叉+"; }
       cont_reasons=$(echo "$cont_reasons" | sed 's/+$//; s/+/+/g')
-      if [ "$(echo "$cont_score >= 0.15" | bc -l 2>/dev/null)" = "1" ]; then
+      if cmp "$cont_score >= 0.15"; then
         entry_type="TREND_CONTINUE"
-        [ "$(echo "$cont_score > 0.30" | bc -l 2>/dev/null)" = "1" ] && cont_score=0.30
+        cmp "$cont_score > 0.30" && cont_score=0.30
         entry_score=$cont_score
         entry_trigger="$cont_reasons"
       fi
@@ -887,17 +1065,17 @@ evaluate() {
   if [ "$entry_type" = "NO_ENTRY" ] && [ "$today_limit" -eq 0 ] && [ "$today_down_limit" -eq 0 ]; then
     if [ "$market_state" = "WEAK_DOWN" ] || [ "$market_state" = "CHOP_DOWN" ]; then
       local over_score=0 over_reasons=""
-      [ "$has_chip_below_cost" -eq 1 ] && { over_score=$(echo "$over_score + 0.10" | bc -l); over_reasons="${over_reasons}低于成本+"; }
-      [ "$has_chip_density_low" -eq 1 -o "$has_chip_peak_low" -eq 1 ] && { over_score=$(echo "$over_score + 0.08" | bc -l); over_reasons="${over_reasons}低位密集+"; }
-      [ "$has_bottom_div" -eq 1 ] && { over_score=$(echo "$over_score + 0.15" | bc -l); over_reasons="${over_reasons}MACD底背离+"; }
-      [ "$has_oversold" -eq 1 ] && { over_score=$(echo "$over_score + 0.10" | bc -l); over_reasons="${over_reasons}RSI超卖+"; }
-      [ "$has_hammer" -eq 1 ] && { over_score=$(echo "$over_score + 0.08" | bc -l); over_reasons="${over_reasons}锤子线+"; }
-      [ "$has_should_fall_strong" -eq 1 ] && { over_score=$(echo "$over_score + 0.12" | bc -l); over_reasons="${over_reasons}该跌不跌+"; }
-      [ "$has_ma_convergence" -eq 1 ] && { over_score=$(echo "$over_score + 0.08" | bc -l); over_reasons="${over_reasons}均线收敛+"; }
+      [ "$has_chip_below_cost" -eq 1 ] && { over_score=$(calc "$over_score + 0.10"); over_reasons="${over_reasons}低于成本+"; }
+      [ "$has_chip_density_low" -eq 1 -o "$has_chip_peak_low" -eq 1 ] && { over_score=$(calc "$over_score + 0.08"); over_reasons="${over_reasons}低位密集+"; }
+      [ "$has_bottom_div" -eq 1 ] && { over_score=$(calc "$over_score + 0.15"); over_reasons="${over_reasons}MACD底背离+"; }
+      [ "$has_oversold" -eq 1 ] && { over_score=$(calc "$over_score + 0.10"); over_reasons="${over_reasons}RSI超卖+"; }
+      [ "$has_hammer" -eq 1 ] && { over_score=$(calc "$over_score + 0.08"); over_reasons="${over_reasons}锤子线+"; }
+      [ "$has_should_fall_strong" -eq 1 ] && { over_score=$(calc "$over_score + 0.12"); over_reasons="${over_reasons}该跌不跌+"; }
+      [ "$has_ma_convergence" -eq 1 ] && { over_score=$(calc "$over_score + 0.08"); over_reasons="${over_reasons}均线收敛+"; }
       over_reasons=$(echo "$over_reasons" | sed 's/+$//; s/+/+/g')
-      if [ "$(echo "$over_score >= 0.15" | bc -l 2>/dev/null)" = "1" ]; then
+      if cmp "$over_score >= 0.15"; then
         entry_type="OVERSOLD_BUY"
-        [ "$(echo "$over_score > 0.35" | bc -l 2>/dev/null)" = "1" ] && over_score=0.35
+        cmp "$over_score > 0.35" && over_score=0.35
         entry_score=$over_score
         entry_trigger="$over_reasons"
       fi
@@ -910,11 +1088,11 @@ evaluate() {
       entry_trigger="今日涨停·不追"
     elif [ "$today_down_limit" -eq 1 ]; then
       entry_trigger="跌停·不碰"
-    elif [ "$market_state" = "STRONG_UP" ] && [ "$(echo "$profit_pct >= 98 && $dev_cost > 25" | bc -l 2>/dev/null)" = "1" ]; then
+    elif [ "$market_state" = "STRONG_UP" ] && cmp "$profit_pct >= 98 && $dev_cost > 25"; then
       local potential=""
       [ "$ma5" != "n/a" ] && [ -n "$ma5" ] && potential="等回踩MA5≈$ma5"
       entry_trigger="获利盘${profit_pct}%+偏离${dev_cost}%·过热 | ${potential}"
-    elif [ "$market_state" = "STRONG_UP" ] && [ "$(echo "$profit_pct >= 90" | bc -l 2>/dev/null)" = "1" ]; then
+    elif [ "$market_state" = "STRONG_UP" ] && cmp "$profit_pct >= 90"; then
       local potential=""
       [ "$ma5" != "n/a" ] && [ -n "$ma5" ] && potential="等回踩MA5≈$ma5"
       entry_trigger="获利盘${profit_pct}%·偏热 | ${potential}"
@@ -948,6 +1126,9 @@ evaluate() {
   \"buy_vote\":$buy_vote,
   \"sell_vote\":$sell_vote,
   \"total_score_ext\":$total_score_ext,
+  \"iq_score\":$iq_score,
+  \"iq_grade\":\"$iq_grade\",
+  \"iq_detail\":\"$iq_detail\",
   \"entry_type\":\"$entry_type\",
   \"entry_trigger\":\"$entry_trigger\",
   \"entry_score\":$entry_score,
@@ -978,6 +1159,10 @@ if [ "$(basename "$0" 2>/dev/null)" != "engine.sh" ]; then
 fi
 
 RAW=$(fetch_bulk)
+
+# --------------- MACD批量预计算（v6.4优化：一次python3算所有标的）---------------
+precompute_macd
+# --------------- MACD预计算结束 ---------------
 
 # --------------- 板块相对强度预解析 ---------------
 # 从RAW提取5个核心板块ETF涨跌幅（规则函数通过全局变量访问）
@@ -1048,6 +1233,8 @@ with open('$REPORT_FILE') as f:
     content = f.read()
 # 修复1: signals 数组内 JSON 对象间缺逗号（多行输出导致 }\\n{）
 content = re.sub(r'\\}(?:\\s*\\n)+\\s*\\{', '},{', content)
+# 修复1b: 捕获 "]\n[" 的情况（最外层数组）
+content = re.sub(r"\]\s*\n\s*\[", "],[", content)
 # 修复2: :. → :0. （bc输出.5而不是0.5）
 content = re.sub(r':\\.(\\d)', r':0.\\1', content)
 # 修复3: 对象末尾 ,{ 但缺少闭合 }（chip_distribution 信号拼接异常）
