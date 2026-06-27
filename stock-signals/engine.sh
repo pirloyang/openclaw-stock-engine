@@ -463,6 +463,9 @@ _translate_signal() {
     gap_up) echo "跳空高开" ;;
     vol_up_with_price) echo "量价齐升" ;;
     outperform_sector) echo "跑赢板块" ;;
+    vol_down_shrink) echo "缩量洗盘" ;;
+    rsi_overbought) echo "RSI超买" ;;
+    rsi_oversold) echo "RSI超卖" ;;
     shooting_star) echo "射击之星" ;;
     three_crows) echo "三只乌鸦" ;;
     hanging_man) echo "上吊线" ;;
